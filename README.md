@@ -7,6 +7,8 @@ A unified toolkit for Express.js that provides pre-built CRUD logic, robust S3 f
 [![Express Version](https://img.shields.io/badge/Express-5%2B-black)](https://expressjs.com)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](https://opensource.org/licenses/MIT)
 
+**[Full Documentation & Live Demo](https://ornate-source.github.io/controllerSets/)**
+
 Designed to help you build APIs faster by automating repetitive controller logic and middleware configuration while maintaining type safety and flexibility.
 
 ---
