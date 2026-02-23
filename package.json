@@ -1,6 +1,6 @@
 {
   "name": "express-controller-sets",
-  "version": "2.0.1",
+  "version": "2.1.1",
   "description": "Unified package for Express.js controller sets, dynamic routing, and S3 file uploads.",
   "main": "src/index.js",
   "type": "module",
