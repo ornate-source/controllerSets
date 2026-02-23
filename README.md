@@ -8,6 +8,8 @@ A unified toolkit for Express.js that provides pre-built CRUD logic, robust S3 f
 npm install express-controller-sets mongoose express
 ```
 
+*Compatible with Node.js 18+, Mongoose 7.x/8.x, and Express 4.x/5.x.*
+
 ## 1. ControllerSets
 
 The `ControllerSets` class provides the core logic for handling Mongoose operations. It standardizes common patterns like pagination, filtering, and searching.
