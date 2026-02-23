@@ -2,162 +2,133 @@
 
 A unified toolkit for Express.js that provides pre-built CRUD logic, robust S3 file upload handling, and dynamic routing helpers.
 
-## Installation
+[![Node Version](https://img.shields.io/badge/Node-18%2B-blue)](https://nodejs.org)
+[![Mongoose Version](https://img.shields.io/badge/Mongoose-8%2B-green)](https://mongoosejs.com)
+[![Express Version](https://img.shields.io/badge/Express-5%2B-black)](https://expressjs.com)
+[![License](https://img.shields.io/badge/License-MIT-yellow)](https://opensource.org/licenses/MIT)
+
+Designed to help you build APIs faster by automating repetitive controller logic and middleware configuration while maintaining type safety and flexibility.
+
+---
+
+## 🚀 Installation
+
+Install the package and its peer dependencies using your favorite package manager:
 
 ```bash
 npm install express-controller-sets mongoose express
 ```
 
-*Compatible with Node.js 18+, Mongoose 7.x/8.x, and Express 4.x/5.x.*
+## ⚡ Quick Start
 
-## 1. ControllerSets
+Build a full-featured API for your model in just a few lines of code.
 
-The `ControllerSets` class provides the core logic for handling Mongoose operations. It standardizes common patterns like pagination, filtering, and searching.
+```javascript
+import express from 'express';
+import { createRouter } from 'express-controller-sets';
+import Product from './models/Product.js';
 
-### Constructor Options
+const app = express();
+app.use(express.json());
 
-When instantiating `ControllerSets`, you can pass the following arguments:
+// Create all CRUD routes automatically
+const productRouter = createRouter({
+    model: Product,
+    orderBy: '-createdAt', // Sort by newest
+    search: 'name',        // Enable ?name= searching
+    query: ['category']    // Enable ?category= filtering
+});
 
-| Option | Type | Description |
-| :--- | :--- | :--- |
-| `model` | Mongoose Model | The Mongoose model to perform operations on. |
-| `orderBy` | String | Default sorting order (e.g., `'-createdAt'` or `'name'`). Use `'-'` prefix for descending. |
-| `query` | Array | List of field names from `req.query` that should be used as automatic filters. |
-| `search` | String | The field name to enable regex-based searching on (e.g., `'title'`). |
-| `runAfterCreate` | Function | Optional callback that executes after a successful creation. Receives the created document. |
+app.use('/api/products', productRouter);
+```
 
-### Demo: Controller with Router File
+## 📦 Controller Sets
 
-**controllers/productController.js**
+The `ControllerSets` class provides the core logic for handling Mongoose operations. You can use it directly for custom route handling.
+
 ```javascript
 import { ControllerSets } from 'express-controller-sets';
 import Product from '../models/Product.js';
 
 const productController = new ControllerSets(
     Product,
-    '-createdAt',        // Order by newest
-    ['category', 'brand'], // Enable filtering by ?category=...&brand=...
-    'name',              // Enable search by ?name=...
-    (doc) => console.log('Product created:', doc._id)
+    '-createdAt',        // Default sort
+    ['category'],        // Filterable fields
+    'name'               // Searchable field
 );
 
-export default productController;
-```
-
-**routes/productRoutes.js**
-```javascript
-import express from 'express';
-import productController from '../controllers/productController.js';
-
-const router = express.Router();
-
+// Use in manual routes
 router.get('/', productController.getAll);
-router.get('/:id', productController.getById);
 router.post('/', productController.create);
-router.patch('/:id', productController.update);
-router.delete('/:id', productController.delete);
-
-export default router;
 ```
 
-## 2. S3 Upload Middleware
+## ☁️ S3 Upload Middleware
 
-The `fileUploadMiddleware` handles the complexity of uploading files to S3-compatible storage and returns the file locations in `req.body`.
+Handle file uploads to S3-compatible storage with ease. The middleware automatically updates `req.body` with S3 locations.
 
-### Configuration Requirements
-
-The middleware requires the following environment variables:
-- `S3_ENDPOINT`
-- `S3_SPACES_KEY`
-- `S3_SPACES_SECRET`
-- `S3_BUCKET_NAME`
-- `S3_REGION` (Default: us-east-1)
-
-### Demo: Middleware with Router File
-
-**routes/uploadRoutes.js**
 ```javascript
-import express from 'express';
 import { fileUploadMiddleware } from 'express-controller-sets';
 
-const router = express.Router();
-
-router.post('/profile-picture', 
-    (req, res, next) => {
-        const uploadPath = 'users/avatars/';
-        const fields = [{ name: 'avatar', maxCount: 1 }];
-        fileUploadMiddleware(req, res, next, uploadPath, fields);
-    },
-    (req, res) => {
-        // req.body.avatar now contains the S3 URL
-        res.status(200).json({ 
-            success: true, 
-            url: req.body.avatar 
-        });
-    }
-);
-
-export default router;
+router.post('/upload', (req, res, next) => {
+    fileUploadMiddleware(req, res, next, 'uploads/', [
+        { name: 'avatar', maxCount: 1 }
+    ]);
+}, (req, res) => {
+    res.json({ url: req.body.avatar });
+});
 ```
 
-## 3. Dynamic Router Helpers
+## 🛣️ Dynamic Routers
 
-For maximum speed, use the dynamic router helpers to generate a full set of routes in a single call.
+Use the helper functions to quickly scaffold entire resource routers with pre-configured CRUD and upload logic.
 
-### createRouter
-
-Generates standard CRUD routes without file uploads.
-
+### Basic Router
 ```javascript
 import { createRouter } from 'express-controller-sets';
-import Category from '../models/Category.js';
+import Product from './models/Product.js';
 
 const router = createRouter({
-    model: Category,
-    orderBy: 'name',
-    middlewares: [authenticate] // Applied to all routes in this router
+    model: Product,
+    orderBy: '-createdAt',
+    search: 'name'
 });
-
-app.use('/api/categories', router);
 ```
 
-### createRouterS3upload
-
-Generates CRUD routes and automatically attaches S3 upload middleware to the `POST` and `PATCH` endpoints.
-
+### Router with S3 Upload
+Automatically combines CRUD logic with S3 file upload middleware.
 ```javascript
 import { createRouterS3upload } from 'express-controller-sets';
-import Post from '../models/Post.js';
+import User from './models/User.js';
 
 const router = createRouterS3upload({
-    model: Post,
-    path: 'blog/posts/',
-    fields: [
-        { name: 'thumbnail', maxCount: 1 },
-        { name: 'attachments', maxCount: 5 }
-    ],
-    orderBy: '-createdAt',
-    search: 'title'
+    model: User,
+    folder: 'avatars/',
+    filesState: [{ name: 'avatar', maxCount: 1 }]
 });
-
-app.use('/api/posts', router);
 ```
 
-## API Reference
+## 📖 API Reference
 
-### createRouter(options)
-- `model`: (Mongoose Model) Required.
-- `orderBy`: (String) Default sorting.
-- `query`: (Array) Allowed filter fields.
-- `search`: (String) Searchable field.
-- `middlewares`: (Array) List of middlewares to use.
-- `runAfterCreate`: (Function) Post-creation callback.
+| Option | Type | Description |
+| :--- | :--- | :--- |
+| `model` | Mongoose Model | **Required.** Model for database operations. |
+| `orderBy` | String | Default sorting field (e.g. `'-createdAt'`). |
+| `query` | Array<String> | Fields allowed for automatic query filtering. |
+| `search` | String | Field name for regex-based searching. |
+| `middlewares` | Array<Function> | Array of middlewares applied to all routes. |
 
-### createRouterS3upload(options)
-Includes all options from `createRouter` plus:
-- `path`: (String) S3 folder path.
-- `fields`: (Array) Array of field objects `{ name, maxCount }`.
+## ⚙️ Environment Variables
 
-## License
+Configure your S3 credentials via environment variables:
 
-MIT
+```text
+S3_ENDPOINT=your-endpoint.com
+S3_SPACES_KEY=your-key
+S3_SPACES_SECRET=your-secret
+S3_BUCKET_NAME=your-bucket
+S3_REGION=us-east-1
+```
+
+---
+
+Released under the [MIT License](LICENSE). © 2024 Sabbir Mahmud
