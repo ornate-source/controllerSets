@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Express Controller Sets | Documentation</title>
+    <meta name="description" content="Unified toolkit for Express.js - Pre-built CRUD logic, S3 uploads, and dynamic routing.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="dark">
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-text">ControllerSets</span>
+                </div>
+                <div class="header-actions-sidebar">
+                    <button id="theme-toggle-desktop" class="theme-btn" aria-label="Toggle Theme">
+                        <i data-lucide="sun" class="sun-icon"></i>
+                        <i data-lucide="moon" class="moon-icon"></i>
+                    </button>
+                    <button id="sidebar-close" class="mobile-only theme-btn" aria-label="Close Menu">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="#introduction" class="active"><i data-lucide="home"></i> Introduction</a></li>
+                    <li><a href="#installation"><i data-lucide="download"></i> Installation</a></li>
+                    <li><a href="#quick-start"><i data-lucide="rocket"></i> Quick Start</a></li>
+                    <li><a href="#controller-sets"><i data-lucide="layers"></i> Controller Sets</a></li>
+                    <li><a href="#s3-upload"><i data-lucide="cloud-upload"></i> S3 Upload</a></li>
+                    <li><a href="#dynamic-routers"><i data-lucide="route"></i> Dynamic Routers</a></li>
+                    <li><a href="#api-reference"><i data-lucide="book-open"></i> API Reference</a></li>
+                    <li><a href="#environment"><i data-lucide="settings"></i> Environment</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="content">
+            <header class="mobile-header">
+                <div class="logo">
+                    <span class="logo-text">ControllerSets</span>
+                </div>
+                <div class="header-actions">
+                    <button id="theme-toggle-mobile" class="theme-btn" aria-label="Toggle Theme">
+                        <i data-lucide="sun" class="sun-icon"></i>
+                        <i data-lucide="moon" class="moon-icon"></i>
+                    </button>
+                    <button id="menu-toggle" class="theme-btn mobile-only" aria-label="Toggle Menu">
+                        <i data-lucide="menu"></i>
+                    </button>
+                </div>
+            </header>
+
+            <section id="introduction" class="section">
+                <h1>Express Controller Sets</h1>
+                <p class="lead">A unified toolkit for Express.js that provides pre-built CRUD logic, robust S3 file upload handling, and dynamic routing helpers.</p>
+                <div class="badges">
+                    <span class="badge"><i data-lucide="check-circle"></i> Node 18+</span>
+                    <span class="badge"><i data-lucide="shield"></i> Mongoose 8+</span>
+                    <span class="badge"><i data-lucide="zap"></i> Express 5+</span>
+                </div>
+                <p>Designed to help you build APIs faster by automating repetitive controller logic and middleware configuration while maintaining type safety and flexibility.</p>
+            </section>
+
+            <section id="installation" class="section">
+                <h2><i data-lucide="terminal"></i> Installation</h2>
+                <p>Install the package and its peer dependencies using your favorite package manager:</p>
+                <div class="code-block" data-lang="bash">
+                    <pre><code>npm install express-controller-sets mongoose express</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+            </section>
+
+            <section id="quick-start" class="section">
+                <h2><i data-lucide="play"></i> Quick Start</h2>
+                <p>Build a full-featured API for your model in just a few lines of code.</p>
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>import express from 'express';
+import { createRouter } from 'express-controller-sets';
+import Product from './models/Product.js';
+
+const app = express();
+app.use(express.json());
+
+// Create all CRUD routes automatically
+const productRouter = createRouter({
+    model: Product,
+    orderBy: '-createdAt', // Sort by newest
+    search: 'name',        // Enable ?name= searching
+    query: ['category']    // Enable ?category= filtering
+});
+
+app.use('/api/products', productRouter);</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+            </section>
+
+            <section id="controller-sets" class="section">
+                <h2><i data-lucide="box"></i> Controller Sets</h2>
+                <p>The <code>ControllerSets</code> class provides the core logic for handling Mongoose operations. You can use it directly for custom route handling.</p>
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>import { ControllerSets } from 'express-controller-sets';
+import Product from '../models/Product.js';
+
+const productController = new ControllerSets(
+    Product,
+    '-createdAt',        // Default sort
+    ['category'],        // Filterable fields
+    'name'               // Searchable field
+);
+
+// Use in manual routes
+router.get('/', productController.getAll);
+router.post('/', productController.create);</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+            </section>
+
+            <section id="s3-upload" class="section">
+                <h2><i data-lucide="upload-cloud"></i> S3 Upload Middleware</h2>
+                <p>Handle file uploads to S3-compatible storage with ease. The middleware automatically updates <code>req.body</code> with S3 locations.</p>
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>import { fileUploadMiddleware } from 'express-controller-sets';
+
+router.post('/upload', (req, res, next) => {
+    fileUploadMiddleware(req, res, next, 'uploads/', [
+        { name: 'avatar', maxCount: 1 }
+    ]);
+}, (req, res) => {
+    res.json({ url: req.body.avatar });
+});</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+            </section>
+
+            <section id="dynamic-routers" class="section">
+                <h2><i data-lucide="route"></i> Dynamic Routers</h2>
+                <p>Use the helper functions to quickly scaffold entire resource routers with pre-configured CRUD and upload logic.</p>
+                
+                <h3>Basic Router</h3>
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>import { createRouter } from 'express-controller-sets';
+import Product from './models/Product.js';
+
+const router = createRouter({
+    model: Product,
+    orderBy: '-createdAt',
+    search: 'name'
+});</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <h3>Router with S3 Upload</h3>
+                <p>Automatically combines CRUD logic with S3 file upload middleware.</p>
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>import { createRouterS3upload } from 'express-controller-sets';
+import User from './models/User.js';
+
+const router = createRouterS3upload({
+    model: User,
+    folder: 'avatars/',
+    filesState: [{ name: 'avatar', maxCount: 1 }]
+});</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+            </section>
+
+            <section id="api-reference" class="section">
+                <h2><i data-lucide="info"></i> API Reference</h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Option</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>model</code></td>
+                                <td>Mongoose Model</td>
+                                <td>Required model for database operations.</td>
+                            </tr>
+                            <tr>
+                                <td><code>orderBy</code></td>
+                                <td>String</td>
+                                <td>Default sorting field (e.g. <code>'-createdAt'</code>).</td>
+                            </tr>
+                            <tr>
+                                <td><code>query</code></td>
+                                <td>Array&lt;String&gt;</td>
+                                <td>Fields allowed for automatic query filtering.</td>
+                            </tr>
+                            <tr>
+                                <td><code>search</code></td>
+                                <td>String</td>
+                                <td>Field name for regex-based searching.</td>
+                            </tr>
+                            <tr>
+                                <td><code>middlewares</code></td>
+                                <td>Array&lt;Function&gt;</td>
+                                <td>Array of middlewares applied to all routes.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="environment" class="section">
+                <h2><i data-lucide="settings"></i> Environment Variables</h2>
+                <p>Configure your S3 credentials via environment variables:</p>
+                <div class="code-block" data-lang="text">
+                    <pre><code>S3_ENDPOINT=your-endpoint.com
+S3_SPACES_KEY=your-key
+S3_SPACES_SECRET=your-secret
+S3_BUCKET_NAME=your-bucket
+S3_REGION=us-east-1</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+            </section>
+
+            <footer class="main-footer">
+                <p>Released under the <a href="#">MIT License</a>. &copy; 2024 Sabbir Mahmud</p>
+            </footer>
+        </main>
+    </div>
+
+    <script>
+        // Initialize Lucide icons on load and after DOM content is ready
+        window.addEventListener('load', () => {
+            lucide.createIcons();
+            updateThemeIcons();
+        });
+
+        // Theme Toggle Logic
+        const body = document.body;
+        const themeToggles = [
+            document.getElementById('theme-toggle-desktop'),
+            document.getElementById('theme-toggle-mobile')
+        ];
+
+        // Check for saved theme
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        body.className = savedTheme;
+
+        themeToggles.forEach(toggle => {
+            if (toggle) {
+                toggle.addEventListener('click', () => {
+                    const isDark = body.classList.contains('dark');
+                    body.className = isDark ? 'light' : 'dark';
+                    localStorage.setItem('theme', body.className);
+                    updateThemeIcons();
+                });
+            }
+        });
+
+        function updateThemeIcons() {
+            const isDark = body.classList.contains('dark');
+            document.querySelectorAll('.sun-icon').forEach(icon => {
+                icon.style.display = isDark ? 'block' : 'none';
+            });
+            document.querySelectorAll('.moon-icon').forEach(icon => {
+                icon.style.display = isDark ? 'none' : 'block';
+            });
+            // Re-create icons to ensure SVGs are updated if needed
+            lucide.createIcons();
+        }
+
+        // Copy to clipboard
+        document.querySelectorAll('.copy-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const code = button.parentElement.querySelector('code').innerText;
+                navigator.clipboard.writeText(code).then(() => {
+                    const originalHTML = button.innerHTML;
+                    button.innerHTML = '<i data-lucide="check"></i> Copied!';
+                    lucide.createIcons();
+                    button.classList.add('copied');
+                    setTimeout(() => {
+                        button.innerHTML = originalHTML;
+                        lucide.createIcons();
+                        button.classList.remove('copied');
+                    }, 2000);
+                });
+            });
+        });
+
+        // Mobile Menu Toggle
+        const menuToggle = document.getElementById('menu-toggle');
+        const sidebarClose = document.getElementById('sidebar-close');
+        const sidebar = document.querySelector('.sidebar');
+
+        if (menuToggle) {
+            menuToggle.addEventListener('click', () => {
+                sidebar.classList.add('active');
+                body.style.overflow = 'hidden'; // Prevent scroll
+            });
+        }
+
+        if (sidebarClose) {
+            sidebarClose.addEventListener('click', () => {
+                sidebar.classList.remove('active');
+                body.style.overflow = ''; // Restore scroll
+            });
+        }
+
+        // Active Link on Scroll
+        const sections = document.querySelectorAll('.section');
+        const navLinks = document.querySelectorAll('.sidebar-nav a');
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (pageYOffset >= (sectionTop - 150)) {
+                    current = section.getAttribute('id');
+                }
+            });
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (current && link.getAttribute('href') === `#${current}`) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
