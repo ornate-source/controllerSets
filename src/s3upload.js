@@ -75,11 +75,16 @@ const fileUploadMiddleware = (
 
         // Populate req.body with file locations
         if (fields.length === 1 && req.file) {
-            req.body[fields[0].name] = req.file.location;
+            const field = fields[0];
+            req.body[field.name] = field.formatToUrlObject 
+                ? { url: req.file.location } 
+                : req.file.location;
         } else if (req.files) {
             fields.forEach((field) => {
                 if (req.files[field.name]) {
-                    const locations = req.files[field.name].map(f => f.location);
+                    const locations = req.files[field.name].map(f => 
+                        field.formatToUrlObject ? { url: f.location } : f.location
+                    );
                     // If maxCount is 1, return single string, else array
                     req.body[field.name] = (field.maxCount === 1) ? locations[0] : locations;
                 }
