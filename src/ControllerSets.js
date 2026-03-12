@@ -9,7 +9,7 @@ class ControllerSets {
         model,
         orderBy = "none",
         query = [],
-        search = "none",
+        search = [],
         runAfterCreate = "none"
     ) {
         if (!model) {
@@ -69,7 +69,16 @@ class ControllerSets {
                 return acc;
             }, {});
 
-            if (this.search !== "none" && req.query[this.search]) {
+            const searchTerm = req.query.s || req.query.search;
+
+            if (Array.isArray(this.search) && this.search.length > 0 && searchTerm) {
+                filters.$or = this.search.map((field) => ({
+                    [field]: {
+                        $regex: String(searchTerm),
+                        $options: "i",
+                    },
+                }));
+            } else if (!Array.isArray(this.search) && this.search !== "none" && req.query[this.search]) {
                 filters[this.search] = {
                     $regex: String(req.query[this.search]),
                     $options: "i",

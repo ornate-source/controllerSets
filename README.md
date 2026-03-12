@@ -37,7 +37,7 @@ app.use(express.json());
 const productRouter = createRouter({
     model: Product,
     orderBy: '-createdAt', // Sort by newest
-    search: 'name',        // Enable ?name= searching
+    search: ['name', 'description'], // Enable ?search= or ?s= for multi-field search
     query: ['category']    // Enable ?category= filtering
 });
 
@@ -56,7 +56,7 @@ const productController = new ControllerSets(
     Product,
     '-createdAt',        // Default sort
     ['category'],        // Filterable fields
-    'name'               // Searchable field
+    ['name', 'tags']     // Searchable fields array
 );
 
 // Use in manual routes
@@ -92,7 +92,7 @@ import Product from './models/Product.js';
 const router = createRouter({
     model: Product,
     orderBy: '-createdAt',
-    search: 'name'
+    search: ['name', 'description']
 });
 ```
 
@@ -109,6 +109,40 @@ const router = createRouterS3upload({
 });
 ```
 
+## 📘 TypeScript Support
+
+The package comes with built-in TypeScript definitions. You can pass your Mongoose document interfaces to strongly type the controllers and routers.
+
+```typescript
+import express from 'express';
+import { createRouter } from 'express-controller-sets';
+import mongoose, { Document } from 'mongoose';
+
+// 1. Define your interface
+interface IUser extends Document {
+    name: string;
+    email: string;
+    age: number;
+}
+
+// 2. Define or import your model
+const UserModel = mongoose.model<IUser>('User', new mongoose.Schema({
+    name: String,
+    email: String,
+    age: Number
+}));
+
+// 3. Create a strongly-typed router
+const userRouter = createRouter<IUser>({
+    model: UserModel,
+    orderBy: 'name',
+    search: ['name', 'email']
+});
+
+const app = express();
+app.use('/api/users', userRouter);
+```
+
 ## 📖 API Reference
 
 | Option | Type | Description |
@@ -116,7 +150,7 @@ const router = createRouterS3upload({
 | `model` | Mongoose Model | **Required.** Model for database operations. |
 | `orderBy` | String | Default sorting field (e.g. `'-createdAt'`). |
 | `query` | Array<String> | Fields allowed for automatic query filtering. |
-| `search` | String | Field name for regex-based searching. |
+| `search` | Array<String>\|String | Array of field names (or a single string) for regex-based searching via `?s=` or `?search=`. |
 | `middlewares` | Array<Function> | Array of middlewares applied to all routes. |
 
 ## ⚙️ Environment Variables

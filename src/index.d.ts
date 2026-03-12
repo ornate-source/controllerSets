@@ -9,7 +9,7 @@ export class ControllerSets<T extends Document = any> {
         model: Model<T>,
         orderBy?: string,
         query?: string[],
-        search?: string,
+        search?: string | string[],
         runAfterCreate?: ((result: T) => void | Promise<void>) | string
     );
 
@@ -24,7 +24,7 @@ export interface RouterOptions<T extends Document = any> {
     model: Model<T>;
     orderBy?: string;
     query?: string[];
-    search?: string;
+    search?: string | string[];
     runAfterCreate?: ((result: T) => void | Promise<void>) | string;
     middlewares?: any[];
 }

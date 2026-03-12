@@ -38,6 +38,7 @@
                     <li><a href="#controller-sets"><i data-lucide="layers"></i> Controller Sets</a></li>
                     <li><a href="#s3-upload"><i data-lucide="cloud-upload"></i> S3 Upload</a></li>
                     <li><a href="#dynamic-routers"><i data-lucide="route"></i> Dynamic Routers</a></li>
+                    <li><a href="#typescript"><i data-lucide="code"></i> TypeScript</a></li>
                     <li><a href="#api-reference"><i data-lucide="book-open"></i> API Reference</a></li>
                     <li><a href="#environment"><i data-lucide="settings"></i> Environment</a></li>
                 </ul>
@@ -171,6 +172,41 @@ const router = createRouterS3upload({
     folder: 'avatars/',
     filesState: [{ name: 'avatar', maxCount: 1 }]
 });</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+            </section>
+
+            <section id="typescript" class="section">
+                <h2><i data-lucide="code"></i> TypeScript Support</h2>
+                <p>The package comes with built-in TypeScript definitions. You can pass your Mongoose document interfaces to strongly type the controllers and routers.</p>
+                <div class="code-block" data-lang="typescript">
+                    <pre><code>import express from 'express';
+import { createRouter } from 'express-controller-sets';
+import mongoose, { Document } from 'mongoose';
+
+// 1. Define your interface
+interface IUser extends Document {
+    name: string;
+    email: string;
+    age: number;
+}
+
+// 2. Define or import your model
+const UserModel = mongoose.model&lt;IUser&gt;('User', new mongoose.Schema({
+    name: String,
+    email: String,
+    age: Number
+}));
+
+// 3. Create a strongly-typed router
+const userRouter = createRouter&lt;IUser&gt;({
+    model: UserModel,
+    orderBy: 'name',
+    search: ['name', 'email']
+});
+
+const app = express();
+app.use('/api/users', userRouter);</code></pre>
                     <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
                 </div>
             </section>

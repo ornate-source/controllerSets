@@ -14,7 +14,7 @@ export const createRouter = ({
     model,
     orderBy = "none",
     query = [],
-    search = "none",
+    search = [],
     runAfterCreate = "none",
     middlewares = [],
 }) => {
@@ -44,7 +44,7 @@ export const createRouterS3upload = ({
     model,
     orderBy = "none",
     query = [],
-    search = "none",
+    search = [],
     runAfterCreate = "none",
     middlewares = [],
     path = "files/",
