@@ -37,7 +37,7 @@ app.use(express.json());
 const productRouter = createRouter({
     model: Product,
     orderBy: '-createdAt', // Sort by newest
-    search: ['name', 'description'], // Enable ?search= or ?s= for multi-field search
+    search: ['name', 'category.name'], // Enable ?search= or ?s= for multi-field search, including relational fields
     query: ['category']    // Enable ?category= filtering
 });
 
@@ -56,8 +56,11 @@ const productController = new ControllerSets(
     Product,
     '-createdAt',        // Default sort
     ['category'],        // Filterable fields
-    ['name', 'tags']     // Searchable fields array
+    ['name', 'tags'],    // Searchable fields array
+    async (doc) => {}    // Optional runAfterCreate callback
 );
+
+// Pagination is built-in. Use ?page=1&pageSize=50 when fetching lists.
 
 // Use in manual routes
 router.get('/', productController.getAll);

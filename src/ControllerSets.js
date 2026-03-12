@@ -72,12 +72,45 @@ class ControllerSets {
             const searchTerm = req.query.s || req.query.search;
 
             if (Array.isArray(this.search) && this.search.length > 0 && searchTerm) {
-                filters.$or = this.search.map((field) => ({
-                    [field]: {
-                        $regex: String(searchTerm),
-                        $options: "i",
-                    },
-                }));
+                const searchPromises = this.search.map(async (field) => {
+                    if (field.includes(".")) {
+                        const [relation, childField] = field.split(".");
+                        const schemaPath = this.model.schema.path(relation);
+                        if (schemaPath && schemaPath.options && schemaPath.options.ref) {
+                            const refModelName = schemaPath.options.ref;
+                            try {
+                                const refModel = mongoose.model(refModelName);
+                                const matchedDocs = await refModel.find({
+                                    [childField]: { $regex: String(searchTerm), $options: "i" }
+                                }).select('_id').lean();
+                                
+                                const ids = matchedDocs.map((doc) => doc._id);
+                                return ids.length > 0 ? { [relation]: { $in: ids } } : null;
+                            } catch (e) {
+                                console.error(`[ControllerSets] Error resolving nested search for ${field}:`, e.message);
+                                return null;
+                            }
+                        }
+                        return null;
+                    } else {
+                        return {
+                            [field]: {
+                                $regex: String(searchTerm),
+                                $options: "i",
+                            },
+                        };
+                    }
+                });
+
+                const resolvedOr = await Promise.all(searchPromises);
+                const validOrClauses = resolvedOr.filter(Boolean);
+
+                if (validOrClauses.length > 0) {
+                    filters.$or = validOrClauses;
+                } else {
+                    // Search term yielded 0 matches across all relations and fields
+                    filters.$or = [{ _id: null }]; 
+                }
             } else if (!Array.isArray(this.search) && this.search !== "none" && req.query[this.search]) {
                 filters[this.search] = {
                     $regex: String(req.query[this.search]),

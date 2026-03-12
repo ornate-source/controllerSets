@@ -97,7 +97,7 @@ app.use(express.json());
 const productRouter = createRouter({
     model: Product,
     orderBy: '-createdAt', // Sort by newest
-    search: 'name',        // Enable ?name= searching
+    search: ['name', 'category.name'], // Enable ?search= or ?s= for multi-field search (including relational)
     query: ['category']    // Enable ?category= filtering
 });
 
@@ -117,7 +117,8 @@ const productController = new ControllerSets(
     Product,
     '-createdAt',        // Default sort
     ['category'],        // Filterable fields
-    'name'               // Searchable field
+    ['name', 'tags'],    // Searchable fields array
+    async (doc) => {}    // Optional runAfterCreate callback
 );
 
 // Use in manual routes
@@ -156,7 +157,7 @@ import Product from './models/Product.js';
 const router = createRouter({
     model: Product,
     orderBy: '-createdAt',
-    search: 'name'
+    search: ['name', 'description']
 });</code></pre>
                     <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
                 </div>
@@ -240,8 +241,13 @@ app.use('/api/users', userRouter);</code></pre>
                             </tr>
                             <tr>
                                 <td><code>search</code></td>
-                                <td>String</td>
-                                <td>Field name for regex-based searching.</td>
+                                <td>Array&lt;String&gt; | String</td>
+                                <td>Array of field names (or a single string) for regex searching. Supports relation dot notation (e.g. <code>category.name</code>).</td>
+                            </tr>
+                            <tr>
+                                <td><code>runAfterCreate</code></td>
+                                <td>Function</td>
+                                <td>Optional callback executed after successful create.</td>
                             </tr>
                             <tr>
                                 <td><code>middlewares</code></td>
@@ -251,6 +257,8 @@ app.use('/api/users', userRouter);</code></pre>
                         </tbody>
                     </table>
                 </div>
+                <h3>Note on Pagination</h3>
+                <p>Pagination is supported out-of-the-box for <code>getAll</code> queries. By appending <code>?page=1&pageSize=50</code>, the response automatically provides a <code>pagination</code> metadata object alongside your results.</p>
             </section>
 
             <section id="environment" class="section">
