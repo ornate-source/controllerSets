@@ -7,12 +7,21 @@ import path from "path";
 dotenv.config();
 
 // Configuration validation
-const requiredEnv = ["S3_ENDPOINT", "S3_SPACES_KEY", "S3_SPACES_SECRET", "S3_BUCKET_NAME"];
-const missingEnv = requiredEnv.filter(key => !process.env[key]);
+const requiredEnv = [
+    "S3_ENDPOINT",
+    "S3_SPACES_KEY",
+    "S3_SPACES_SECRET",
+    "S3_BUCKET_NAME",
+];
+const missingEnv = requiredEnv.filter((key) => !process.env[key]);
 
 if (missingEnv.length > 0) {
-    console.warn(`[ControllerSet-S3] WARNING: Missing required S3 environment variables: ${missingEnv.join(", ")}`);
-    console.warn(`[ControllerSet-S3] S3 uploads will likely fail until these are configured.`);
+    console.warn(
+        `[ControllerSet-S3] WARNING: Missing required S3 environment variables: ${missingEnv.join(", ")}`,
+    );
+    console.warn(
+        `[ControllerSet-S3] S3 uploads will likely fail until these are configured.`,
+    );
 }
 
 const s3Client = new S3Client({
@@ -36,13 +45,13 @@ const fileUploadMiddleware = (
     res,
     next,
     uploadPath = "files/",
-    fields = [{ name: "file", maxCount: 1 }]
+    fields = [{ name: "file", maxCount: 1 }],
 ) => {
     // Fail fast if config is missing
     if (missingEnv.length > 0) {
         return res.status(503).json({
             success: false,
-            error: "S3 service is not properly configured on the server."
+            error: "S3 service is not properly configured on the server.",
         });
     }
 
@@ -53,40 +62,47 @@ const fileUploadMiddleware = (
             acl: "public-read",
             contentType: multerS3.AUTO_CONTENT_TYPE,
             key: (req, file, cb) => {
-                const uniqueId = Date.now() + '-' + Math.round(Math.random() * 1E9);
+                const uniqueId =
+                    Date.now() + "-" + Math.round(Math.random() * 1e9);
                 const extension = path.extname(file.originalname);
-                const finalPath = path.posix.join(uploadPath, `${uniqueId}${extension}`);
+                const finalPath = path.posix.join(
+                    uploadPath,
+                    `${uniqueId}${extension}`,
+                );
                 cb(null, finalPath);
             },
         }),
         limits: {
             fileSize: 10 * 1024 * 1024, // 10MB default limit
-        }
+        },
     });
 
     const handleUploadResult = (error) => {
         if (error) {
             console.error(`[ControllerSet-S3] Upload Error: ${error.message}`);
-            return res.status(500).json({ 
-                success: false, 
-                error: error.message || "Failed to process S3 upload." 
+            return res.status(500).json({
+                success: false,
+                error: error.message || "Failed to process S3 upload.",
             });
         }
 
         // Populate req.body with file locations
         if (fields.length === 1 && req.file) {
             const field = fields[0];
-            req.body[field.name] = field.formatToUrlObject 
-                ? { url: req.file.location } 
+            req.body[field.name] = field.formatToUrlObject
+                ? { url: req.file.location }
                 : req.file.location;
         } else if (req.files) {
             fields.forEach((field) => {
                 if (req.files[field.name]) {
-                    const locations = req.files[field.name].map(f => 
-                        field.formatToUrlObject ? { url: f.location } : f.location
+                    const locations = req.files[field.name].map((f) =>
+                        field.formatToUrlObject
+                            ? { url: f.location }
+                            : f.location,
                     );
                     // If maxCount is 1, return single string, else array
-                    req.body[field.name] = (field.maxCount === 1) ? locations[0] : locations;
+                    req.body[field.name] =
+                        field.maxCount === 1 ? locations[0] : locations;
                 }
             });
         }
@@ -97,10 +113,10 @@ const fileUploadMiddleware = (
         }
     };
 
-    // Determine if single field or multiple
-    if (fields.length === 1) {
+    if (fields.length === 1 && fields[0].maxCount == 1) {
         upload.single(fields[0].name)(req, res, handleUploadResult);
     } else {
+        console.log("uploading multiple file");
         upload.fields(fields)(req, res, handleUploadResult);
     }
 };
