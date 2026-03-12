@@ -85,7 +85,11 @@ const fileUploadMiddleware = (
                 }
             });
         }
-        next();
+        if (typeof next === "function") {
+            next();
+        } else {
+            console.error("[ControllerSet-S3] 'next' is not a function.");
+        }
     };
 
     // Determine if single field or multiple
