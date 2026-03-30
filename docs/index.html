@@ -39,6 +39,7 @@
                 <ul>
                     <li><a href="#introduction" class="active"><i data-lucide="home"></i> Introduction</a></li>
                     <li><a href="#installation"><i data-lucide="download"></i> Installation</a></li>
+                    <li><a href="#environment"><i data-lucide="settings"></i> Environment</a></li>
                     <li><a href="#quick-start"><i data-lucide="rocket"></i> Quick Start</a></li>
                     <li><a href="#controller-sets"><i data-lucide="layers"></i> Controller Sets</a></li>
                     <li><a href="#s3-upload"><i data-lucide="cloud-upload"></i> S3 Upload</a></li>
@@ -46,7 +47,6 @@
                     <li><a href="#typescript"><i data-lucide="code"></i> TypeScript</a></li>
                     <li><a href="#api-reference"><i data-lucide="book-open"></i> API Reference</a></li>
                     <li><a href="#api-endpoints"><i data-lucide="network"></i> API Endpoints</a></li>
-                    <li><a href="#environment"><i data-lucide="settings"></i> Environment</a></li>
                 </ul>
             </nav>
         </aside>
@@ -87,6 +87,19 @@
                 <p>Install the package using your favorite package manager:</p>
                 <div class="code-block" data-lang="bash">
                     <pre><code>npm install express-controller-sets mongoose express multer multer-s3 dotenv @aws-sdk/client-s3</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+            </section>
+
+            <section id="environment" class="section">
+                <h2><i data-lucide="settings"></i> Environment Variables</h2>
+                <p>Configure your S3 credentials via environment variables:</p>
+                <div class="code-block" data-lang="text">
+                    <pre><code>S3_ENDPOINT=your-endpoint.com
+S3_SPACES_KEY=your-key
+S3_SPACES_SECRET=your-secret
+S3_BUCKET_NAME=your-bucket
+S3_REGION=us-east-1</code></pre>
                     <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
                 </div>
             </section>
@@ -392,21 +405,9 @@ fetch('/api/users', {
                 </div>
             </section>
 
-            <section id="environment" class="section">
-                <h2><i data-lucide="settings"></i> Environment Variables</h2>
-                <p>Configure your S3 credentials via environment variables:</p>
-                <div class="code-block" data-lang="text">
-                    <pre><code>S3_ENDPOINT=your-endpoint.com
-S3_SPACES_KEY=your-key
-S3_SPACES_SECRET=your-secret
-S3_BUCKET_NAME=your-bucket
-S3_REGION=us-east-1</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
-                </div>
-            </section>
 
             <footer class="main-footer">
-                <p>Released under the <a href="#">MIT License</a>. &copy; 2024 Sabbir Mahmud</p>
+                <p>Released under the <a href="../LICENSE" target="_blank">MIT License</a>. &copy; 2024 Sabbir Mahmud</p>
             </footer>
         </main>
     </div>
