@@ -102,9 +102,10 @@ class ControllerSets {
         }
 
         let sort = {};
-        if (this.orderBy !== "none") {
-            const isDescending = this.orderBy.startsWith("-");
-            const sortKey = isDescending ? this.orderBy.substring(1) : this.orderBy;
+        const activeSort = req.query.sort || this.orderBy;
+        if (activeSort && activeSort !== "none") {
+            const isDescending = activeSort.startsWith("-");
+            const sortKey = isDescending ? activeSort.substring(1) : activeSort;
             sort[sortKey] = isDescending ? -1 : 1;
         }
 

@@ -19,7 +19,8 @@ const createMockModel = () => {
                 return null;
             }
         },
-        find: (filters) => {
+        lastSort: null,
+        find: function(filters) {
             let data = Array.from(mockData.values());
             
             // Simple filter implementation
@@ -40,7 +41,10 @@ const createMockModel = () => {
             }
 
             const query = {
-                sort: () => query,
+                sort: (s) => {
+                    this.lastSort = s;
+                    return query;
+                },
                 skip: () => query,
                 limit: () => query,
                 lean: () => Promise.resolve(data)
@@ -179,6 +183,17 @@ test("Express Controller Sets - Smoke Test", async (t) => {
             assert.strictEqual(res.status, 200);
             assert.strictEqual(body.data.length, 1);
             assert.strictEqual(body.data[0].name, "Updated Name");
+        } finally {
+            server.close();
+        }
+    });
+
+    await t.test("GET /items?sort=-name - should sort records dynamically", async () => {
+        const server = app.listen(0);
+        const port = server.address().port;
+        try {
+            await fetch(`http://localhost:${port}/items?sort=-name`);
+            assert.deepStrictEqual(mockModel.lastSort, { name: -1 });
         } finally {
             server.close();
         }
