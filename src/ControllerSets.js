@@ -152,7 +152,7 @@ class ControllerSets {
         const updatedObject = await this.model.findByIdAndUpdate(
             object._id,
             { $set: req.body },
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         ).lean();
 
         return res.status(200).json({ success: true, data: updatedObject });

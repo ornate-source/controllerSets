@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert";
 import express from "express";
 import mongoose from "mongoose";
-import { createRouter } from "../src/router.js";
+import { createRouter, errorHandler } from "../src/index.js";
 
 // --- Mock Mongoose Model ---
 const mockData = new Map();
@@ -56,6 +56,12 @@ const createMockModel = () => {
             return Promise.resolve(item || null);
         },
         create: (body) => {
+            if (body.name === "TRIGGER_ERROR") {
+                const err = new Error("Validation failed");
+                err.name = "ValidationError";
+                err.errors = { name: { message: "Name is required" } };
+                return Promise.reject(err);
+            }
             const id = (idCounter++).toString().padStart(24, '0');
             const newItem = { _id: id, ...body };
             mockData.set(id, newItem);
@@ -92,6 +98,9 @@ test("Express Controller Sets - Smoke Test", async (t) => {
     });
 
     app.use("/items", router);
+
+    // Global Error Handler Test
+    app.use(errorHandler);
 
     let createdId = "";
 
@@ -214,6 +223,25 @@ test("Express Controller Sets - Smoke Test", async (t) => {
             // Verify deletion
             const getRes = await fetch(`http://localhost:${port}/items/${createdId}`);
             assert.strictEqual(getRes.status, 404);
+        } finally {
+            server.close();
+        }
+    });
+
+    await t.test("POST /items (Error) - should return JSON error on validation failure", async () => {
+        const server = app.listen(0);
+        const port = server.address().port;
+        try {
+            const res = await fetch(`http://localhost:${port}/items`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: "TRIGGER_ERROR" })
+            });
+            const body = await res.json();
+
+            assert.strictEqual(res.status, 400);
+            assert.strictEqual(body.success, false);
+            assert.ok(body.error.includes("Validation Error"));
         } finally {
             server.close();
         }

@@ -47,6 +47,7 @@
                     <li><a href="#typescript"><i data-lucide="code"></i> TypeScript</a></li>
                     <li><a href="#api-reference"><i data-lucide="book-open"></i> API Reference</a></li>
                     <li><a href="#api-endpoints"><i data-lucide="network"></i> API Endpoints</a></li>
+                    <li><a href="#error-handling"><i data-lucide="alert-circle"></i> Error Handling</a></li>
                 </ul>
             </nav>
         </aside>
@@ -402,6 +403,33 @@ fetch('/api/users', {
     // fetch will set it for multipart/form-data with boundary automatically.
 }).then(res => res.json());</code></pre>
                     <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+            <section id="error-handling" class="section">
+                <h2><i data-lucide="alert-circle"></i> Global Error Handling</h2>
+                <p>To ensure all errors (including database validation failures) are returned in professional <strong>JSON format</strong>, use the built-in <code>errorHandler</code> middleware.</p>
+                
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>import express from 'express';
+import { createRouter, errorHandler } from 'express-controller-sets';
+
+const app = express();
+app.use(express.json());
+
+// ... your routes ...
+
+// MUST BE ADDED LAST: Global JSON Error Handler
+app.use(errorHandler);</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <h3>Standardized Error Response</h3>
+                <p>All errors caught by this middleware will return a consistent 400 or 500 status code with the following body:</p>
+                <div class="code-block" data-lang="json">
+                    <pre><code>{
+    "success": false,
+    "error": "Detailed error message here",
+    "stack": "... (only visible in development) ..."
+}</code></pre>
                 </div>
             </section>
 
