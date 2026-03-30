@@ -2,13 +2,6 @@ import express from "express";
 import { ControllerSets } from "./ControllerSets.js";
 import { fileUploadMiddleware } from "./s3upload.js";
 
-/**
- * Wraps async functions to catch errors and pass them to the next middleware.
- * This prevents app crashes and ensures consistent error handling.
- */
-const asyncHandler = (fn) => (req, res, next) => {
-    return Promise.resolve(fn(req, res, next)).catch(next);
-};
 
 export const createRouter = ({
     model,
@@ -31,11 +24,11 @@ export const createRouter = ({
         runAfterCreate
     );
 
-    router.get("/", asyncHandler(controller.getAll.bind(controller)));
-    router.post("/", asyncHandler(controller.create.bind(controller)));
-    router.get("/:id", asyncHandler(controller.getById.bind(controller)));
-    router.patch("/:id", asyncHandler(controller.update.bind(controller)));
-    router.delete("/:id", asyncHandler(controller.delete.bind(controller)));
+    router.get("/", controller.getAll);
+    router.post("/", controller.create);
+    router.get("/:id", controller.getById);
+    router.patch("/:id", controller.update);
+    router.delete("/:id", controller.delete);
 
     return router;
 };
@@ -63,23 +56,23 @@ export const createRouterS3upload = ({
         runAfterCreate
     );
 
-    router.get("/", asyncHandler(controller.getAll.bind(controller)));
+    router.get("/", controller.getAll);
     router.post(
         "/",
         (req, res, next) => {
             fileUploadMiddleware(req, res, next, path, fields);
         },
-        asyncHandler(controller.create.bind(controller))
+        controller.create
     );
-    router.get("/:id", asyncHandler(controller.getById.bind(controller)));
+    router.get("/:id", controller.getById);
     router.patch(
         "/:id",
         (req, res, next) => {
             fileUploadMiddleware(req, res, next, path, fields);
         },
-        asyncHandler(controller.update.bind(controller))
+        controller.update
     );
-    router.delete("/:id", asyncHandler(controller.delete.bind(controller)));
+    router.delete("/:id", controller.delete);
 
     return router;
 };

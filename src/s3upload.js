@@ -80,6 +80,15 @@ const fileUploadMiddleware = (
     const handleUploadResult = (error) => {
         if (error) {
             console.error(`[ControllerSet-S3] Upload Error: ${error.message}`);
+            
+            // Handle specific Multer errors
+            if (error instanceof multer.MulterError) {
+                return res.status(400).json({
+                    success: false,
+                    error: `File upload error: ${error.message}`,
+                });
+            }
+
             return res.status(500).json({
                 success: false,
                 error: error.message || "Failed to process S3 upload.",
@@ -87,15 +96,19 @@ const fileUploadMiddleware = (
         }
 
         // Populate req.body with file locations
-        if (fields.length === 1 && req.file) {
-            const field = fields[0];
+        if (req.file) {
+            const field = fields.find(f => f.name === req.file.fieldname) || fields[0];
             req.body[field.name] = field.formatToUrlObject
                 ? { url: req.file.location }
                 : req.file.location;
         } else if (req.files) {
             fields.forEach((field) => {
-                if (req.files[field.name]) {
-                    const locations = req.files[field.name].map((f) =>
+                const fieldFiles = Array.isArray(req.files) 
+                    ? req.files.filter(f => f.fieldname === field.name)
+                    : req.files[field.name];
+
+                if (fieldFiles && fieldFiles.length > 0) {
+                    const locations = fieldFiles.map((f) =>
                         field.formatToUrlObject
                             ? { url: f.location }
                             : f.location,
@@ -106,17 +119,15 @@ const fileUploadMiddleware = (
                 }
             });
         }
+        
         if (typeof next === "function") {
             next();
-        } else {
-            console.error("[ControllerSet-S3] 'next' is not a function.");
         }
     };
 
-    if (fields.length === 1 && fields[0].maxCount == 1) {
+    if (fields.length === 1 && fields[0].maxCount === 1) {
         upload.single(fields[0].name)(req, res, handleUploadResult);
     } else {
-        console.log("uploading multiple file");
         upload.fields(fields)(req, res, handleUploadResult);
     }
 };

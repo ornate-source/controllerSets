@@ -10,7 +10,7 @@ export class ControllerSets<T extends Document = any> {
         orderBy?: string,
         query?: string[],
         search?: string | string[],
-        runAfterCreate?: ((result: T) => void | Promise<void>) | string
+        runAfterCreate?: ((result: any) => void | Promise<void>) | "none"
     );
 
     getAll(req: Request, res: Response): Promise<Response | void>;
@@ -25,13 +25,13 @@ export interface RouterOptions<T extends Document = any> {
     orderBy?: string;
     query?: string[];
     search?: string | string[];
-    runAfterCreate?: ((result: T) => void | Promise<void>) | string;
+    runAfterCreate?: ((result: any) => void | Promise<void>) | "none";
     middlewares?: any[];
 }
 
 export interface RouterS3Options<T extends Document = any> extends RouterOptions<T> {
     path?: string;
-    fields?: { name: string; maxCount: number }[];
+    fields?: { name: string; maxCount: number; formatToUrlObject?: boolean }[];
 }
 
 /**
@@ -52,5 +52,5 @@ export function fileUploadMiddleware(
     res: Response,
     next: NextFunction,
     uploadPath?: string,
-    fields?: { name: string; maxCount: number }[]
+    fields?: { name: string; maxCount: number; formatToUrlObject?: boolean }[]
 ): void;

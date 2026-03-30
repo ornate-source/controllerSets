@@ -6,7 +6,7 @@
   "types": "src/index.d.ts",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test tests/*.test.js"
   },
   "author": "Sabbir Mahmud",
   "license": "MIT",
@@ -22,16 +22,16 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.750.0",
-    "dotenv": "^16.4.7",
-    "express": ">=4.18.0",
-    "mongoose": ">=7.0.0",
-    "multer": "^1.4.5-lts.1",
+    "@aws-sdk/client-s3": "^3.1019.0",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "mongoose": "^9.3.3",
+    "multer": "^2.1.1",
     "multer-s3": "^3.0.1"
   },
   "peerDependencies": {
-    "express": ">=4.18.0",
-    "mongoose": ">=7.0.0"
+    "express": ">=5.0.0",
+    "mongoose": ">=9.0.0"
   },
   "keywords": [
     "express-controllers",
@@ -43,9 +43,9 @@
     "file upload"
   ],
   "devDependencies": {
-    "@types/express": "^5.0.6",
+    "@types/express": "^5.0.0",
     "@types/multer": "^2.0.0",
     "@types/node": "^25.3.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.8.2"
   }
 }
