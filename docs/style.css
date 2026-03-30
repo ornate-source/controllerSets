@@ -1,7 +1,7 @@
 /* UI/UX Refactor: Senior Developer Standard */
 :root {
     --sidebar-width: 260px;
-    --max-content: 840px;
+    --max-content: 1200px;
     --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-base: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -132,13 +132,14 @@ body {
 .content {
     margin-left: var(--sidebar-width);
     padding: 6rem 4rem;
-    width: 100%;
-    max-width: calc(var(--max-content) + var(--sidebar-width));
+    width: calc(100% - var(--sidebar-width));
+    max-width: 100%;
 }
 
 .section {
     padding-bottom: 6rem;
     max-width: var(--max-content);
+    width: 100%;
 }
 
 h1 {
@@ -197,10 +198,26 @@ p.lead {
     font-size: 0.8rem;
     font-weight: 600;
     border: 1px solid transparent;
+    transition: var(--transition-fast);
+    cursor: default;
+}
+
+.badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.badge-accent {
+    background-color: rgba(249, 115, 22, 0.1);
+    color: #f97316;
 }
 
 body.dark .badge {
     border-color: #1a1a1a;
+}
+
+body.dark .badge-accent {
+    border-color: rgba(249, 115, 22, 0.2);
 }
 
 /* Code Blocks */
@@ -220,12 +237,21 @@ body.dark .badge {
 
 .code-block pre {
     overflow-x: auto;
+    overflow-y: hidden;
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+}
+
+.code-block pre::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
 }
 
 .code-block code {
     font-family: 'Fira Code', monospace;
     font-size: 0.95rem;
     color: var(--code-text);
+    white-space: pre-wrap;
+    word-break: break-all;
 }
 
 .code-block[data-lang]::before {

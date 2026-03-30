@@ -21,7 +21,8 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "dependencies": {
+  "dependencies": {},
+  "peerDependencies": {
     "@aws-sdk/client-s3": "^3.1019.0",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
@@ -29,9 +30,17 @@
     "multer": "^2.1.1",
     "multer-s3": "^3.0.1"
   },
-  "peerDependencies": {
-    "express": ">=5.0.0",
-    "mongoose": ">=9.0.0"
+  "devDependencies": {
+    "@aws-sdk/client-s3": "^3.1019.0",
+    "@types/express": "^5.0.0",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^25.3.0",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "mongoose": "^9.3.3",
+    "multer": "^2.1.1",
+    "multer-s3": "^3.0.1",
+    "typescript": "^5.8.2"
   },
   "keywords": [
     "express-controllers",
@@ -41,11 +50,5 @@
     "s3",
     "multer",
     "file upload"
-  ],
-  "devDependencies": {
-    "@types/express": "^5.0.0",
-    "@types/multer": "^2.0.0",
-    "@types/node": "^25.3.0",
-    "typescript": "^5.8.2"
-  }
+  ]
 }

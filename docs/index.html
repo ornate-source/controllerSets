@@ -1,17 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Express Controller Sets | Documentation</title>
-    <meta name="description" content="Unified toolkit for Express.js - Pre-built CRUD logic, S3 uploads, and dynamic routing.">
+    <meta name="description"
+        content="Unified toolkit for Express.js - Pre-built CRUD logic, S3 uploads, and dynamic routing.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
+
 <body class="dark">
     <div class="app-container">
         <!-- Sidebar Navigation -->
@@ -64,20 +69,23 @@
 
             <section id="introduction" class="section">
                 <h1>Express Controller Sets</h1>
-                <p class="lead">A unified toolkit for Express.js that provides pre-built CRUD logic, robust S3 file upload handling, and dynamic routing helpers.</p>
+                <p class="lead">A unified toolkit for Express.js that provides pre-built CRUD logic, seamless
+                    <strong>Multer</strong> integration, and robust <strong>AWS S3</strong> file upload handling.</p>
                 <div class="badges">
-                    <span class="badge"><i data-lucide="check-circle"></i> Node 18+</span>
-                    <span class="badge"><i data-lucide="shield"></i> Mongoose 8+</span>
+                    <span class="badge"><i data-lucide="check-circle"></i> Node 20+</span>
+                    <span class="badge"><i data-lucide="shield"></i> Mongoose 9+</span>
                     <span class="badge"><i data-lucide="zap"></i> Express 5+</span>
+                    <span class="badge badge-accent"><i data-lucide="upload"></i> Multer 2+</span>
                 </div>
-                <p>Designed to help you build APIs faster by automating repetitive controller logic and middleware configuration while maintaining type safety and flexibility.</p>
+                <p>Designed to help you build production-ready APIs faster by automating repetitive controller logic and
+                    complex S3 middleware configuration while maintaining type safety and maximum flexibility.</p>
             </section>
 
             <section id="installation" class="section">
                 <h2><i data-lucide="terminal"></i> Installation</h2>
-                <p>Install the package and its peer dependencies using your favorite package manager:</p>
+                <p>Install the package using your favorite package manager:</p>
                 <div class="code-block" data-lang="bash">
-                    <pre><code>npm install express-controller-sets mongoose express</code></pre>
+                    <pre><code>npm install express-controller-sets mongoose express multer multer-s3 dotenv @aws-sdk/client-s3</code></pre>
                     <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
                 </div>
             </section>
@@ -108,7 +116,8 @@ app.use('/api/products', productRouter);</code></pre>
 
             <section id="controller-sets" class="section">
                 <h2><i data-lucide="box"></i> Controller Sets</h2>
-                <p>The <code>ControllerSets</code> class provides the core logic for handling Mongoose operations. You can use it directly for custom route handling.</p>
+                <p>The <code>ControllerSets</code> class provides the core logic for handling Mongoose operations. You
+                    can use it directly for custom route handling.</p>
                 <div class="code-block" data-lang="javascript">
                     <pre><code>import { ControllerSets } from 'express-controller-sets';
 import Product from '../models/Product.js';
@@ -130,7 +139,8 @@ router.post('/', productController.create);</code></pre>
 
             <section id="s3-upload" class="section">
                 <h2><i data-lucide="upload-cloud"></i> S3 Upload Middleware</h2>
-                <p>Handle file uploads to S3-compatible storage with ease. The middleware automatically updates <code>req.body</code> with S3 locations.</p>
+                <p>Handle file uploads to S3-compatible storage with ease. The middleware automatically updates
+                    <code>req.body</code> with S3 locations.</p>
                 <div class="code-block" data-lang="javascript">
                     <pre><code>import { fileUploadMiddleware } from 'express-controller-sets';
 
@@ -147,8 +157,9 @@ router.post('/upload', (req, res, next) => {
 
             <section id="dynamic-routers" class="section">
                 <h2><i data-lucide="route"></i> Dynamic Routers</h2>
-                <p>Use the helper functions to quickly scaffold entire resource routers with pre-configured CRUD and upload logic.</p>
-                
+                <p>Use the helper functions to quickly scaffold entire resource routers with pre-configured CRUD and
+                    upload logic.</p>
+
                 <h3>Basic Router</h3>
                 <div class="code-block" data-lang="javascript">
                     <pre><code>import { createRouter } from 'express-controller-sets';
@@ -179,7 +190,8 @@ const router = createRouterS3upload({
 
             <section id="typescript" class="section">
                 <h2><i data-lucide="code"></i> TypeScript Support</h2>
-                <p>The package comes with built-in TypeScript definitions. You can pass your Mongoose document interfaces to strongly type the controllers and routers.</p>
+                <p>The package comes with built-in TypeScript definitions. You can pass your Mongoose document
+                    interfaces to strongly type the controllers and routers.</p>
                 <div class="code-block" data-lang="typescript">
                     <pre><code>import express from 'express';
 import { createRouter } from 'express-controller-sets';
@@ -242,7 +254,8 @@ app.use('/api/users', userRouter);</code></pre>
                             <tr>
                                 <td><code>search</code></td>
                                 <td>Array&lt;String&gt; | String</td>
-                                <td>Array of field names (or a single string) for regex searching. Supports relation dot notation (e.g. <code>category.name</code>).</td>
+                                <td>Array of field names (or a single string) for regex searching. Supports relation dot
+                                    notation (e.g. <code>category.name</code>).</td>
                             </tr>
                             <tr>
                                 <td><code>runAfterCreate</code></td>
@@ -258,7 +271,9 @@ app.use('/api/users', userRouter);</code></pre>
                     </table>
                 </div>
                 <h3>Note on Pagination</h3>
-                <p>Pagination is supported out-of-the-box for <code>getAll</code> queries. By appending <code>?page=1&pageSize=50</code>, the response automatically provides a <code>pagination</code> metadata object alongside your results.</p>
+                <p>Pagination is supported out-of-the-box for <code>getAll</code> queries. By appending
+                    <code>?page=1&pageSize=50</code>, the response automatically provides a <code>pagination</code>
+                    metadata object alongside your results.</p>
             </section>
 
             <section id="environment" class="section">
@@ -378,4 +393,5 @@ S3_REGION=us-east-1</code></pre>
         });
     </script>
 </body>
+
 </html>

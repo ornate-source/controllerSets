@@ -2,8 +2,8 @@
 
 A unified toolkit for Express.js that provides pre-built CRUD logic, robust S3 file upload handling, and dynamic routing helpers.
 
-[![Node Version](https://img.shields.io/badge/Node-18%2B-blue)](https://nodejs.org)
-[![Mongoose Version](https://img.shields.io/badge/Mongoose-8%2B-green)](https://mongoosejs.com)
+[![Node Version](https://img.shields.io/badge/Node-20%2B-blue)](https://nodejs.org)
+[![Mongoose Version](https://img.shields.io/badge/Mongoose-9%2B-green)](https://mongoosejs.com)
 [![Express Version](https://img.shields.io/badge/Express-5%2B-black)](https://expressjs.com)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](https://opensource.org/licenses/MIT)
 
@@ -15,10 +15,10 @@ Designed to help you build APIs faster by automating repetitive controller logic
 
 ## 🚀 Installation
 
-Install the package and its peer dependencies using your favorite package manager:
+Install the package using your favorite package manager:
 
 ```bash
-npm install express-controller-sets mongoose express
+npm install express-controller-sets mongoose express multer multer-s3 dotenv @aws-sdk/client-s3
 ```
 
 ## ⚡ Quick Start
