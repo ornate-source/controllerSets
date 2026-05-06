@@ -442,6 +442,16 @@ app.use('/api/users', userRouter);</code></pre>
                                 <td>Direct equality filter for any configured query field.</td>
                                 <td><code>?category=65a...</code></td>
                             </tr>
+                            <tr>
+                                <td><code>rangeField</code></td>
+                                <td>The numeric field name to apply a range filter on. Works together with <code>range</code> parameter.</td>
+                                <td><code>?rangeField=price</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>range</code></td>
+                                <td>The range boundaries in format <code>min-max</code>. Supports min-only (<code>min-</code>) or max-only (<code>-max</code>) ranges.</td>
+                                <td><code>?range=10-100</code></td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -460,7 +470,22 @@ fetch('/api/products?page=2&pageSize=20&sort=-price&status=active')
                     <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
                 </div>
 
-                <h4>2. Creating a Record with File Upload</h4>
+                <h4>2. Filtering by Numeric Range</h4>
+                <p>Filter records dynamically by a numeric range using <code>rangeField</code> and <code>range</code> query parameters.</p>
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>// Fetch products priced between $10 and $100
+fetch('/api/products?rangeField=price&range=10-100')
+    .then(res => res.json())
+    .then(data => console.log(data.data));
+
+// Fetch users aged 18 or older (min only)
+fetch('/api/users?rangeField=age&range=18-')
+    .then(res => res.json())
+    .then(data => console.log(data.data));</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <h4>3. Creating a Record with File Upload</h4>
                 <p>When using <code>createRouterS3upload</code>, ensure you use <code>FormData</code> for multipart requests.</p>
                 <div class="code-block" data-lang="javascript">
                     <pre><code>const formData = new FormData();

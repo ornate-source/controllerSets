@@ -10,7 +10,7 @@ class ControllerSets {
         orderBy = "none",
         query = [],
         search = [],
-        runAfterCreate = "none"
+        runAfterCreate = "none",
     ) {
         if (!model) {
             throw new Error("ControllerSets: Mongoose model is required.");
@@ -53,9 +53,40 @@ class ControllerSets {
             return acc;
         }, {});
 
+        if (req.query.rangeField && req.query.range) {
+            const rangeField = req.query.rangeField;
+            const rangeParts = req.query.range.split("-");
+            console.log(rangeParts);
+            if (rangeParts.length === 2) {
+                const minVal = rangeParts[0].trim();
+                const maxVal = rangeParts[1].trim();
+                const rangeFilter = {};
+
+                if (minVal !== "") {
+                    const min = Number(minVal);
+                    if (!isNaN(min)) {
+                        rangeFilter.$gte = min;
+                    }
+                }
+                if (maxVal !== "") {
+                    const max = Number(maxVal);
+                    if (!isNaN(max)) {
+                        rangeFilter.$lte = max;
+                    }
+                }
+                if (Object.keys(rangeFilter).length > 0) {
+                    filters[rangeField] = rangeFilter;
+                }
+            }
+        }
+
         const searchTerm = req.query.s || req.query.search;
 
-        if (Array.isArray(this.search) && this.search.length > 0 && searchTerm) {
+        if (
+            Array.isArray(this.search) &&
+            this.search.length > 0 &&
+            searchTerm
+        ) {
             const searchPromises = this.search.map(async (field) => {
                 if (field.includes(".")) {
                     const [relation, childField] = field.split(".");
@@ -64,14 +95,25 @@ class ControllerSets {
                         const refModelName = schemaPath.options.ref;
                         try {
                             const refModel = mongoose.model(refModelName);
-                            const matchedDocs = await refModel.find({
-                                [childField]: { $regex: String(searchTerm), $options: "i" }
-                            }).select('_id').lean();
-                            
+                            const matchedDocs = await refModel
+                                .find({
+                                    [childField]: {
+                                        $regex: String(searchTerm),
+                                        $options: "i",
+                                    },
+                                })
+                                .select("_id")
+                                .lean();
+
                             const ids = matchedDocs.map((doc) => doc._id);
-                            return ids.length > 0 ? { [relation]: { $in: ids } } : null;
+                            return ids.length > 0
+                                ? { [relation]: { $in: ids } }
+                                : null;
                         } catch (e) {
-                            console.error(`[ControllerSets] Error resolving nested search for ${field}:`, e.message);
+                            console.error(
+                                `[ControllerSets] Error resolving nested search for ${field}:`,
+                                e.message,
+                            );
                             return null;
                         }
                     }
@@ -92,9 +134,13 @@ class ControllerSets {
             if (validOrClauses.length > 0) {
                 filters.$or = validOrClauses;
             } else {
-                filters.$or = [{ _id: null }]; 
+                filters.$or = [{ _id: null }];
             }
-        } else if (!Array.isArray(this.search) && this.search !== "none" && req.query[this.search]) {
+        } else if (
+            !Array.isArray(this.search) &&
+            this.search !== "none" &&
+            req.query[this.search]
+        ) {
             filters[this.search] = {
                 $regex: String(req.query[this.search]),
                 $options: "i",
@@ -136,7 +182,9 @@ class ControllerSets {
             try {
                 await this.runAfterCreate(result);
             } catch (callbackError) {
-                console.error(`[ControllerSets] Error in runAfterCreate callback: ${callbackError.message}`);
+                console.error(
+                    `[ControllerSets] Error in runAfterCreate callback: ${callbackError.message}`,
+                );
             }
         }
         return res.status(201).json({ success: true, data: result });
@@ -149,11 +197,13 @@ class ControllerSets {
         const object = await this.getObjectById(req, res);
         if (!object) return;
 
-        const updatedObject = await this.model.findByIdAndUpdate(
-            object._id,
-            { $set: req.body },
-            { returnDocument: 'after', runValidators: true }
-        ).lean();
+        const updatedObject = await this.model
+            .findByIdAndUpdate(
+                object._id,
+                { $set: req.body },
+                { returnDocument: "after", runValidators: true },
+            )
+            .lean();
 
         return res.status(200).json({ success: true, data: updatedObject });
     };
@@ -166,7 +216,9 @@ class ControllerSets {
         if (!object) return;
 
         await this.model.findByIdAndDelete(object._id);
-        return res.status(200).json({ success: true, message: "Item successfully deleted." });
+        return res
+            .status(200)
+            .json({ success: true, message: "Item successfully deleted." });
     };
 
     /**
@@ -174,12 +226,20 @@ class ControllerSets {
      */
     getPaginatedResults = async (req, res, filters, sort) => {
         const page = Math.max(1, parseInt(req.query.page) || 1);
-        const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize) || 50));
+        const pageSize = Math.min(
+            100,
+            Math.max(1, parseInt(req.query.pageSize) || 50),
+        );
         const skip = (page - 1) * pageSize;
 
         const [totalRecords, result] = await Promise.all([
             this.model.countDocuments(filters),
-            this.model.find(filters).skip(skip).limit(pageSize).sort(sort).lean(),
+            this.model
+                .find(filters)
+                .skip(skip)
+                .limit(pageSize)
+                .sort(sort)
+                .lean(),
         ]);
 
         const totalPages = Math.ceil(totalRecords / pageSize);
@@ -190,8 +250,8 @@ class ControllerSets {
                 currentPage: page,
                 pageSize,
                 totalPages,
-                totalRecords
-            }
+                totalRecords,
+            },
         });
     };
 

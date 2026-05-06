@@ -34,7 +34,14 @@ const createMockModel = () => {
                                 return new RegExp(regex, "i").test(item[field]);
                             });
                         }
-                        if (item[key] !== filters[key]) return false;
+                        if (typeof filters[key] === 'object' && filters[key] !== null) {
+                            const val = item[key];
+                            if (val === undefined) return false;
+                            if (filters[key].$gte !== undefined && val < filters[key].$gte) return false;
+                            if (filters[key].$lte !== undefined && val > filters[key].$lte) return false;
+                        } else if (item[key] !== filters[key]) {
+                            return false;
+                        }
                     }
                     return true;
                 });
@@ -193,6 +200,47 @@ test("Express Controller Sets - Smoke Test", async (t) => {
             assert.strictEqual(body.data.length, 1);
             assert.strictEqual(body.data[0].name, "Updated Name");
         } finally {
+            server.close();
+        }
+    });
+
+    await t.test("GET /items with range query - should filter records by numeric range", async () => {
+        const server = app.listen(0);
+        const port = server.address().port;
+        try {
+            mockData.set("item_low", { _id: "item_low", name: "Low price item", price: 15 });
+            mockData.set("item_mid", { _id: "item_mid", name: "Mid price item", price: 50 });
+            mockData.set("item_high", { _id: "item_high", name: "High price item", price: 120 });
+
+            // Query range 20-100
+            const res1 = await fetch(`http://localhost:${port}/items?rangeField=price&range=20-100`);
+            const body1 = await res1.json();
+            assert.strictEqual(res1.status, 200);
+            assert.strictEqual(body1.data.length, 1);
+            assert.strictEqual(body1.data[0].price, 50);
+
+            // Query range 20- (min only)
+            const res2 = await fetch(`http://localhost:${port}/items?rangeField=price&range=20-`);
+            const body2 = await res2.json();
+            assert.strictEqual(res2.status, 200);
+            const prices2 = body2.data.map(item => item.price);
+            assert.ok(prices2.includes(50));
+            assert.ok(prices2.includes(120));
+            assert.ok(!prices2.includes(15));
+
+            // Query range -80 (max only)
+            const res3 = await fetch(`http://localhost:${port}/items?rangeField=price&range=-80`);
+            const body3 = await res3.json();
+            assert.strictEqual(res3.status, 200);
+            const prices3 = body3.data.map(item => item.price);
+            assert.ok(prices3.includes(15));
+            assert.ok(prices3.includes(50));
+            assert.ok(!prices3.includes(120));
+
+        } finally {
+            mockData.delete("item_low");
+            mockData.delete("item_mid");
+            mockData.delete("item_high");
             server.close();
         }
     });
