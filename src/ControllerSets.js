@@ -80,6 +80,38 @@ class ControllerSets {
             }
         }
 
+        if (req.query.compareField && req.query.compareValue !== undefined) {
+            const field = req.query.compareField;
+            const op = req.query.compareOperator || "eq";
+            const valStr = req.query.compareValue;
+
+            // Try to parse number if applicable
+            const val =
+                valStr === ""
+                    ? ""
+                    : isNaN(Number(valStr))
+                      ? valStr
+                      : Number(valStr);
+
+            const opMap = {
+                gt: "$gt",
+                gte: "$gte",
+                lt: "$lt",
+                lte: "$lte",
+                ne: "$ne",
+                eq: "$eq",
+            };
+
+            const mongoOp = opMap[op];
+            if (mongoOp) {
+                if (mongoOp === "$eq") {
+                    filters[field] = val;
+                } else {
+                    filters[field] = { [mongoOp]: val };
+                }
+            }
+        }
+
         const searchTerm = req.query.s || req.query.search;
 
         if (

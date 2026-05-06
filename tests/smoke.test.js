@@ -39,6 +39,9 @@ const createMockModel = () => {
                             if (val === undefined) return false;
                             if (filters[key].$gte !== undefined && val < filters[key].$gte) return false;
                             if (filters[key].$lte !== undefined && val > filters[key].$lte) return false;
+                            if (filters[key].$gt !== undefined && val <= filters[key].$gt) return false;
+                            if (filters[key].$lt !== undefined && val >= filters[key].$lt) return false;
+                            if (filters[key].$ne !== undefined && val === filters[key].$ne) return false;
                         } else if (item[key] !== filters[key]) {
                             return false;
                         }
@@ -236,6 +239,47 @@ test("Express Controller Sets - Smoke Test", async (t) => {
             assert.ok(prices3.includes(15));
             assert.ok(prices3.includes(50));
             assert.ok(!prices3.includes(120));
+
+        } finally {
+            mockData.delete("item_low");
+            mockData.delete("item_mid");
+            mockData.delete("item_high");
+            server.close();
+        }
+    });
+
+    await t.test("GET /items with comparison query - should filter records dynamically by operator", async () => {
+        const server = app.listen(0);
+        const port = server.address().port;
+        try {
+            mockData.set("item_low", { _id: "item_low", name: "Low price item", price: 15 });
+            mockData.set("item_mid", { _id: "item_mid", name: "Mid price item", price: 50 });
+            mockData.set("item_high", { _id: "item_high", name: "High price item", price: 120 });
+
+            // Greater Than (gt): price > 50 -> item_high (120)
+            const res1 = await fetch(`http://localhost:${port}/items?compareField=price&compareValue=50&compareOperator=gt`);
+            const body1 = await res1.json();
+            assert.strictEqual(res1.status, 200);
+            assert.strictEqual(body1.data.length, 1);
+            assert.strictEqual(body1.data[0].price, 120);
+
+            // Greater Than or Equal (gte): price >= 50 -> item_mid (50), item_high (120)
+            const res2 = await fetch(`http://localhost:${port}/items?compareField=price&compareValue=50&compareOperator=gte`);
+            const body2 = await res2.json();
+            assert.strictEqual(res2.status, 200);
+            const prices2 = body2.data.map(item => item.price);
+            assert.ok(prices2.includes(50));
+            assert.ok(prices2.includes(120));
+            assert.ok(!prices2.includes(15));
+
+            // Not Equal (ne): price != 50 -> item_low (15), item_high (120)
+            const res3 = await fetch(`http://localhost:${port}/items?compareField=price&compareValue=50&compareOperator=ne`);
+            const body3 = await res3.json();
+            assert.strictEqual(res3.status, 200);
+            const prices3 = body3.data.map(item => item.price);
+            assert.ok(prices3.includes(15));
+            assert.ok(prices3.includes(120));
+            assert.ok(!prices3.includes(50));
 
         } finally {
             mockData.delete("item_low");

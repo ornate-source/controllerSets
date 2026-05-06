@@ -452,6 +452,21 @@ app.use('/api/users', userRouter);</code></pre>
                                 <td>The range boundaries in format <code>min-max</code>. Supports min-only (<code>min-</code>) or max-only (<code>-max</code>) ranges.</td>
                                 <td><code>?range=10-100</code></td>
                             </tr>
+                            <tr>
+                                <td><code>compareField</code></td>
+                                <td>The field name to perform a dynamic comparison on (e.g., <code>price</code>, <code>age</code>, etc.).</td>
+                                <td><code>?compareField=price</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>compareValue</code></td>
+                                <td>The target value to compare against. Tries to parse as a number if valid, otherwise treats as a string.</td>
+                                <td><code>?compareValue=50</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>compareOperator</code></td>
+                                <td>The comparison operator: <code>gt</code> (&gt;), <code>gte</code> (&gt;=), <code>lt</code> (&lt;), <code>lte</code> (&lt;=), <code>ne</code> (!=), <code>eq</code> (==). Default is <code>eq</code>.</td>
+                                <td><code>?compareOperator=gt</code></td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -485,7 +500,22 @@ fetch('/api/users?rangeField=age&range=18-')
                     <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
                 </div>
 
-                <h4>3. Creating a Record with File Upload</h4>
+                <h4>3. Dynamic Field Comparison</h4>
+                <p>Filter records dynamically on a field using comparison operators like greater than (<code>gt</code>), greater than or equal (<code>gte</code>), less than (<code>lt</code>), less than or equal (<code>lte</code>), not equal (<code>ne</code>), or equal (<code>eq</code>).</p>
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>// Fetch products with price greater than 50
+fetch('/api/products?compareField=price&compareValue=50&compareOperator=gt')
+    .then(res => res.json())
+    .then(data => console.log(data.data));
+
+// Fetch active users with age less than or equal to 30
+fetch('/api/users?status=active&compareField=age&compareValue=30&compareOperator=lte')
+    .then(res => res.json())
+    .then(data => console.log(data.data));</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <h4>4. Creating a Record with File Upload</h4>
                 <p>When using <code>createRouterS3upload</code>, ensure you use <code>FormData</code> for multipart requests.</p>
                 <div class="code-block" data-lang="javascript">
                     <pre><code>const formData = new FormData();
