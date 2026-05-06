@@ -197,6 +197,43 @@ router.post('/upload', (req, res, next) => {
 });</code></pre>
                     <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
                 </div>
+
+                <h3>Image Compression & Optimization</h3>
+                <p>You can optimize and compress uploaded images automatically using the <code>imgOptimizations</code> feature. It leverages <strong>Sharp</strong> under the hood to perform efficient, multi-pass binary search quality optimization, reducing file size while keeping resolutions intact.</p>
+                
+                <p>Supported levels:</p>
+                <ul>
+                    <li><code>low</code>: Compress image to target <strong>75% - 80%</strong> of original file size.</li>
+                    <li><code>medium</code> / <code>med</code>: Compress image to target <strong>60% - 65%</strong> of original file size.</li>
+                    <li><code>high</code>: Compress image to target <strong>40% - 45%</strong> of original file size.</li>
+                </ul>
+
+                <p>There are two ways to apply image optimizations:</p>
+
+                <h4>1. Route-Level Setup (Static Default)</h4>
+                <p>Specify the default compression level when initializing your router:</p>
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>import { createRouterS3upload } from 'express-controller-sets';
+
+const router = createRouterS3upload({
+    model: User,
+    path: 'avatars/',
+    fields: [{ name: 'avatar', maxCount: 1 }],
+    imgOptimizations: 'medium' // All avatars will be compressed to 60-65% size by default
+});</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <h4>2. Client-Controlled (Dynamic Override)</h4>
+                <p>Clients can dynamically specify or override the optimization level per-request by passing the <code>imgOptimizations</code> parameter. This parameter can be passed in the <strong>query string</strong>, <strong>multipart form-data fields</strong>, or <strong>headers</strong> (<code>imgOptimizations</code> or <code>x-img-optimizations</code>):</p>
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>// Dynamic query parameter override
+fetch('/api/users?imgOptimizations=high', {
+    method: 'POST',
+    body: formData
+});</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
             </section>
 
             <section id="dynamic-routers" class="section">
@@ -310,6 +347,11 @@ app.use('/api/users', userRouter);</code></pre>
                                 <td><code>middlewares</code></td>
                                 <td>Array&lt;Function&gt;</td>
                                 <td>Array of middlewares applied to all routes.</td>
+                            </tr>
+                            <tr>
+                                <td><code>imgOptimizations</code></td>
+                                <td>String</td>
+                                <td>Optional default image optimization preset for S3 uploads: <code>'low'</code>, <code>'medium'</code>, <code>'med'</code>, or <code>'high'</code>.</td>
                             </tr>
                         </tbody>
                     </table>

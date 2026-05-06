@@ -42,6 +42,7 @@ export const createRouterS3upload = ({
     middlewares = [],
     path = "files/",
     fields = [{ name: "file", maxCount: 1 }],
+    imgOptimizations = undefined,
 }) => {
     const router = express.Router();
     if (middlewares.length > 0) {
@@ -60,7 +61,7 @@ export const createRouterS3upload = ({
     router.post(
         "/",
         (req, res, next) => {
-            fileUploadMiddleware(req, res, next, path, fields);
+            fileUploadMiddleware(req, res, next, path, fields, imgOptimizations);
         },
         controller.create
     );
@@ -68,7 +69,7 @@ export const createRouterS3upload = ({
     router.patch(
         "/:id",
         (req, res, next) => {
-            fileUploadMiddleware(req, res, next, path, fields);
+            fileUploadMiddleware(req, res, next, path, fields, imgOptimizations);
         },
         controller.update
     );

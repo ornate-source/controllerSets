@@ -32,6 +32,7 @@ export interface RouterOptions<T extends Document = any> {
 export interface RouterS3Options<T extends Document = any> extends RouterOptions<T> {
     path?: string;
     fields?: { name: string; maxCount: number; formatToUrlObject?: boolean }[];
+    imgOptimizations?: "low" | "medium" | "med" | "high";
 }
 
 /**
@@ -52,5 +53,6 @@ export function fileUploadMiddleware(
     res: Response,
     next: NextFunction,
     uploadPath?: string,
-    fields?: { name: string; maxCount: number; formatToUrlObject?: boolean }[]
+    fields?: { name: string; maxCount: number; formatToUrlObject?: boolean }[],
+    imgOptimizationsDefault?: "low" | "medium" | "med" | "high"
 ): void;
