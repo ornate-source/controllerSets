@@ -1,5 +1,14 @@
 import { Request, Response, NextFunction, Router } from "express";
-import { Model, Document } from "mongoose";
+import { Model, Document, PopulateOptions } from "mongoose";
+
+/** Result returned by the onGet hook */
+export interface OnGetResult {
+    populates?: string | PopulateOptions | (string | PopulateOptions)[];
+    selects?: string;
+}
+
+/** onGet hook function type */
+export type OnGetFn = (req: Request, res: Response) => OnGetResult | Promise<OnGetResult>;
 
 /**
  * ControllerSets - Professional Express logic for Mongoose CRUD.
@@ -10,9 +19,11 @@ export class ControllerSets<T extends Document = any> {
         orderBy?: string,
         query?: string[],
         search?: string | string[],
-        runAfterCreate?: ((result: any) => void | Promise<void>) | "none"
+        runAfterCreate?: ((result: any) => void | Promise<void>) | "none",
+        onGet?: OnGetFn | "none"
     );
 
+    getPopulates(req: Request, res: Response): Promise<{ populates: string | PopulateOptions | (string | PopulateOptions)[]; selects: string }>;
     getAll(req: Request, res: Response): Promise<Response | void>;
     getById(req: Request, res: Response): Promise<Response | void>;
     create(req: Request, res: Response): Promise<Response | void>;
@@ -26,6 +37,7 @@ export interface RouterOptions<T extends Document = any> {
     query?: string[];
     search?: string | string[];
     runAfterCreate?: ((result: any) => void | Promise<void>) | "none";
+    onGet?: OnGetFn | "none";
     middlewares?: any[];
 }
 

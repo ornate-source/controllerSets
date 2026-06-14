@@ -9,6 +9,7 @@ export const createRouter = ({
     query = [],
     search = [],
     runAfterCreate = "none",
+    onGet = "none",
     middlewares = [],
 }) => {
     const router = express.Router();
@@ -21,7 +22,8 @@ export const createRouter = ({
         orderBy,
         query,
         search,
-        runAfterCreate
+        runAfterCreate,
+        onGet
     );
 
     router.get("/", controller.getAll);
@@ -39,6 +41,7 @@ export const createRouterS3upload = ({
     query = [],
     search = [],
     runAfterCreate = "none",
+    onGet = "none",
     middlewares = [],
     path = "files/",
     fields = [{ name: "file", maxCount: 1 }],
@@ -54,7 +57,8 @@ export const createRouterS3upload = ({
         orderBy,
         query,
         search,
-        runAfterCreate
+        runAfterCreate,
+        onGet
     );
 
     router.get("/", controller.getAll);

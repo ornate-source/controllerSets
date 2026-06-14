@@ -11,6 +11,7 @@ class ControllerSets {
         query = [],
         search = [],
         runAfterCreate = "none",
+        onGet = "none",
     ) {
         if (!model) {
             throw new Error("ControllerSets: Mongoose model is required.");
@@ -20,7 +21,30 @@ class ControllerSets {
         this.query = query;
         this.search = search;
         this.runAfterCreate = runAfterCreate;
+        this.onGet = onGet;
     }
+
+    /**
+     * Resolves populate and select options from the onGet hook.
+     * Returns safe defaults when no hook is provided.
+     */
+    getPopulates = async (req, res) => {
+        if (typeof this.onGet !== "function") {
+            return { populates: [], selects: "" };
+        }
+        try {
+            const result = await this.onGet(req, res);
+            return {
+                populates: result?.populates || [],
+                selects: result?.selects || "",
+            };
+        } catch (err) {
+            console.error(
+                `[ControllerSets] Error in onGet: ${err.message}`,
+            );
+            return { populates: [], selects: "" };
+        }
+    };
 
     /**
      * Internal utility to fetch an object and handle basic validation.
@@ -34,7 +58,8 @@ class ControllerSets {
             return null;
         }
 
-        const object = await this.model.findById(id);
+        const { populates, selects } = await this.getPopulates(req, res);
+        const object = await this.model.findById(id).populate(populates).select(selects);
         if (!object) {
             this.sendErrorResponse(res, 404, "Entry not found.");
             return null;
@@ -187,11 +212,13 @@ class ControllerSets {
             sort[sortKey] = isDescending ? -1 : 1;
         }
 
+        const { populates, selects } = await this.getPopulates(req, res);
+
         if (req.query.page) {
-            return await this.getPaginatedResults(req, res, filters, sort);
+            return await this.getPaginatedResults(req, res, filters, sort, populates, selects);
         }
 
-        const result = await this.model.find(filters).sort(sort).lean();
+        const result = await this.model.find(filters).sort(sort).populate(populates).select(selects).lean();
         return res.status(200).json({ success: true, data: result });
     };
 
@@ -256,7 +283,7 @@ class ControllerSets {
     /**
      * Internal pagination logic.
      */
-    getPaginatedResults = async (req, res, filters, sort) => {
+    getPaginatedResults = async (req, res, filters, sort, populates = [], selects = "") => {
         const page = Math.max(1, parseInt(req.query.page) || 1);
         const pageSize = Math.min(
             100,
@@ -271,6 +298,8 @@ class ControllerSets {
                 .skip(skip)
                 .limit(pageSize)
                 .sort(sort)
+                .populate(populates)
+                .select(selects)
                 .lean(),
         ]);
 

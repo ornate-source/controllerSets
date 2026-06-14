@@ -20,6 +20,8 @@ const createMockModel = () => {
             }
         },
         lastSort: null,
+        lastPopulate: null,
+        lastSelect: null,
         find: function(filters) {
             let data = Array.from(mockData.values());
             
@@ -52,18 +54,37 @@ const createMockModel = () => {
 
             const query = {
                 sort: (s) => {
-                    this.lastSort = s;
+                    model.lastSort = s;
                     return query;
                 },
                 skip: () => query,
                 limit: () => query,
+                populate: (p) => {
+                    model.lastPopulate = p;
+                    return query;
+                },
+                select: (s) => {
+                    model.lastSelect = s;
+                    return query;
+                },
                 lean: () => Promise.resolve(data)
             };
             return query;
         },
         findById: (id) => {
             const item = mockData.get(id.toString());
-            return Promise.resolve(item || null);
+            const query = {
+                populate: (p) => {
+                    model.lastPopulate = p;
+                    return query;
+                },
+                select: (s) => {
+                    model.lastSelect = s;
+                    return query;
+                },
+                then: (resolve, reject) => Promise.resolve(item || null).then(resolve, reject),
+            };
+            return query;
         },
         create: (body) => {
             if (body.name === "TRIGGER_ERROR") {
@@ -335,6 +356,193 @@ test("Express Controller Sets - Smoke Test", async (t) => {
             assert.strictEqual(body.success, false);
             assert.ok(body.error.includes("Validation Error"));
         } finally {
+            server.close();
+        }
+    });
+});
+
+// --- onGet Hook Tests ---
+
+test("onGet Hook - Conditional Populate & Select", async (t) => {
+    const onGetMockData = new Map();
+    let onGetIdCounter = 100;
+
+    const createOnGetMockModel = () => {
+        const model = {
+            schema: { path: () => null },
+            lastPopulate: null,
+            lastSelect: null,
+            find: function(filters) {
+                let data = Array.from(onGetMockData.values());
+                const query = {
+                    sort: () => query,
+                    skip: () => query,
+                    limit: () => query,
+                    populate: (p) => { model.lastPopulate = p; return query; },
+                    select: (s) => { model.lastSelect = s; return query; },
+                    lean: () => Promise.resolve(data)
+                };
+                return query;
+            },
+            findById: (id) => {
+                const item = onGetMockData.get(id.toString());
+                const query = {
+                    populate: (p) => { model.lastPopulate = p; return query; },
+                    select: (s) => { model.lastSelect = s; return query; },
+                    then: (resolve, reject) => Promise.resolve(item || null).then(resolve, reject),
+                };
+                return query;
+            },
+            create: (body) => {
+                const id = (onGetIdCounter++).toString().padStart(24, '0');
+                const newItem = { _id: id, ...body };
+                onGetMockData.set(id, newItem);
+                return Promise.resolve(newItem);
+            },
+            findByIdAndUpdate: (id, update) => {
+                const existing = onGetMockData.get(id.toString());
+                if (!existing) return { lean: () => Promise.resolve(null) };
+                const updated = { ...existing, ...update.$set };
+                onGetMockData.set(id.toString(), updated);
+                return { lean: () => Promise.resolve(updated) };
+            },
+            findByIdAndDelete: (id) => {
+                onGetMockData.delete(id.toString());
+                return Promise.resolve(true);
+            },
+            countDocuments: () => Promise.resolve(onGetMockData.size)
+        };
+        return model;
+    };
+
+    await t.test("GET /items - onGet with populate should call .populate()", async () => {
+        const mockModel = createOnGetMockModel();
+        const app = express();
+        app.use(express.json());
+
+        const router = createRouter({
+            model: mockModel,
+            onGet: (req, res) => {
+                return {
+                    populates: [{ path: "users.user", select: "name email" }],
+                };
+            }
+        });
+        app.use("/items", router);
+        app.use(errorHandler);
+
+        onGetMockData.set("test1", { _id: "test1", name: "Item 1" });
+
+        const server = app.listen(0);
+        const port = server.address().port;
+        try {
+            const res = await fetch(`http://localhost:${port}/items`);
+            const body = await res.json();
+
+            assert.strictEqual(res.status, 200);
+            assert.strictEqual(body.success, true);
+            assert.deepStrictEqual(mockModel.lastPopulate, [{ path: "users.user", select: "name email" }]);
+        } finally {
+            onGetMockData.clear();
+            server.close();
+        }
+    });
+
+    await t.test("GET /items - onGet with selects should call .select()", async () => {
+        const mockModel = createOnGetMockModel();
+        const app = express();
+        app.use(express.json());
+
+        const router = createRouter({
+            model: mockModel,
+            onGet: (req, res) => {
+                return { selects: "-users -password" };
+            }
+        });
+        app.use("/items", router);
+        app.use(errorHandler);
+
+        onGetMockData.set("test1", { _id: "test1", name: "Item 1" });
+
+        const server = app.listen(0);
+        const port = server.address().port;
+        try {
+            const res = await fetch(`http://localhost:${port}/items`);
+            const body = await res.json();
+
+            assert.strictEqual(res.status, 200);
+            assert.strictEqual(mockModel.lastSelect, "-users -password");
+        } finally {
+            onGetMockData.clear();
+            server.close();
+        }
+    });
+
+    await t.test("GET /items/:id - onGet should apply to getById", async () => {
+        const mockModel = createOnGetMockModel();
+        const app = express();
+        app.use(express.json());
+
+        const router = createRouter({
+            model: mockModel,
+            onGet: (req, res) => {
+                return {
+                    populates: "category",
+                    selects: "-internalNotes",
+                };
+            }
+        });
+        app.use("/items", router);
+        app.use(errorHandler);
+
+        const validId = "507f1f77bcf86cd799439011";
+        onGetMockData.set(validId, { _id: validId, name: "Single Item" });
+
+        const server = app.listen(0);
+        const port = server.address().port;
+        try {
+            const res = await fetch(`http://localhost:${port}/items/${validId}`);
+            const body = await res.json();
+
+            assert.strictEqual(res.status, 200);
+            assert.strictEqual(body.data.name, "Single Item");
+            assert.strictEqual(mockModel.lastPopulate, "category");
+            assert.strictEqual(mockModel.lastSelect, "-internalNotes");
+        } finally {
+            onGetMockData.clear();
+            server.close();
+        }
+    });
+
+    await t.test("GET /items - without onGet should work normally (backward compat)", async () => {
+        const mockModel = createOnGetMockModel();
+        const app = express();
+        app.use(express.json());
+
+        // No onGet provided
+        const router = createRouter({
+            model: mockModel,
+            search: ["name"]
+        });
+        app.use("/items", router);
+        app.use(errorHandler);
+
+        onGetMockData.set("test1", { _id: "test1", name: "Item 1" });
+
+        const server = app.listen(0);
+        const port = server.address().port;
+        try {
+            const res = await fetch(`http://localhost:${port}/items`);
+            const body = await res.json();
+
+            assert.strictEqual(res.status, 200);
+            assert.strictEqual(body.success, true);
+            assert.strictEqual(body.data.length, 1);
+            // populate/select called with defaults (no-ops)
+            assert.deepStrictEqual(mockModel.lastPopulate, []);
+            assert.strictEqual(mockModel.lastSelect, "");
+        } finally {
+            onGetMockData.clear();
             server.close();
         }
     });

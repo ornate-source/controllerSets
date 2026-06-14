@@ -43,6 +43,7 @@
                     <li><a href="#error-handling"><i data-lucide="alert-circle"></i> Error Handling</a></li>
                     <li><a href="#quick-start"><i data-lucide="rocket"></i> Quick Start</a></li>
                     <li><a href="#controller-sets"><i data-lucide="layers"></i> Controller Sets</a></li>
+                    <li><a href="#conditional-populate"><i data-lucide="git-branch"></i> Conditional Populate</a></li>
                     <li><a href="#s3-upload"><i data-lucide="cloud-upload"></i> S3 Upload</a></li>
                     <li><a href="#dynamic-routers"><i data-lucide="route"></i> Dynamic Routers</a></li>
                     <li><a href="#typescript"><i data-lucide="code"></i> TypeScript</a></li>
@@ -177,6 +178,88 @@ const productController = new ControllerSets(
 // Use in manual routes
 router.get('/', productController.getAll);
 router.post('/', productController.create);</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+            </section>
+
+            <section id="conditional-populate" class="section">
+                <h2><i data-lucide="git-branch"></i> Conditional Populate (<code>onGet</code>)</h2>
+                <p>The <code>onGet</code> hook gives you request-time control over <code>.populate()</code> and <code>.select()</code> for all GET operations (<code>getAll</code>, <code>getById</code>, and paginated results). It is <strong>entirely optional</strong> &mdash; without it, ControllerSets works exactly as before.</p>
+
+                <h3>Hook Signature</h3>
+                <p>The hook receives <code>(req, res)</code> and returns an object with <code>populates</code> and/or <code>selects</code>:</p>
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>onGet(req, res) {
+    return {
+        populates,  // string | object | array &mdash; passed to .populate()
+        selects,    // string &mdash; passed to .select()
+    };
+}</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <h3>Simple Example</h3>
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>import { createRouter } from 'express-controller-sets';
+import Product from './models/Product.js';
+
+const productRouter = createRouter({
+    model: Product,
+    query: ['category'],
+    onGet: (req, res) => {
+        if (!req.query.noUsers) {
+            return {
+                populates: [{ path: "users.user", select: "name email" }],
+            };
+        }
+        return { selects: "-users" };
+    }
+});</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <h3>Complex Multi-Populate</h3>
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>const orderRouter = createRouter({
+    model: Order,
+    query: ['status'],
+    onGet: (req, res) => {
+        const populates = [{ path: "customer", select: "name email" }];
+        let selects = "";
+
+        if (req.query.detailed === "true") {
+            populates.push({ path: "items.product", select: "name price image" });
+        } else {
+            selects = "-items";
+        }
+
+        if (req.user?.role === "admin") {
+            populates.push({ path: "assignedTo" });
+        }
+
+        return { populates, selects };
+    }
+});</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <h3>Modular Reuse</h3>
+                <p>Extract your <code>onGet</code> logic into reusable functions and share across routers:</p>
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>// hooks/populateUsers.js
+export const populateUsers = (req, res) => {
+    if (!req.query.noUsers) {
+        return { populates: [{ path: "users.user", select: "name email" }] };
+    }
+    return { selects: "-users" };
+};
+
+// routes/products.js
+import { populateUsers } from '../hooks/populateUsers.js';
+const productRouter = createRouter({ model: Product, onGet: populateUsers });
+
+// routes/orders.js &mdash; same hook, zero duplication
+const orderRouter = createRouter({ model: Order, onGet: populateUsers });</code></pre>
                     <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
                 </div>
             </section>
@@ -352,6 +435,11 @@ app.use('/api/users', userRouter);</code></pre>
                                 <td><code>imgOptimizations</code></td>
                                 <td>String</td>
                                 <td>Optional default image optimization preset for S3 uploads: <code>'low'</code>, <code>'medium'</code>, <code>'med'</code>, or <code>'high'</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>onGet</code></td>
+                                <td>Function</td>
+                                <td>Optional hook <code>(req, res) =&gt; { populates, selects }</code> for conditional <code>.populate()</code> and <code>.select()</code> on all GET queries. Entirely optional.</td>
                             </tr>
                         </tbody>
                     </table>
