@@ -47,4 +47,13 @@ app.use('/api/products', productRouter);
 > [!TIP]
 > **View the [Full Documentation & Live Demo](https://ornate-source.github.io/controllerSets/)** for a complete list of endpoints, filtering options, and S3 configuration.
 
+---
+
+## 📋 Changelog
+
+### Version 2.3.5
+- **New Feature**: Added an optional `onGet` lifecycle hook giving request-time control over `.populate()` and `.select()` on all GET operations (`getAll`, `getById`, and paginated results).
+
+---
+
 Released under the [MIT License](LICENSE). © 2024 Sabbir Mahmud
