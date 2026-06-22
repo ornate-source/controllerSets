@@ -163,23 +163,74 @@ app.use('/api/products', productRouter);</code></pre>
 
             <section id="controller-sets" class="section">
                 <h2><i data-lucide="box"></i> Controller Sets</h2>
-                <p>The <code>ControllerSets</code> class provides the core logic for handling Mongoose operations. You
-                    can use it directly for custom route handling.</p>
+                <p>The <code>ControllerSets</code> class provides the core logic for handling Mongoose operations. You can use it directly for custom route handling by instantiating it with specific options.</p>
+
+                <h3>Constructor Parameters</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>model</code></td>
+                                <td>Mongoose Model</td>
+                                <td><strong>Required.</strong> The Mongoose model that the controller will operate on (e.g., <code>Product</code>, <code>User</code>).</td>
+                            </tr>
+                            <tr>
+                                <td><code>orderBy</code></td>
+                                <td>String</td>
+                                <td>The default sorting behavior when fetching lists (e.g., <code>'-createdAt'</code> for newest first). Defaults to <code>'none'</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>query</code></td>
+                                <td>Array&lt;String&gt;</td>
+                                <td>An array of field names that are allowed to be filtered directly via query parameters (e.g., <code>['category', 'status']</code> allows <code>?status=active</code>).</td>
+                            </tr>
+                            <tr>
+                                <td><code>search</code></td>
+                                <td>Array&lt;String&gt; | String</td>
+                                <td>Fields to include when a user provides the <code>?search=</code> or <code>?s=</code> query parameter. Supports relational dot notation (e.g., <code>'category.name'</code>).</td>
+                            </tr>
+                            <tr>
+                                <td><code>runAfterCreate</code></td>
+                                <td>Function</td>
+                                <td>An optional asynchronous callback function executed immediately after a new document is created. It receives the newly created document as its argument.</td>
+                            </tr>
+                            <tr>
+                                <td><code>onGet</code></td>
+                                <td>Function</td>
+                                <td>An optional hook <code>(req, res)</code> that returns <code>{ populates, selects }</code> to conditionally modify how data is populated or selected on all GET operations.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
                 <div class="code-block" data-lang="javascript">
                     <pre><code>import { ControllerSets } from 'express-controller-sets';
 import Product from '../models/Product.js';
 
 const productController = new ControllerSets(
-    Product,
-    '-createdAt',        // Default sort
-    ['category'],        // Filterable fields
-    ['name', 'tags'],    // Searchable fields array
-    async (doc) => {}    // Optional runAfterCreate callback
+    Product,             // 1. model
+    '-createdAt',        // 2. orderBy
+    ['category'],        // 3. query (Filterable fields)
+    ['name', 'tags'],    // 4. search (Searchable fields)
+    async (doc) => {},   // 5. runAfterCreate callback
+    (req, res) => {      // 6. onGet hook
+        return { selects: '-hiddenField' }; 
+    }
 );
 
 // Use in manual routes
 router.get('/', productController.getAll);
-router.post('/', productController.create);</code></pre>
+router.post('/', productController.create);
+router.get('/:id', productController.getById);
+router.patch('/:id', productController.update);
+router.delete('/:id', productController.delete);</code></pre>
                     <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
                 </div>
             </section>
