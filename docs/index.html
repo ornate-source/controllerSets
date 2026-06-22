@@ -929,6 +929,17 @@ fetch('/api/users', {
         // Active Link on Scroll
         const sections = document.querySelectorAll('.section');
         const navLinks = document.querySelectorAll('.sidebar-nav a');
+
+        // Close sidebar on link click (mobile responsive behavior)
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.remove('active');
+                    body.style.overflow = ''; // Restore scroll
+                }
+            });
+        });
+
         window.addEventListener('scroll', () => {
             let current = '';
             sections.forEach(section => {
