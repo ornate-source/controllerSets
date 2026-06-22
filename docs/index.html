@@ -717,8 +717,8 @@ app.use('/api/avatars', avatarRouter);</code></pre>
                             </tr>
                             <tr>
                                 <td><code>search</code> / <code>s</code></td>
-                                <td>Global search across configured fields.</td>
-                                <td><code>?search=laptop</code></td>
+                                <td>Global case-insensitive regex search across configured fields. Uniquely supports relational dot-notation (e.g., searching within populated related models automatically).</td>
+                                <td><code>?s=laptop</code></td>
                             </tr>
                             <tr>
                                 <td><code>sort</code></td>
@@ -812,7 +812,18 @@ fetch('/api/users?status=active&compareField=age&compareValue=30&compareOperator
                     <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
                 </div>
 
-                <h4>4. Creating a Record with File Upload</h4>
+                <h4>4. Global and Relational Search</h4>
+                <p>Use <code>?s=term</code> or <code>?search=term</code> to execute a case-insensitive search across all fields configured in the router's <code>search</code> array. Because it natively supports dot-notation, you can even search inside populated references without writing complex aggregate queries.</p>
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>// Assuming the router was created with search: ['name', 'description', 'category.name']
+// This searches the Product's name/description AND the related Category's name!
+fetch('/api/products?s=wireless')
+    .then(res => res.json())
+    .then(data => console.log(data.data));</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <h4>5. Creating a Record with File Upload</h4>
                 <p>When using <code>createRouterS3upload</code>, ensure you use <code>FormData</code> for multipart
                     requests.</p>
                 <div class="code-block" data-lang="javascript">
