@@ -43,8 +43,8 @@
                     <li><a href="#error-handling"><i data-lucide="alert-circle"></i> Error Handling</a></li>
                     <li><a href="#quick-start"><i data-lucide="rocket"></i> Quick Start</a></li>
                     <li><a href="#controller-sets"><i data-lucide="layers"></i> Controller Sets</a></li>
+                    <li><a href="#s3-upload"><i data-lucide="cloud-upload"></i> S3 File Upload</a></li>
                     <li><a href="#conditional-populate"><i data-lucide="git-branch"></i> Conditional Populate</a></li>
-                    <li><a href="#s3-upload"><i data-lucide="cloud-upload"></i> S3 Upload</a></li>
                     <li><a href="#dynamic-routers"><i data-lucide="route"></i> Dynamic Routers</a></li>
                     <li><a href="#typescript"><i data-lucide="code"></i> TypeScript</a></li>
                     <li><a href="#api-reference"><i data-lucide="book-open"></i> API Reference</a></li>
@@ -235,6 +235,147 @@ router.delete('/:id', productController.delete);</code></pre>
                 </div>
             </section>
 
+            <section id="s3-upload" class="section">
+                <h2><i data-lucide="upload-cloud"></i> S3 File Upload Middleware</h2>
+                <p>Handle file uploads to S3-compatible storage with ease. The middleware automatically updates
+                    <code>req.body</code> with S3 locations.</p>
+                
+                <p><strong>Type:</strong> This is a specialized Express middleware wrapper around <strong>Multer</strong> and the <strong>AWS SDK</strong>. It intercepts multipart form data, optionally compresses images using Sharp, securely uploads them directly to S3 via memory buffers, and seamlessly forwards execution back to your route handler.</p>
+                
+                <h3>Middleware Arguments</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Argument</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>req</code></td>
+                                <td>Object</td>
+                                <td>The standard Express Request object.</td>
+                            </tr>
+                            <tr>
+                                <td><code>res</code></td>
+                                <td>Object</td>
+                                <td>The standard Express Response object.</td>
+                            </tr>
+                            <tr>
+                                <td><code>next</code></td>
+                                <td>Function</td>
+                                <td>The standard Express Next callback.</td>
+                            </tr>
+                            <tr>
+                                <td><code>uploadPath</code></td>
+                                <td>String</td>
+                                <td>The destination folder path inside your S3 bucket (e.g., <code>'uploads/'</code>).</td>
+                            </tr>
+                            <tr>
+                                <td><code>fields</code></td>
+                                <td>Array</td>
+                                <td>Multer field configurations specifying expected files (e.g., <code>[{ name: 'avatar', maxCount: 1 }]</code>).</td>
+                            </tr>
+                            <tr>
+                                <td><code>imgOptimizationsDefault</code></td>
+                                <td>String</td>
+                                <td>(Optional) The fallback image compression level (<code>'low'</code>, <code>'medium'</code>, <code>'high'</code>).</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>import { fileUploadMiddleware } from 'express-controller-sets';
+
+router.post('/upload', (req, res, next) => {
+    // Pass the optimization level (e.g., 'medium') as the 6th parameter
+    fileUploadMiddleware(req, res, next, 'uploads/', [
+        { name: 'avatar', maxCount: 1 }
+    ], 'medium');
+}, (req, res) => {
+    res.json({ url: req.body.avatar });
+});</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <h3><i data-lucide="image"></i> Image Compression & Optimization</h3>
+                <p>Drastically reduce your S3 storage costs and improve API response times by automatically optimizing uploaded images via the <code>imgOptimizations</code> feature. Powered by <strong>Sharp</strong>, the module utilizes a highly efficient, multi-pass binary search algorithm to dynamically scale down the file size while preserving original image dimensions and visual fidelity.</p>
+
+                <p><strong>Available Compression Profiles:</strong></p>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Level</th>
+                                <th>Target File Size</th>
+                                <th>Best Used For</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>low</code></td>
+                                <td><strong>75% - 80%</strong> of original size</td>
+                                <td>High-fidelity images where maximum quality is prioritized over bandwidth savings.</td>
+                            </tr>
+                            <tr>
+                                <td><code>medium</code> / <code>med</code></td>
+                                <td><strong>60% - 65%</strong> of original size</td>
+                                <td>General purpose uploads (e.g., product photos, hero images) offering the perfect balance of quality and size.</td>
+                            </tr>
+                            <tr>
+                                <td><code>high</code></td>
+                                <td><strong>40% - 45%</strong> of original size</td>
+                                <td>Avatars, thumbnails, and heavy traffic endpoints where aggressive bandwidth savings are crucial.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>You can seamlessly integrate image optimization into your workflow in two ways:</p>
+
+                <h4>1. Route-Level Setup (Static Default)</h4>
+                <p>Specify the default compression level when initializing your router:</p>
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>import { createRouterS3upload } from 'express-controller-sets';
+
+const router = createRouterS3upload({
+    model: User,
+    path: 'avatars/',
+    fields: [{ name: 'avatar', maxCount: 1 }],
+    imgOptimizations: 'medium' // All avatars will be compressed to 60-65% size by default
+});</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <h4>2. Client-Controlled (Dynamic Override)</h4>
+                <p>Clients can dynamically specify or override the optimization level per-request by passing the
+                    <code>imgOptimizations</code> parameter. This parameter can be passed in the <strong>query
+                        string</strong>, <strong>multipart form-data fields</strong>, or <strong>headers</strong>
+                    (<code>imgOptimizations</code> or <code>x-img-optimizations</code>):</p>
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>// Dynamic query parameter override
+fetch('/api/users?imgOptimizations=high', {
+    method: 'POST',
+    body: formData
+});</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <h4>3. Bypassing / Ignoring Optimizations</h4>
+                <p>If you have set a route-level default (e.g., <code>'medium'</code>) but want to allow certain uploads to bypass compression entirely, clients can explicitly pass <code>none</code> or <code>false</code> as the <code>imgOptimizations</code> parameter. This guarantees the original file is uploaded untouched:</p>
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>// Ignore optimizations for this specific upload
+fetch('/api/users?imgOptimizations=none', {
+    method: 'POST',
+    body: formData
+});</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+            </section>
+
             <section id="conditional-populate" class="section">
                 <h2><i data-lucide="git-branch"></i> Conditional Populate (<code>onGet</code>)</h2>
                 <p>The <code>onGet</code> hook gives you request-time control over <code>.populate()</code> and
@@ -321,69 +462,6 @@ const orderRouter = createRouter({ model: Order, onGet: populateUsers });</code>
                 </div>
             </section>
 
-            <section id="s3-upload" class="section">
-                <h2><i data-lucide="upload-cloud"></i> S3 Upload Middleware</h2>
-                <p>Handle file uploads to S3-compatible storage with ease. The middleware automatically updates
-                    <code>req.body</code> with S3 locations.</p>
-                <div class="code-block" data-lang="javascript">
-                    <pre><code>import { fileUploadMiddleware } from 'express-controller-sets';
-
-router.post('/upload', (req, res, next) => {
-    fileUploadMiddleware(req, res, next, 'uploads/', [
-        { name: 'avatar', maxCount: 1 }
-    ]);
-}, (req, res) => {
-    res.json({ url: req.body.avatar });
-});</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
-                </div>
-
-                <h3>Image Compression & Optimization</h3>
-                <p>You can optimize and compress uploaded images automatically using the <code>imgOptimizations</code>
-                    feature. It leverages <strong>Sharp</strong> under the hood to perform efficient, multi-pass binary
-                    search quality optimization, reducing file size while keeping resolutions intact.</p>
-
-                <p>Supported levels:</p>
-                <ul>
-                    <li><code>low</code>: Compress image to target <strong>75% - 80%</strong> of original file size.
-                    </li>
-                    <li><code>medium</code> / <code>med</code>: Compress image to target <strong>60% - 65%</strong> of
-                        original file size.</li>
-                    <li><code>high</code>: Compress image to target <strong>40% - 45%</strong> of original file size.
-                    </li>
-                </ul>
-
-                <p>There are two ways to apply image optimizations:</p>
-
-                <h4>1. Route-Level Setup (Static Default)</h4>
-                <p>Specify the default compression level when initializing your router:</p>
-                <div class="code-block" data-lang="javascript">
-                    <pre><code>import { createRouterS3upload } from 'express-controller-sets';
-
-const router = createRouterS3upload({
-    model: User,
-    path: 'avatars/',
-    fields: [{ name: 'avatar', maxCount: 1 }],
-    imgOptimizations: 'medium' // All avatars will be compressed to 60-65% size by default
-});</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
-                </div>
-
-                <h4>2. Client-Controlled (Dynamic Override)</h4>
-                <p>Clients can dynamically specify or override the optimization level per-request by passing the
-                    <code>imgOptimizations</code> parameter. This parameter can be passed in the <strong>query
-                        string</strong>, <strong>multipart form-data fields</strong>, or <strong>headers</strong>
-                    (<code>imgOptimizations</code> or <code>x-img-optimizations</code>):</p>
-                <div class="code-block" data-lang="javascript">
-                    <pre><code>// Dynamic query parameter override
-fetch('/api/users?imgOptimizations=high', {
-    method: 'POST',
-    body: formData
-});</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
-                </div>
-            </section>
-
             <section id="dynamic-routers" class="section">
                 <h2><i data-lucide="route"></i> Dynamic Routers</h2>
                 <p>Use the helper functions to quickly scaffold entire resource routers with pre-configured CRUD and
@@ -402,7 +480,7 @@ const router = createRouter({
                     <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
                 </div>
 
-                <h3>Router with S3 Upload</h3>
+                <h3>Router with S3 File Upload</h3>
                 <p>Automatically combines CRUD logic with S3 file upload middleware.</p>
                 <div class="code-block" data-lang="javascript">
                     <pre><code>import { createRouterS3upload } from 'express-controller-sets';
