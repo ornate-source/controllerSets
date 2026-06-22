@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Express Controller Sets | Documentation</title>
     <meta name="description"
-        content="Unified toolkit for Express.js - Pre-built CRUD logic, S3 uploads, and dynamic routing.">
+        content="An advanced, unified toolkit for Express.js that accelerates API development by providing automated CRUD operations, dynamic routing capabilities, and robust Amazon S3 file upload handling out of the box.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -72,8 +72,7 @@
 
             <section id="introduction" class="section">
                 <h1>Express Controller Sets</h1>
-                <p class="lead">A unified toolkit for Express.js that provides pre-built CRUD logic, seamless
-                    <strong>Multer</strong> integration, and robust <strong>AWS S3</strong> file upload handling.</p>
+                <p class="lead">An advanced, unified toolkit for Express.js that accelerates API development by providing automated CRUD operations, dynamic routing capabilities, and robust Amazon S3 file upload handling out of the box.</p>
                 <div class="badges">
                     <span class="badge"><i data-lucide="check-circle"></i> Node 20+</span>
                     <span class="badge"><i data-lucide="shield"></i> Mongoose 9+</span>
@@ -95,9 +94,10 @@
 
             <section id="environment" class="section">
                 <h2><i data-lucide="settings"></i> Environment Variables</h2>
-                <p>Configure your S3 credentials via environment variables:</p>
+                <p>Configure your application and S3 credentials via environment variables:</p>
                 <div class="code-block" data-lang="text">
-                    <pre><code>S3_ENDPOINT=your-endpoint.com
+                    <pre><code>NODE_ENV=development
+S3_ENDPOINT=your-endpoint.com
 S3_SPACES_KEY=your-key
 S3_SPACES_SECRET=your-secret
 S3_BUCKET_NAME=your-bucket
@@ -108,8 +108,9 @@ S3_REGION=us-east-1</code></pre>
 
             <section id="error-handling" class="section">
                 <h2><i data-lucide="alert-circle"></i> Global Error Handling</h2>
-                <p>To ensure all errors (including database validation failures) are returned in professional <strong>JSON format</strong>, use the built-in <code>errorHandler</code> middleware.</p>
-                
+                <p>To ensure all errors (including database validation failures) are returned in professional
+                    <strong>JSON format</strong>, use the built-in <code>errorHandler</code> middleware.</p>
+
                 <div class="code-block" data-lang="javascript">
                     <pre><code>import express from 'express';
 import { createRouter, errorHandler } from 'express-controller-sets';
@@ -125,7 +126,8 @@ app.use(errorHandler);</code></pre>
                 </div>
 
                 <h3>Standardized Error Response</h3>
-                <p>All errors caught by this middleware will return a consistent 400 or 500 status code with the following body:</p>
+                <p>All errors caught by this middleware will return a consistent 400 or 500 status code with the
+                    following body:</p>
                 <div class="code-block" data-lang="json">
                     <pre><code>{
     "success": false,
@@ -184,10 +186,14 @@ router.post('/', productController.create);</code></pre>
 
             <section id="conditional-populate" class="section">
                 <h2><i data-lucide="git-branch"></i> Conditional Populate (<code>onGet</code>)</h2>
-                <p>The <code>onGet</code> hook gives you request-time control over <code>.populate()</code> and <code>.select()</code> for all GET operations (<code>getAll</code>, <code>getById</code>, and paginated results). It is <strong>entirely optional</strong> &mdash; without it, ControllerSets works exactly as before.</p>
+                <p>The <code>onGet</code> hook gives you request-time control over <code>.populate()</code> and
+                    <code>.select()</code> for all GET operations (<code>getAll</code>, <code>getById</code>, and
+                    paginated results). It is <strong>entirely optional</strong> &mdash; without it, ControllerSets
+                    works exactly as before.</p>
 
                 <h3>Hook Signature</h3>
-                <p>The hook receives <code>(req, res)</code> and returns an object with <code>populates</code> and/or <code>selects</code>:</p>
+                <p>The hook receives <code>(req, res)</code> and returns an object with <code>populates</code> and/or
+                    <code>selects</code>:</p>
                 <div class="code-block" data-lang="javascript">
                     <pre><code>onGet(req, res) {
     return {
@@ -282,13 +288,18 @@ router.post('/upload', (req, res, next) => {
                 </div>
 
                 <h3>Image Compression & Optimization</h3>
-                <p>You can optimize and compress uploaded images automatically using the <code>imgOptimizations</code> feature. It leverages <strong>Sharp</strong> under the hood to perform efficient, multi-pass binary search quality optimization, reducing file size while keeping resolutions intact.</p>
-                
+                <p>You can optimize and compress uploaded images automatically using the <code>imgOptimizations</code>
+                    feature. It leverages <strong>Sharp</strong> under the hood to perform efficient, multi-pass binary
+                    search quality optimization, reducing file size while keeping resolutions intact.</p>
+
                 <p>Supported levels:</p>
                 <ul>
-                    <li><code>low</code>: Compress image to target <strong>75% - 80%</strong> of original file size.</li>
-                    <li><code>medium</code> / <code>med</code>: Compress image to target <strong>60% - 65%</strong> of original file size.</li>
-                    <li><code>high</code>: Compress image to target <strong>40% - 45%</strong> of original file size.</li>
+                    <li><code>low</code>: Compress image to target <strong>75% - 80%</strong> of original file size.
+                    </li>
+                    <li><code>medium</code> / <code>med</code>: Compress image to target <strong>60% - 65%</strong> of
+                        original file size.</li>
+                    <li><code>high</code>: Compress image to target <strong>40% - 45%</strong> of original file size.
+                    </li>
                 </ul>
 
                 <p>There are two ways to apply image optimizations:</p>
@@ -308,7 +319,10 @@ const router = createRouterS3upload({
                 </div>
 
                 <h4>2. Client-Controlled (Dynamic Override)</h4>
-                <p>Clients can dynamically specify or override the optimization level per-request by passing the <code>imgOptimizations</code> parameter. This parameter can be passed in the <strong>query string</strong>, <strong>multipart form-data fields</strong>, or <strong>headers</strong> (<code>imgOptimizations</code> or <code>x-img-optimizations</code>):</p>
+                <p>Clients can dynamically specify or override the optimization level per-request by passing the
+                    <code>imgOptimizations</code> parameter. This parameter can be passed in the <strong>query
+                        string</strong>, <strong>multipart form-data fields</strong>, or <strong>headers</strong>
+                    (<code>imgOptimizations</code> or <code>x-img-optimizations</code>):</p>
                 <div class="code-block" data-lang="javascript">
                     <pre><code>// Dynamic query parameter override
 fetch('/api/users?imgOptimizations=high', {
@@ -434,12 +448,15 @@ app.use('/api/users', userRouter);</code></pre>
                             <tr>
                                 <td><code>imgOptimizations</code></td>
                                 <td>String</td>
-                                <td>Optional default image optimization preset for S3 uploads: <code>'low'</code>, <code>'medium'</code>, <code>'med'</code>, or <code>'high'</code>.</td>
+                                <td>Optional default image optimization preset for S3 uploads: <code>'low'</code>,
+                                    <code>'medium'</code>, <code>'med'</code>, or <code>'high'</code>.</td>
                             </tr>
                             <tr>
                                 <td><code>onGet</code></td>
                                 <td>Function</td>
-                                <td>Optional hook <code>(req, res) =&gt; { populates, selects }</code> for conditional <code>.populate()</code> and <code>.select()</code> on all GET queries. Entirely optional.</td>
+                                <td>Optional hook <code>(req, res) =&gt; { populates, selects }</code> for conditional
+                                    <code>.populate()</code> and <code>.select()</code> on all GET queries. Entirely
+                                    optional.</td>
                             </tr>
                         </tbody>
                     </table>
@@ -452,7 +469,8 @@ app.use('/api/users', userRouter);</code></pre>
 
             <section id="api-endpoints" class="section">
                 <h2><i data-lucide="network"></i> API Endpoints</h2>
-                <p>All routers created with <code>createRouter</code> or <code>createRouterS3upload</code> follow standard RESTful patterns and include a powerful built-in filtering engine.</p>
+                <p>All routers created with <code>createRouter</code> or <code>createRouterS3upload</code> follow
+                    standard RESTful patterns and include a powerful built-in filtering engine.</p>
 
                 <div class="table-container">
                     <table>
@@ -465,27 +483,37 @@ app.use('/api/users', userRouter);</code></pre>
                         </thead>
                         <tbody>
                             <tr>
-                                <td><span class="badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: none;">GET</span></td>
+                                <td><span class="badge"
+                                        style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: none;">GET</span>
+                                </td>
                                 <td><code>/</code></td>
                                 <td>List records with support for pagination, search, and custom filters.</td>
                             </tr>
                             <tr>
-                                <td><span class="badge" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: none;">POST</span></td>
+                                <td><span class="badge"
+                                        style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: none;">POST</span>
+                                </td>
                                 <td><code>/</code></td>
                                 <td>Create a new record. Supports multipart file uploads on S3 routers.</td>
                             </tr>
                             <tr>
-                                <td><span class="badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: none;">GET</span></td>
+                                <td><span class="badge"
+                                        style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: none;">GET</span>
+                                </td>
                                 <td><code>/:id</code></td>
                                 <td>Retrieve a single record by its 24-character hex ID.</td>
                             </tr>
                             <tr>
-                                <td><span class="badge" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: none;">PATCH</span></td>
+                                <td><span class="badge"
+                                        style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: none;">PATCH</span>
+                                </td>
                                 <td><code>/:id</code></td>
                                 <td>Update an existing record partially. Supports file updates on S3 routers.</td>
                             </tr>
                             <tr>
-                                <td><span class="badge" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: none;">DELETE</span></td>
+                                <td><span class="badge"
+                                        style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: none;">DELETE</span>
+                                </td>
                                 <td><code>/:id</code></td>
                                 <td>Permanently remove a record from the database.</td>
                             </tr>
@@ -494,7 +522,8 @@ app.use('/api/users', userRouter);</code></pre>
                 </div>
 
                 <h3>Query Parameters (Filtering Engine)</h3>
-                <p>The <code>GET /</code> endpoint supports several parameters out-of-the-box to filter and paginate your data.</p>
+                <p>The <code>GET /</code> endpoint supports several parameters out-of-the-box to filter and paginate
+                    your data.</p>
                 <div class="table-container">
                     <table>
                         <thead>
@@ -532,27 +561,33 @@ app.use('/api/users', userRouter);</code></pre>
                             </tr>
                             <tr>
                                 <td><code>rangeField</code></td>
-                                <td>The numeric field name to apply a range filter on. Works together with <code>range</code> parameter.</td>
+                                <td>The numeric field name to apply a range filter on. Works together with
+                                    <code>range</code> parameter.</td>
                                 <td><code>?rangeField=price</code></td>
                             </tr>
                             <tr>
                                 <td><code>range</code></td>
-                                <td>The range boundaries in format <code>min-max</code>. Supports min-only (<code>min-</code>) or max-only (<code>-max</code>) ranges.</td>
+                                <td>The range boundaries in format <code>min-max</code>. Supports min-only
+                                    (<code>min-</code>) or max-only (<code>-max</code>) ranges.</td>
                                 <td><code>?range=10-100</code></td>
                             </tr>
                             <tr>
                                 <td><code>compareField</code></td>
-                                <td>The field name to perform a dynamic comparison on (e.g., <code>price</code>, <code>age</code>, etc.).</td>
+                                <td>The field name to perform a dynamic comparison on (e.g., <code>price</code>,
+                                    <code>age</code>, etc.).</td>
                                 <td><code>?compareField=price</code></td>
                             </tr>
                             <tr>
                                 <td><code>compareValue</code></td>
-                                <td>The target value to compare against. Tries to parse as a number if valid, otherwise treats as a string.</td>
+                                <td>The target value to compare against. Tries to parse as a number if valid, otherwise
+                                    treats as a string.</td>
                                 <td><code>?compareValue=50</code></td>
                             </tr>
                             <tr>
                                 <td><code>compareOperator</code></td>
-                                <td>The comparison operator: <code>gt</code> (&gt;), <code>gte</code> (&gt;=), <code>lt</code> (&lt;), <code>lte</code> (&lt;=), <code>ne</code> (!=), <code>eq</code> (==). Default is <code>eq</code>.</td>
+                                <td>The comparison operator: <code>gt</code> (&gt;), <code>gte</code> (&gt;=),
+                                    <code>lt</code> (&lt;), <code>lte</code> (&lt;=), <code>ne</code> (!=),
+                                    <code>eq</code> (==). Default is <code>eq</code>.</td>
                                 <td><code>?compareOperator=gt</code></td>
                             </tr>
                         </tbody>
@@ -574,7 +609,8 @@ fetch('/api/products?page=2&pageSize=20&sort=-price&status=active')
                 </div>
 
                 <h4>2. Filtering by Numeric Range</h4>
-                <p>Filter records dynamically by a numeric range using <code>rangeField</code> and <code>range</code> query parameters.</p>
+                <p>Filter records dynamically by a numeric range using <code>rangeField</code> and <code>range</code>
+                    query parameters.</p>
                 <div class="code-block" data-lang="javascript">
                     <pre><code>// Fetch products priced between $10 and $100
 fetch('/api/products?rangeField=price&range=10-100')
@@ -589,7 +625,9 @@ fetch('/api/users?rangeField=age&range=18-')
                 </div>
 
                 <h4>3. Dynamic Field Comparison</h4>
-                <p>Filter records dynamically on a field using comparison operators like greater than (<code>gt</code>), greater than or equal (<code>gte</code>), less than (<code>lt</code>), less than or equal (<code>lte</code>), not equal (<code>ne</code>), or equal (<code>eq</code>).</p>
+                <p>Filter records dynamically on a field using comparison operators like greater than (<code>gt</code>),
+                    greater than or equal (<code>gte</code>), less than (<code>lt</code>), less than or equal
+                    (<code>lte</code>), not equal (<code>ne</code>), or equal (<code>eq</code>).</p>
                 <div class="code-block" data-lang="javascript">
                     <pre><code>// Fetch products with price greater than 50
 fetch('/api/products?compareField=price&compareValue=50&compareOperator=gt')
@@ -604,7 +642,8 @@ fetch('/api/users?status=active&compareField=age&compareValue=30&compareOperator
                 </div>
 
                 <h4>4. Creating a Record with File Upload</h4>
-                <p>When using <code>createRouterS3upload</code>, ensure you use <code>FormData</code> for multipart requests.</p>
+                <p>When using <code>createRouterS3upload</code>, ensure you use <code>FormData</code> for multipart
+                    requests.</p>
                 <div class="code-block" data-lang="javascript">
                     <pre><code>const formData = new FormData();
 formData.append('name', 'New User');
@@ -620,9 +659,10 @@ fetch('/api/users', {
                 </div>
 
 
-            <footer class="main-footer">
-                <p>Released under the <a href="../LICENSE" target="_blank">MIT License</a>. &copy; 2024 Sabbir Mahmud</p>
-            </footer>
+                <footer class="main-footer">
+                    <p>Released under the <a href="../LICENSE" target="_blank">MIT License</a>. &copy; 2024 Sabbir
+                        Mahmud</p>
+                </footer>
         </main>
     </div>
 
