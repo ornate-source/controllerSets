@@ -1,6 +1,6 @@
 # Express Controller Sets
 
-A unified toolkit for Express.js that provides pre-built CRUD logic, robust S3 file upload handling, and dynamic routing helpers.
+An advanced, unified toolkit for Express.js that accelerates API development by providing automated CRUD operations, dynamic routing capabilities, and robust Amazon S3 file upload handling out of the box.
 
 [![Node Version](https://img.shields.io/badge/Node-20%2B-blue)](https://nodejs.org)
 [![Mongoose Version](https://img.shields.io/badge/Mongoose-9%2B-green)](https://mongoosejs.com)
@@ -10,6 +10,14 @@ A unified toolkit for Express.js that provides pre-built CRUD logic, robust S3 f
 **[Full Documentation & Live Demo](https://ornate-source.github.io/controllerSets/)**
 
 Designed to help you build APIs faster by automating repetitive controller logic and middleware configuration while maintaining type safety and flexibility.
+
+---
+
+## 📋 Changelog
+
+### Version 2.3.5
+- **New Feature**: Added an optional `onGet` lifecycle hook giving request-time control over `.populate()` and `.select()` on all GET operations (`getAll`, `getById`, and paginated results).
+- **New Feature**: Integrated `sharp` for automatic image compression and processing before S3 uploads, optimizing file sizes and delivery.
 
 ---
 
@@ -46,13 +54,6 @@ app.use('/api/products', productRouter);
 
 > [!TIP]
 > **View the [Full Documentation & Live Demo](https://ornate-source.github.io/controllerSets/)** for a complete list of endpoints, filtering options, and S3 configuration.
-
----
-
-## 📋 Changelog
-
-### Version 2.3.5
-- **New Feature**: Added an optional `onGet` lifecycle hook giving request-time control over `.populate()` and `.select()` on all GET operations (`getAll`, `getById`, and paginated results).
 
 ---
 
