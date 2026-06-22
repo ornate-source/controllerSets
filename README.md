@@ -57,4 +57,4 @@ app.use('/api/products', productRouter);
 
 ---
 
-Released under the [MIT License](LICENSE). © 2024 Sabbir Mahmud
+Released under the [MIT License](LICENSE). © 2024-present Sabbir Mahmud
