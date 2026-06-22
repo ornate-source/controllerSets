@@ -452,7 +452,8 @@ app.use('/api/products', productRouter);</code></pre>
                     <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
                 </div>
 
-                <h3>Simple Example</h3>
+                <h3>Simple Demo</h3>
+                <p>Use simple query parameters to conditionally include or exclude fields.</p>
                 <div class="code-block" data-lang="javascript">
                     <pre><code>import { createRouter } from 'express-controller-sets';
 import Product from './models/Product.js';
@@ -461,18 +462,21 @@ const productRouter = createRouter({
     model: Product,
     query: ['category'],
     onGet: (req, res) => {
-        if (!req.query.noUsers) {
-            return {
-                populates: [{ path: "users.user", select: "name email" }],
-            };
+        // If ?noUsers=true is passed, exclude the 'users' field
+        if (req.query.noUsers) {
+            return { selects: "-users" };
         }
-        return { selects: "-users" };
+        // Otherwise, populate the users field
+        return {
+            populates: [{ path: "users.user", select: "name email" }]
+        };
     }
 });</code></pre>
                     <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
                 </div>
 
-                <h3>Complex Multi-Populate</h3>
+                <h3>Complex Demo</h3>
+                <p>Chain multiple populates and make decisions based on both query parameters and user roles.</p>
                 <div class="code-block" data-lang="javascript">
                     <pre><code>const orderRouter = createRouter({
     model: Order,
@@ -481,12 +485,14 @@ const productRouter = createRouter({
         const populates = [{ path: "customer", select: "name email" }];
         let selects = "";
 
+        // Add detailed item data if requested
         if (req.query.detailed === "true") {
             populates.push({ path: "items.product", select: "name price image" });
         } else {
             selects = "-items";
         }
 
+        // Only admins can see who the order is assigned to
         if (req.user?.role === "admin") {
             populates.push({ path: "assignedTo" });
         }
@@ -497,15 +503,13 @@ const productRouter = createRouter({
                     <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
                 </div>
 
-                <h3>Modular Reuse</h3>
-                <p>Extract your <code>onGet</code> logic into reusable functions and share across routers:</p>
+                <h3>Advanced Demo (Modular Reuse)</h3>
+                <p>Extract your <code>onGet</code> logic into isolated, reusable hook functions to share complex population logic across multiple resource routers.</p>
                 <div class="code-block" data-lang="javascript">
                     <pre><code>// hooks/populateUsers.js
 export const populateUsers = (req, res) => {
-    if (!req.query.noUsers) {
-        return { populates: [{ path: "users.user", select: "name email" }] };
-    }
-    return { selects: "-users" };
+    if (req.query.noUsers) return { selects: "-users" };
+    return { populates: [{ path: "users.user", select: "name email" }] };
 };
 
 // routes/products.js
