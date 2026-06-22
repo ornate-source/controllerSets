@@ -44,8 +44,8 @@
                     <li><a href="#quick-start"><i data-lucide="rocket"></i> Quick Start</a></li>
                     <li><a href="#controller-sets"><i data-lucide="layers"></i> Controller Sets</a></li>
                     <li><a href="#s3-upload"><i data-lucide="cloud-upload"></i> S3 File Upload</a></li>
-                    <li><a href="#conditional-populate"><i data-lucide="git-branch"></i> Conditional Populate</a></li>
                     <li><a href="#dynamic-routers"><i data-lucide="route"></i> Dynamic Routers</a></li>
+                    <li><a href="#conditional-populate"><i data-lucide="git-branch"></i> Conditional Populate</a></li>
                     <li><a href="#typescript"><i data-lucide="code"></i> TypeScript</a></li>
                     <li><a href="#api-reference"><i data-lucide="book-open"></i> API Reference</a></li>
                     <li><a href="#api-endpoints"><i data-lucide="network"></i> API Endpoints</a></li>
@@ -376,6 +376,62 @@ fetch('/api/users?imgOptimizations=none', {
                 </div>
             </section>
 
+            <section id="dynamic-routers" class="section">
+                <h2><i data-lucide="route"></i> Dynamic Routers</h2>
+                <p>Accelerate your API development by utilizing our dynamic routing helper functions. With a single function call, you can instantly scaffold full-featured Express routers equipped with comprehensive CRUD operations, integrated S3 file uploads, and advanced querying capabilities out-of-the-box.</p>
+
+                <h3>Basic Router</h3>
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>import { createRouter } from 'express-controller-sets';
+import Product from './models/Product.js';
+
+const router = createRouter({
+    model: Product,
+    orderBy: '-createdAt',              // Sort order for GET requests
+    query: ['category', 'status'],      // Allowed query parameters for filtering
+    search: ['name', 'description'],    // Fields to search when ?search=term is used
+    runAfterCreate: async (doc) => {},  // Hook executed after document creation
+    onGet: (req, res) => { return {} }, // Hook to conditionally apply populate/select
+    middlewares: [authMiddleware]       // Array of middlewares to run before controllers
+});</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <h3>Router with S3 File Upload</h3>
+                <p>Automatically combines CRUD logic with S3 file upload middleware.</p>
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>import { createRouterS3upload } from 'express-controller-sets';
+import User from './models/User.js';
+
+const router = createRouterS3upload({
+    model: User,
+    orderBy: '-createdAt',              // Sort order
+    query: ['role'],                    // Allowed query params
+    search: ['username', 'email'],      // Searchable fields
+    runAfterCreate: async (doc) => {},  // Post-create hook
+    onGet: (req, res) => { return {} }, // Conditional populate/select
+    middlewares: [authMiddleware],      // Route middlewares
+    path: 'avatars/',                   // S3 folder path for uploads
+    fields: [{ name: 'avatar', maxCount: 1 }], // Multer upload fields
+    imgOptimizations: 'medium'          // Optional image compression default
+});</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <h3>Registering the Router</h3>
+                <p>Because the helper functions return a standard Express router, you register them in your main application exactly as you would normally:</p>
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>import express from 'express';
+// import productRouter from './routes/productRouter.js'
+
+const app = express();
+
+app.use(express.json());
+app.use('/api/products', productRouter);</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+            </section>
+
             <section id="conditional-populate" class="section">
                 <h2><i data-lucide="git-branch"></i> Conditional Populate (<code>onGet</code>)</h2>
                 <p>The <code>onGet</code> hook gives you request-time control over <code>.populate()</code> and
@@ -458,39 +514,6 @@ const productRouter = createRouter({ model: Product, onGet: populateUsers });
 
 // routes/orders.js &mdash; same hook, zero duplication
 const orderRouter = createRouter({ model: Order, onGet: populateUsers });</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
-                </div>
-            </section>
-
-            <section id="dynamic-routers" class="section">
-                <h2><i data-lucide="route"></i> Dynamic Routers</h2>
-                <p>Use the helper functions to quickly scaffold entire resource routers with pre-configured CRUD and
-                    upload logic.</p>
-
-                <h3>Basic Router</h3>
-                <div class="code-block" data-lang="javascript">
-                    <pre><code>import { createRouter } from 'express-controller-sets';
-import Product from './models/Product.js';
-
-const router = createRouter({
-    model: Product,
-    orderBy: '-createdAt',
-    search: ['name', 'description']
-});</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
-                </div>
-
-                <h3>Router with S3 File Upload</h3>
-                <p>Automatically combines CRUD logic with S3 file upload middleware.</p>
-                <div class="code-block" data-lang="javascript">
-                    <pre><code>import { createRouterS3upload } from 'express-controller-sets';
-import User from './models/User.js';
-
-const router = createRouterS3upload({
-    model: User,
-    folder: 'avatars/',
-    filesState: [{ name: 'avatar', maxCount: 1 }]
-});</code></pre>
                     <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
                 </div>
             </section>
