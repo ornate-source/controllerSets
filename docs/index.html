@@ -523,37 +523,56 @@ const orderRouter = createRouter({ model: Order, onGet: populateUsers });</code>
             </section>
 
             <section id="typescript" class="section">
-                <h2><i data-lucide="code"></i> TypeScript Support</h2>
-                <p>The package comes with built-in TypeScript definitions. You can pass your Mongoose document
-                    interfaces to strongly type the controllers and routers.</p>
+                <h2><i data-lucide="code"></i> First-Class TypeScript Support</h2>
+                <p><strong>Express Controller Sets</strong> is built with modern development in mind and ships with comprehensive TypeScript definitions out of the box. By passing your Mongoose document interfaces as generics, you unlock deep autocomplete, strict type-checking for hooks, and an enhanced developer experience.</p>
+                
+                <h3>End-to-End Type Safety</h3>
+                <p>When you pass your interface (e.g., <code>&lt;IUser&gt;</code>) to the helpers, hooks like <code>runAfterCreate</code> automatically infer the correct document type, ensuring you never misspell a property.</p>
+
                 <div class="code-block" data-lang="typescript">
                     <pre><code>import express from 'express';
-import { createRouter } from 'express-controller-sets';
+import { createRouter, createRouterS3upload } from 'express-controller-sets';
 import mongoose, { Document } from 'mongoose';
 
-// 1. Define your interface
-interface IUser extends Document {
+// 1. Define your Mongoose document interface
+export interface IUser extends Document {
     name: string;
     email: string;
     age: number;
+    avatar?: string;
 }
 
-// 2. Define or import your model
-const UserModel = mongoose.model&lt;IUser&gt;('User', new mongoose.Schema({
-    name: String,
-    email: String,
-    age: Number
-}));
+// 2. Create the Mongoose schema and model
+const userSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    email: { type: String, required: true },
+    age: Number,
+    avatar: String
+});
+const UserModel = mongoose.model&lt;IUser&gt;('User', userSchema);
 
-// 3. Create a strongly-typed router
-const userRouter = createRouter&lt;IUser&gt;({
+// 3. Create a strongly-typed standard router
+const standardRouter = createRouter&lt;IUser&gt;({
     model: UserModel,
-    orderBy: 'name',
-    search: ['name', 'email']
+    orderBy: '-age',
+    search: ['name', 'email'],
+    // 'doc' is strictly typed as IUser
+    runAfterCreate: async (doc) => {
+        console.log(`New user created: ${doc.name} (${doc.email})`);
+    }
+});
+
+// 4. Or create a strongly-typed S3 upload router
+const avatarRouter = createRouterS3upload&lt;IUser&gt;({
+    model: UserModel,
+    path: 'avatars/',
+    fields: [{ name: 'avatar', maxCount: 1 }],
+    imgOptimizations: 'medium'
 });
 
 const app = express();
-app.use('/api/users', userRouter);</code></pre>
+app.use('/api/users', standardRouter);
+app.use('/api/avatars', avatarRouter);</code></pre>
                     <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
                 </div>
             </section>
