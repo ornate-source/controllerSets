@@ -39,6 +39,7 @@
                 <ul>
                     <li><a href="#introduction" class="active"><i data-lucide="home"></i> Introduction</a></li>
                     <li><a href="#installation"><i data-lucide="download"></i> Installation</a></li>
+                    <li><a href="#security"><i data-lucide="shield-alert"></i> Security Model</a></li>
                     <li><a href="#environment"><i data-lucide="settings"></i> Environment</a></li>
                     <li><a href="#error-handling"><i data-lucide="alert-circle"></i> Error Handling</a></li>
                     <li><a href="#quick-start"><i data-lucide="rocket"></i> Quick Start</a></li>
@@ -87,8 +88,60 @@
                 <h2><i data-lucide="terminal"></i> Installation</h2>
                 <p>Install the package using your favorite package manager:</p>
                 <div class="code-block" data-lang="bash">
-                    <pre><code>npm install express-controller-sets mongoose express multer multer-s3 dotenv @aws-sdk/client-s3</code></pre>
+                    <pre><code>npm install express-controller-sets mongoose express</code></pre>
                     <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+                <p>Only if you use the S3 upload routes, also install the upload peers:</p>
+                <div class="code-block" data-lang="bash">
+                    <pre><code>npm install multer @aws-sdk/client-s3</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+            </section>
+
+            <section id="security" class="section">
+                <h2><i data-lucide="shield-alert"></i> Security Model</h2>
+                <p>This package generates <strong>public HTTP endpoints</strong> over your Mongoose models.
+                    Two things are deliberately <em>not</em> handled for you, and both will leave your API
+                    exposed if you skip them.</p>
+
+                <h3>1. Authentication is yours to supply</h3>
+                <p>Every generated route is open until you pass middleware. There is no implicit auth.</p>
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>createRouter({
+    model: Order,
+    middlewares: [requireAuth, requireRole('staff')],
+});</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <h3>2. Declare what clients may write and filter</h3>
+                <p>Without <code>allowedFields</code>, every field your schema defines is writable through
+                    <code>POST</code> and <code>PATCH</code> &mdash; including <code>role</code>,
+                    <code>isAdmin</code>, or <code>balance</code>. Mongoose's <code>strict</code> mode does not
+                    protect you here: it discards keys your schema does not define, which means it drops typos
+                    and faithfully saves the privilege escalation.</p>
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>createRouter({
+    model: User,
+    allowedFields: ['name', 'email', 'avatar'],   // writable by clients
+    blockedFields: ['role'],                      // or subtract instead
+    filterableFields: ['createdAt'],              // ?compareField= / ?rangeField=
+    sortableFields: ['createdAt'],                // ?sort=
+});</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+                <p>Fields not named in <code>filterableFields</code> / <code>sortableFields</code> return
+                    <code>400</code>. This matters because a filterable field is readable even when it is
+                    excluded from the response: a client can binary-search a password hash or reset token from
+                    the result counts alone.</p>
+
+                <div class="callout callout-warning">
+                    <p><strong>Defaults since 3.0:</strong> search terms are regex-escaped, unpaginated reads
+                        are capped at 100 documents, uploads are stored with a <code>private</code> ACL and a
+                        content type derived from the file's bytes rather than the client's header, and
+                        <code>5xx</code> responses no longer echo internal error messages. See
+                        <a href="https://github.com/ornate-source/controllerSets/blob/main/MIGRATION.md">MIGRATION.md</a>
+                        to upgrade from 2.x.</p>
                 </div>
             </section>
 
@@ -126,14 +179,43 @@ app.use(errorHandler);</code></pre>
                 </div>
 
                 <h3>Standardized Error Response</h3>
-                <p>All errors caught by this middleware will return a consistent 400 or 500 status code with the
-                    following body:</p>
+                <p>All errors caught by this middleware return a consistent body:</p>
                 <div class="code-block" data-lang="json">
                     <pre><code>{
     "success": false,
-    "error": "Detailed error message here",
+    "error": "Validation Error: name is required",
+    "requestId": "3f9c1e64-...",
     "stack": "... (only visible in development) ..."
 }</code></pre>
+                </div>
+                <div class="callout">
+                    <p><strong>Client-facing messages are deliberate.</strong> Validation, cast, duplicate-key
+                        and upload errors return a specific message. Anything else returns a generic
+                        <code>"Internal Server Error"</code> &mdash; driver and SDK messages routinely contain
+                        connection strings, hostnames and bucket names. Use the <code>requestId</code> to find
+                        the full error in your server logs.</p>
+                </div>
+
+                <h3>Status Codes</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Condition</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Schema validation failure</td><td><code>400</code></td></tr>
+                            <tr><td>Malformed ObjectId or cast error</td><td><code>400</code></td></tr>
+                            <tr><td>Non-filterable / non-sortable field requested</td><td><code>400</code></td></tr>
+                            <tr><td>Body contains no writable fields</td><td><code>400</code></td></tr>
+                            <tr><td>Disallowed or unrecognised upload type</td><td><code>400</code></td></tr>
+                            <tr><td>Record not found</td><td><code>404</code></td></tr>
+                            <tr><td>Unique constraint violation</td><td><code>409</code></td></tr>
+                            <tr><td>S3 not configured</td><td><code>503</code></td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </section>
 
@@ -142,7 +224,7 @@ app.use(errorHandler);</code></pre>
                 <p>Build a full-featured API for your model in just a few lines of code.</p>
                 <div class="code-block" data-lang="javascript">
                     <pre><code>import express from 'express';
-import { createRouter } from 'express-controller-sets';
+import { createRouter, errorHandler } from 'express-controller-sets';
 import Product from './models/Product.js';
 
 const app = express();
@@ -151,12 +233,21 @@ app.use(express.json());
 // Create all CRUD routes automatically
 const productRouter = createRouter({
     model: Product,
-    orderBy: '-createdAt', // Sort by newest
-    search: ['name', 'category.name'], // Enable ?search= or ?s= for multi-field search (including relational)
-    query: ['category']    // Enable ?category= filtering
+    orderBy: '-createdAt',              // Sort by newest
+    search: ['name', 'category.name'],  // ?search= / ?s=, including relational fields
+    query: ['category'],                // Enable ?category= filtering
+
+    // Fields a client may write. Without this, every field your schema
+    // defines is writable through POST and PATCH.
+    allowedFields: ['name', 'price', 'category', 'description'],
+
+    // Fields usable with ?compareField= / ?rangeField= and ?sort=
+    filterableFields: ['price', 'category'],
+    sortableFields: ['price', 'createdAt'],
 });
 
-app.use('/api/products', productRouter);</code></pre>
+app.use('/api/products', productRouter);
+app.use(errorHandler);</code></pre>
                     <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
                 </div>
             </section>
@@ -206,6 +297,61 @@ app.use('/api/products', productRouter);</code></pre>
                                 <td>Function</td>
                                 <td>An optional hook <code>(req, res)</code> that returns <code>{ populates, selects }</code> to conditionally modify how data is populated or selected on all GET operations.</td>
                             </tr>
+                            <tr>
+                                <td><code>allowedFields</code></td>
+                                <td>Array&lt;String&gt; | Object</td>
+                                <td><strong>Security.</strong> Fields a client may write via <code>POST</code>/<code>PATCH</code>. Accepts a flat array, or <code>{ create, update }</code> for per-verb control. <em>If omitted, every field your schema defines is writable.</em></td>
+                            </tr>
+                            <tr>
+                                <td><code>blockedFields</code></td>
+                                <td>Array&lt;String&gt; | Object</td>
+                                <td><strong>Security.</strong> Fields a client may never write. Applied after <code>allowedFields</code>. <code>_id</code>, <code>__v</code>, <code>createdAt</code> and <code>updatedAt</code> are always blocked.</td>
+                            </tr>
+                            <tr>
+                                <td><code>filterableFields</code></td>
+                                <td>Array&lt;String&gt;</td>
+                                <td><strong>Security.</strong> Fields usable with <code>?compareField=</code> and <code>?rangeField=</code>. Defaults to <code>query</code>. Anything else returns <code>400</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>sortableFields</code></td>
+                                <td>Array&lt;String&gt;</td>
+                                <td><strong>Security.</strong> Fields usable with <code>?sort=</code>. Defaults to <code>query</code> plus the <code>orderBy</code> field.</td>
+                            </tr>
+                            <tr>
+                                <td><code>maxLimit</code></td>
+                                <td>Number</td>
+                                <td>Hard cap on documents returned, paginated or not. Defaults to <code>100</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>allowRawRegex</code></td>
+                                <td>Boolean</td>
+                                <td>Pass search terms to MongoDB unescaped. Unsafe for untrusted callers &mdash; a crafted pattern can stall the database. Defaults to <code>false</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>maxSearchLength</code></td>
+                                <td>Number</td>
+                                <td>Maximum accepted length of a search term. Defaults to <code>128</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>lean</code></td>
+                                <td>Boolean</td>
+                                <td>Return plain objects, bypassing schema <code>toJSON</code> transforms. Faster, but any field you strip in a transform will reappear. Defaults to <code>false</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>strictAfterCreate</code></td>
+                                <td>Boolean</td>
+                                <td>Propagate <code>runAfterCreate</code> failures instead of logging and swallowing them. Defaults to <code>false</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>legacyMode</code></td>
+                                <td>Boolean</td>
+                                <td>Restores 2.x behaviour: no field gating, raw regex, unbounded reads. A migration bridge only &mdash; it re-enables known vulnerabilities.</td>
+                            </tr>
+                            <tr>
+                                <td><code>logger</code></td>
+                                <td>Object</td>
+                                <td>Custom logger exposing <code>warn</code> / <code>error</code> / <code>debug</code>. Defaults to the console.</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -214,16 +360,17 @@ app.use('/api/products', productRouter);</code></pre>
                     <pre><code>import { ControllerSets } from 'express-controller-sets';
 import Product from '../models/Product.js';
 
-const productController = new ControllerSets(
-    Product,             // 1. model
-    '-createdAt',        // 2. orderBy
-    ['category'],        // 3. query (Filterable fields)
-    ['name', 'tags'],    // 4. search (Searchable fields)
-    async (doc) => {},   // 5. runAfterCreate callback
-    (req, res) => {      // 6. onGet hook
-        return { selects: '-hiddenField' }; 
-    }
-);
+const productController = new ControllerSets({
+    model: Product,
+    orderBy: '-createdAt',
+    query: ['category'],                     // ?category= equality filtering
+    search: ['name', 'tags'],                // ?search= / ?s=
+    allowedFields: ['name', 'tags', 'price', 'category'],
+    filterableFields: ['price', 'category'],
+    sortableFields: ['price', 'createdAt'],
+    runAfterCreate: async (doc) => {},
+    onGet: (req, res) => ({ selects: '-hiddenField' }),
+});
 
 // Use in manual routes
 router.get('/', productController.getAll);
@@ -269,19 +416,64 @@ router.delete('/:id', productController.delete);</code></pre>
                                 <td>The standard Express Next callback.</td>
                             </tr>
                             <tr>
+                                <td><code>options</code></td>
+                                <td>Object</td>
+                                <td>Upload configuration. See the table below.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>Upload Options</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Option</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
                                 <td><code>uploadPath</code></td>
                                 <td>String</td>
-                                <td>The destination folder path inside your S3 bucket (e.g., <code>'uploads/'</code>).</td>
+                                <td>Destination folder inside your bucket. Defaults to <code>'files/'</code>.</td>
                             </tr>
                             <tr>
                                 <td><code>fields</code></td>
                                 <td>Array</td>
-                                <td>Multer field configurations specifying expected files (e.g., <code>[{ name: 'avatar', maxCount: 1 }]</code>).</td>
+                                <td>Multer field configuration, e.g. <code>[{ name: 'avatar', maxCount: 1 }]</code>. Add <code>formatToUrlObject: true</code> to store <code>{ url }</code> instead of a bare string.</td>
                             </tr>
                             <tr>
-                                <td><code>imgOptimizationsDefault</code></td>
+                                <td><code>acl</code></td>
                                 <td>String</td>
-                                <td>(Optional) The fallback image compression level (<code>'low'</code>, <code>'medium'</code>, <code>'high'</code>).</td>
+                                <td><strong>Security.</strong> Object ACL. Defaults to <code>'private'</code>. Pass <code>'public-read'</code> only when the objects are genuinely public.</td>
+                            </tr>
+                            <tr>
+                                <td><code>allowedMimeTypes</code></td>
+                                <td>Array&lt;String&gt;</td>
+                                <td><strong>Security.</strong> Types accepted <em>after sniffing the file's bytes</em>. Defaults to common images plus PDF.</td>
+                            </tr>
+                            <tr>
+                                <td><code>maxFileSize</code></td>
+                                <td>Number</td>
+                                <td>Per-file limit in bytes. Defaults to 10&nbsp;MB.</td>
+                            </tr>
+                            <tr>
+                                <td><code>maxFiles</code></td>
+                                <td>Number</td>
+                                <td>Maximum files per request. Defaults to <code>10</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>imgOptimizations</code></td>
+                                <td>String</td>
+                                <td>Compression level (<code>'low'</code>, <code>'medium'</code>, <code>'high'</code>). Server-side only by default.</td>
+                            </tr>
+                            <tr>
+                                <td><code>allowClientImageOptions</code></td>
+                                <td>Boolean</td>
+                                <td>Let clients pick the level via <code>?imgOptimizations=</code>. Each level costs CPU, so an open endpoint is an amplification vector. Defaults to <code>false</code>.</td>
                             </tr>
                         </tbody>
                     </table>
@@ -291,14 +483,32 @@ router.delete('/:id', productController.delete);</code></pre>
                     <pre><code>import { fileUploadMiddleware } from 'express-controller-sets';
 
 router.post('/upload', (req, res, next) => {
-    // Pass the optimization level (e.g., 'medium') as the 6th parameter
-    fileUploadMiddleware(req, res, next, 'uploads/', [
-        { name: 'avatar', maxCount: 1 }
-    ], 'medium');
+    fileUploadMiddleware(req, res, next, {
+        uploadPath: 'uploads/',
+        fields: [{ name: 'avatar', maxCount: 1 }],
+        allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+        acl: 'public-read',        // avatars are genuinely public
+        maxFileSize: 5 * 1024 * 1024,
+        imgOptimizations: 'medium',
+    });
 }, (req, res) => {
     res.json({ url: req.body.avatar });
 });</code></pre>
                     <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <div class="callout callout-warning">
+                    <p><strong>The client's <code>Content-Type</code> is never trusted.</strong> Since 3.0 the
+                        stored content type and file extension are derived from the file's actual bytes. Uploading
+                        HTML or SVG labelled <code>image/png</code> is rejected rather than stored and served as
+                        executable content on your bucket's origin. Types outside a strict inline allowlist are
+                        stored with <code>Content-Disposition: attachment</code>.</p>
+                </div>
+
+                <div class="callout">
+                    <p><strong>Private objects</strong> are not fetchable from the returned URL. Serve them
+                        through presigned URLs or a CDN origin-access identity &mdash; <code>file.key</code> is
+                        populated alongside <code>file.location</code> for exactly this purpose.</p>
                 </div>
 
                 <h3><i data-lucide="image"></i> Image Compression & Optimization</h3>
@@ -350,29 +560,38 @@ const router = createRouterS3upload({
                     <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
                 </div>
 
-                <h4>2. Client-Controlled (Dynamic Override)</h4>
-                <p>Clients can dynamically specify or override the optimization level per-request by passing the
-                    <code>imgOptimizations</code> parameter. This parameter can be passed in the <strong>query
-                        string</strong>, <strong>multipart form-data fields</strong>, or <strong>headers</strong>
-                    (<code>imgOptimizations</code> or <code>x-img-optimizations</code>):</p>
+                <h4>2. Client-Controlled (Opt-In)</h4>
+                <div class="callout callout-warning">
+                    <p><strong>Changed in 3.0.</strong> Client-supplied optimization levels are now
+                        <strong>ignored by default</strong>. Each level runs up to seven sequential re-encodes of
+                        a multi-megabyte buffer, so an endpoint where anyone can request <code>high</code> is a
+                        CPU-amplification vector. Your server-side setting always wins unless you opt in.</p>
+                </div>
+                <p>To accept a per-request level, enable it explicitly. Values are still allowlisted, so an
+                    unrecognised level falls back to your configured default:</p>
                 <div class="code-block" data-lang="javascript">
-                    <pre><code>// Dynamic query parameter override
-fetch('/api/users?imgOptimizations=high', {
-    method: 'POST',
-    body: formData
-});</code></pre>
+                    <pre><code>createRouterS3upload({
+    model: User,
+    path: 'avatars/',
+    imgOptimizations: 'medium',                     // server default
+    upload: { allowClientImageOptions: true },      // allow per-request override
+});
+
+// Client may now request a level via query string or the
+// x-img-optimizations header:
+fetch('/api/users?imgOptimizations=high', { method: 'POST', body: formData });</code></pre>
                     <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
                 </div>
 
-                <h4>3. Bypassing / Ignoring Optimizations</h4>
-                <p>If you have set a route-level default (e.g., <code>'medium'</code>) but want to allow certain uploads to bypass compression entirely, clients can explicitly pass <code>none</code> or <code>false</code> as the <code>imgOptimizations</code> parameter. This guarantees the original file is uploaded untouched:</p>
-                <div class="code-block" data-lang="javascript">
-                    <pre><code>// Ignore optimizations for this specific upload
-fetch('/api/users?imgOptimizations=none', {
-    method: 'POST',
-    body: formData
-});</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                <h4>3. Skipping Optimization</h4>
+                <p>Omit <code>imgOptimizations</code> entirely and files upload untouched. Formats that cannot be
+                    safely re-encoded &mdash; GIF, SVG, AVIF, HEIC &mdash; always pass through unchanged, even
+                    when a level is configured.</p>
+                <div class="callout">
+                    <p><strong>Fixed in 3.0:</strong> these formats previously fell through to the JPEG encoder,
+                        producing JPEG bytes stored under a <code>.gif</code> key with
+                        <code>Content-Type: image/gif</code>. Animation was lost and the stored object was
+                        corrupt. Extensions are now derived from the bytes actually written.</p>
                 </div>
             </section>
 
@@ -392,7 +611,12 @@ const router = createRouter({
     search: ['name', 'description'],    // Fields to search when ?search=term is used
     runAfterCreate: async (doc) => {},  // Hook executed after document creation
     onGet: (req, res) => { return {} }, // Hook to conditionally apply populate/select
-    middlewares: [authMiddleware]       // Array of middlewares to run before controllers
+    middlewares: [authMiddleware],      // Array of middlewares to run before controllers
+
+    allowedFields: ['name', 'description', 'price', 'category'], // Client-writable
+    filterableFields: ['price', 'category'],  // ?compareField= / ?rangeField=
+    sortableFields: ['price', 'createdAt'],   // ?sort=
+    maxLimit: 100,                            // Cap on documents per response
 });</code></pre>
                     <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
                 </div>
@@ -411,9 +635,17 @@ const router = createRouterS3upload({
     runAfterCreate: async (doc) => {},  // Post-create hook
     onGet: (req, res) => { return {} }, // Conditional populate/select
     middlewares: [authMiddleware],      // Route middlewares
-    path: 'avatars/',                   // S3 folder path for uploads
-    fields: [{ name: 'avatar', maxCount: 1 }], // Multer upload fields
-    imgOptimizations: 'medium'          // Optional image compression default
+
+    allowedFields: ['username', 'email', 'avatar'], // Client-writable fields
+    sortableFields: ['createdAt'],                  // ?sort= allowlist
+
+    path: 'avatars/',                              // S3 folder path
+    fields: [{ name: 'avatar', maxCount: 1 }],     // Multer upload fields
+    imgOptimizations: 'medium',                    // Compression default
+    upload: {
+        acl: 'public-read',                        // Avatars are public
+        allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+    },
 });</code></pre>
                     <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
                 </div>
@@ -556,6 +788,8 @@ const standardRouter = createRouter&lt;IUser&gt;({
     model: UserModel,
     orderBy: '-age',
     search: ['name', 'email'],
+    allowedFields: ['name', 'email', 'age'],
+    sortableFields: ['age', 'createdAt'],
     // 'doc' is strictly typed as IUser
     runAfterCreate: async (doc) => {
         console.log(`New user created: ${doc.name} (${doc.email})`);
@@ -567,7 +801,12 @@ const avatarRouter = createRouterS3upload&lt;IUser&gt;({
     model: UserModel,
     path: 'avatars/',
     fields: [{ name: 'avatar', maxCount: 1 }],
-    imgOptimizations: 'medium'
+    allowedFields: ['avatar'],
+    imgOptimizations: 'medium',
+    upload: {
+        acl: 'public-read',
+        allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+    },
 });
 
 const app = express();
@@ -597,12 +836,12 @@ app.use('/api/avatars', avatarRouter);</code></pre>
                             <tr>
                                 <td><code>orderBy</code></td>
                                 <td><code>String</code></td>
-                                <td>The default sorting field (e.g., <code>'-createdAt'</code>). Clients can override this dynamically using the <code>?sort=field</code> query parameter.</td>
+                                <td>The default sorting field (e.g., <code>'-createdAt'</code>). Clients may override it with <code>?sort=field</code>, but only for fields listed in <code>sortableFields</code>.</td>
                             </tr>
                             <tr>
                                 <td><code>query</code></td>
                                 <td><code>Array&lt;String&gt;</code></td>
-                                <td>An array of field names allowed for automatic filtering. The controller parses these from the query string (e.g., <code>?status=active</code>). It also automatically handles built-in advanced queries like ranges (<code>?rangeField=price&range=10-50</code>) and comparisons (<code>?compareField=age&compareOperator=gte&compareValue=18</code>).</td>
+                                <td>Field names allowed for automatic equality filtering from the query string (e.g., <code>?status=active</code>). Also serves as the default allowlist for ranges (<code>?rangeField=price&range=10-50</code>) and comparisons (<code>?compareField=age&compareOperator=gte&compareValue=18</code>) &mdash; override with <code>filterableFields</code>. Repeated params (<code>?tag=a&tag=b</code>) become an <code>$in</code> match.</td>
                             </tr>
                             <tr>
                                 <td><code>search</code></td>
@@ -712,28 +951,27 @@ app.use('/api/avatars', avatarRouter);</code></pre>
                             </tr>
                             <tr>
                                 <td><code>pageSize</code></td>
-                                <td>Number of items per page (default: 10, max: 100).</td>
+                                <td>Number of items per page. Defaults to <code>50</code>, capped at <code>maxLimit</code> (<code>100</code> by default).</td>
                                 <td><code>?pageSize=50</code></td>
                             </tr>
                             <tr>
                                 <td><code>search</code> / <code>s</code></td>
-                                <td>Global case-insensitive regex search across configured fields. Uniquely supports relational dot-notation (e.g., searching within populated related models automatically).</td>
+                                <td>Global case-insensitive search across configured fields, including relational dot-notation. Terms are matched literally &mdash; regex metacharacters are escaped unless <code>allowRawRegex</code> is set. Capped at <code>maxSearchLength</code> (128) characters.</td>
                                 <td><code>?s=laptop</code></td>
                             </tr>
                             <tr>
                                 <td><code>sort</code></td>
-                                <td>Field to sort by. Prefix with <code>-</code> for descending.</td>
+                                <td>Field to sort by, prefixed with <code>-</code> for descending. Must appear in <code>sortableFields</code>, otherwise returns <code>400</code>.</td>
                                 <td><code>?sort=-price</code></td>
                             </tr>
                             <tr>
                                 <td><code>[fieldName]</code></td>
-                                <td>Direct equality filter for any configured query field.</td>
+                                <td>Direct equality filter for any configured <code>query</code> field. Repeat the parameter for an <code>$in</code> match.</td>
                                 <td><code>?category=65a...</code></td>
                             </tr>
                             <tr>
                                 <td><code>rangeField</code></td>
-                                <td>The numeric field name to apply a range filter on. Works together with
-                                    <code>range</code> parameter.</td>
+                                <td>The numeric field to apply a range filter on, used with <code>range</code>. Must appear in <code>filterableFields</code>, otherwise returns <code>400</code>.</td>
                                 <td><code>?rangeField=price</code></td>
                             </tr>
                             <tr>
@@ -744,8 +982,8 @@ app.use('/api/avatars', avatarRouter);</code></pre>
                             </tr>
                             <tr>
                                 <td><code>compareField</code></td>
-                                <td>The field name to perform a dynamic comparison on (e.g., <code>price</code>,
-                                    <code>age</code>, etc.).</td>
+                                <td>The field to perform a dynamic comparison on. Must appear in
+                                    <code>filterableFields</code>, otherwise returns <code>400</code>.</td>
                                 <td><code>?compareField=price</code></td>
                             </tr>
                             <tr>
@@ -839,7 +1077,7 @@ fetch('/api/users', {
 }).then(res => res.json());</code></pre>
                     <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
                 </div>
-
+            </section>
 
                 <footer class="main-footer">
                     <p>Released under the <a href="../LICENSE" target="_blank">MIT License</a>. &copy; 2024 Sabbir

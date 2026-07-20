@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Test (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 18 is the floor declared in package.json engines.
+        node: [18, 20, 22]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - run: npm ci
+
+      # mongodb-memory-server downloads a server binary on first use; caching it
+      # keeps the integration suite from re-fetching ~77MB on every run.
+      - name: Cache MongoDB binaries
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/mongodb-binaries
+          key: mongodb-binaries-${{ runner.os }}
+
+      - name: Run tests
+        run: npm test
+
+      - name: Typecheck declarations
+        run: npx --yes tsc --noEmit --strict src/index.d.ts
+
+  package:
+    name: Package contents
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      # The published tarball must not carry docs, tests, or stray dotfiles.
+      - name: Verify published file list
+        run: |
+          npm pack --dry-run --json > pack.json
+          node -e "
+            const files = require('./pack.json')[0].files.map(f => f.path);
+            const disallowed = files.filter(f =>
+              f.startsWith('docs/') || f.startsWith('tests/') || f.startsWith('.')
+            );
+            if (disallowed.length) {
+              console.error('Unexpected files in tarball:\n' + disallowed.join('\n'));
+              process.exit(1);
+            }
+            console.log('Tarball contents OK (' + files.length + ' files)');
+          "
+
+      - name: Verify the package imports without side effects
+        run: |
+          node -e "
+            const noise = [];
+            for (const level of ['log', 'warn', 'error']) {
+              const original = console[level];
+              console[level] = (...args) => { noise.push(args.join(' ')); original(...args); };
+            }
+            import('./src/index.js').then(() => {
+              if (noise.length) {
+                console.error('Importing the package produced output:\n' + noise.join('\n'));
+                process.exit(1);
+              }
+              console.log('Import is side-effect free');
+            });
+          "
+
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm audit --audit-level=high

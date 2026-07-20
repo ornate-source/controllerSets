@@ -1,10 +1,15 @@
 {
   "name": "express-controller-sets",
-  "version": "2.3.7",
+  "version": "3.0.0",
   "description": "Unified package for Express.js controller sets, dynamic routing, and S3 file uploads.",
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "type": "module",
+  "files": [
+    "src",
+    "MIGRATION.md",
+    "CHANGELOG.md"
+  ],
   "scripts": {
     "test": "node --test tests/*.test.js"
   },
@@ -21,16 +26,22 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "dependencies": {
+  "optionalDependencies": {
     "sharp": "^0.33.5"
   },
   "peerDependencies": {
     "@aws-sdk/client-s3": "^3.1019.0",
-    "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "mongoose": "^9.3.3",
-    "multer": "^2.1.1",
-    "multer-s3": "^3.0.1"
+    "multer": "^2.1.1"
+  },
+  "peerDependenciesMeta": {
+    "@aws-sdk/client-s3": {
+      "optional": true
+    },
+    "multer": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.1019.0",
@@ -39,9 +50,9 @@
     "@types/node": "^25.3.0",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
+    "mongodb-memory-server": "^11.2.0",
     "mongoose": "^9.3.3",
     "multer": "^2.1.1",
-    "multer-s3": "^3.0.1",
     "sharp": "^0.33.5",
     "typescript": "^5.8.2"
   },
