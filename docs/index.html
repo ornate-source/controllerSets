@@ -10,19 +10,24 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&family=Fraunces:opsz,wght@9..144,400..600&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <link rel="icon"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%233b82f6'/%3E%3Ctext x='50' y='68' font-family='monospace' font-size='54' font-weight='700' fill='white' text-anchor='middle'%3E%7B%7D%3C/text%3E%3C/svg%3E">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
 <body class="dark">
+    <a href="#main-content" class="skip-link">Skip to content</a>
+    <div class="scroll-progress"><div class="scroll-progress-bar" id="scroll-progress-bar"></div></div>
     <div class="app-container">
         <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
+                    <span class="logo-mark" aria-hidden="true">{}</span>
                     <span class="logo-text">ControllerSets</span>
                 </div>
                 <div class="header-actions-sidebar">
@@ -55,9 +60,10 @@
         </aside>
 
         <!-- Main Content -->
-        <main class="content">
+        <main class="content" id="main-content" tabindex="-1">
             <header class="mobile-header">
                 <div class="logo">
+                    <span class="logo-mark" aria-hidden="true">{}</span>
                     <span class="logo-text">ControllerSets</span>
                 </div>
                 <div class="header-actions">
@@ -72,6 +78,7 @@
             </header>
 
             <section id="introduction" class="section">
+                <div class="hero-kicker"><span class="hero-kicker-dot"></span> v3.0 · Documentation</div>
                 <h1>Express Controller Sets</h1>
                 <p class="lead">An advanced, unified toolkit for Express.js that accelerates API development by providing automated CRUD operations, dynamic routing capabilities, and robust Amazon S3 file upload handling out of the box.</p>
                 <div class="badges">
@@ -89,12 +96,12 @@
                 <p>Install the package using your favorite package manager:</p>
                 <div class="code-block" data-lang="bash">
                     <pre><code>npm install express-controller-sets mongoose express</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                    <button class="copy-btn" aria-live="polite"><i data-lucide="copy"></i> Copy</button>
                 </div>
                 <p>Only if you use the S3 upload routes, also install the upload peers:</p>
                 <div class="code-block" data-lang="bash">
                     <pre><code>npm install multer @aws-sdk/client-s3</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                    <button class="copy-btn" aria-live="polite"><i data-lucide="copy"></i> Copy</button>
                 </div>
             </section>
 
@@ -111,7 +118,7 @@
     model: Order,
     middlewares: [requireAuth, requireRole('staff')],
 });</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                    <button class="copy-btn" aria-live="polite"><i data-lucide="copy"></i> Copy</button>
                 </div>
 
                 <h3>2. Declare what clients may write and filter</h3>
@@ -128,7 +135,7 @@
     filterableFields: ['createdAt'],              // ?compareField= / ?rangeField=
     sortableFields: ['createdAt'],                // ?sort=
 });</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                    <button class="copy-btn" aria-live="polite"><i data-lucide="copy"></i> Copy</button>
                 </div>
                 <p>Fields not named in <code>filterableFields</code> / <code>sortableFields</code> return
                     <code>400</code>. This matters because a filterable field is readable even when it is
@@ -155,7 +162,7 @@ S3_SPACES_KEY=your-key
 S3_SPACES_SECRET=your-secret
 S3_BUCKET_NAME=your-bucket
 S3_REGION=us-east-1</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                    <button class="copy-btn" aria-live="polite"><i data-lucide="copy"></i> Copy</button>
                 </div>
             </section>
 
@@ -175,7 +182,7 @@ app.use(express.json());
 
 // MUST BE ADDED LAST: Global JSON Error Handler
 app.use(errorHandler);</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                    <button class="copy-btn" aria-live="polite"><i data-lucide="copy"></i> Copy</button>
                 </div>
 
                 <h3>Standardized Error Response</h3>
@@ -248,7 +255,7 @@ const productRouter = createRouter({
 
 app.use('/api/products', productRouter);
 app.use(errorHandler);</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                    <button class="copy-btn" aria-live="polite"><i data-lucide="copy"></i> Copy</button>
                 </div>
             </section>
 
@@ -378,7 +385,7 @@ router.post('/', productController.create);
 router.get('/:id', productController.getById);
 router.patch('/:id', productController.update);
 router.delete('/:id', productController.delete);</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                    <button class="copy-btn" aria-live="polite"><i data-lucide="copy"></i> Copy</button>
                 </div>
             </section>
 
@@ -494,7 +501,7 @@ router.post('/upload', (req, res, next) => {
 }, (req, res) => {
     res.json({ url: req.body.avatar });
 });</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                    <button class="copy-btn" aria-live="polite"><i data-lucide="copy"></i> Copy</button>
                 </div>
 
                 <div class="callout callout-warning">
@@ -557,7 +564,7 @@ const router = createRouterS3upload({
     fields: [{ name: 'avatar', maxCount: 1 }],
     imgOptimizations: 'medium' // All avatars will be compressed to 60-65% size by default
 });</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                    <button class="copy-btn" aria-live="polite"><i data-lucide="copy"></i> Copy</button>
                 </div>
 
                 <h4>2. Client-Controlled (Opt-In)</h4>
@@ -580,7 +587,7 @@ const router = createRouterS3upload({
 // Client may now request a level via query string or the
 // x-img-optimizations header:
 fetch('/api/users?imgOptimizations=high', { method: 'POST', body: formData });</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                    <button class="copy-btn" aria-live="polite"><i data-lucide="copy"></i> Copy</button>
                 </div>
 
                 <h4>3. Skipping Optimization</h4>
@@ -618,7 +625,7 @@ const router = createRouter({
     sortableFields: ['price', 'createdAt'],   // ?sort=
     maxLimit: 100,                            // Cap on documents per response
 });</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                    <button class="copy-btn" aria-live="polite"><i data-lucide="copy"></i> Copy</button>
                 </div>
 
                 <h3>Router with S3 File Upload</h3>
@@ -647,7 +654,7 @@ const router = createRouterS3upload({
         allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
     },
 });</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                    <button class="copy-btn" aria-live="polite"><i data-lucide="copy"></i> Copy</button>
                 </div>
 
                 <h3>Registering the Router</h3>
@@ -660,7 +667,7 @@ const app = express();
 
 app.use(express.json());
 app.use('/api/products', productRouter);</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                    <button class="copy-btn" aria-live="polite"><i data-lucide="copy"></i> Copy</button>
                 </div>
             </section>
 
@@ -681,7 +688,7 @@ app.use('/api/products', productRouter);</code></pre>
         selects,    // string &mdash; passed to .select()
     };
 }</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                    <button class="copy-btn" aria-live="polite"><i data-lucide="copy"></i> Copy</button>
                 </div>
 
                 <h3>Simple Demo</h3>
@@ -704,7 +711,7 @@ const productRouter = createRouter({
         };
     }
 });</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                    <button class="copy-btn" aria-live="polite"><i data-lucide="copy"></i> Copy</button>
                 </div>
 
                 <h3>Complex Demo</h3>
@@ -732,7 +739,7 @@ const productRouter = createRouter({
         return { populates, selects };
     }
 });</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                    <button class="copy-btn" aria-live="polite"><i data-lucide="copy"></i> Copy</button>
                 </div>
 
                 <h3>Advanced Demo (Modular Reuse)</h3>
@@ -750,7 +757,7 @@ const productRouter = createRouter({ model: Product, onGet: populateUsers });
 
 // routes/orders.js &mdash; same hook, zero duplication
 const orderRouter = createRouter({ model: Order, onGet: populateUsers });</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                    <button class="copy-btn" aria-live="polite"><i data-lucide="copy"></i> Copy</button>
                 </div>
             </section>
 
@@ -812,7 +819,7 @@ const avatarRouter = createRouterS3upload&lt;IUser&gt;({
 const app = express();
 app.use('/api/users', standardRouter);
 app.use('/api/avatars', avatarRouter);</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                    <button class="copy-btn" aria-live="polite"><i data-lucide="copy"></i> Copy</button>
                 </div>
             </section>
 
@@ -893,37 +900,27 @@ app.use('/api/avatars', avatarRouter);</code></pre>
                         </thead>
                         <tbody>
                             <tr>
-                                <td><span class="badge"
-                                        style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: none;">GET</span>
-                                </td>
+                                <td><span class="badge badge-get">GET</span></td>
                                 <td><code>/</code></td>
                                 <td>List records with support for pagination, search, and custom filters.</td>
                             </tr>
                             <tr>
-                                <td><span class="badge"
-                                        style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: none;">POST</span>
-                                </td>
+                                <td><span class="badge badge-post">POST</span></td>
                                 <td><code>/</code></td>
                                 <td>Create a new record. Supports multipart file uploads on S3 routers.</td>
                             </tr>
                             <tr>
-                                <td><span class="badge"
-                                        style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: none;">GET</span>
-                                </td>
+                                <td><span class="badge badge-get">GET</span></td>
                                 <td><code>/:id</code></td>
                                 <td>Retrieve a single record by its 24-character hex ID.</td>
                             </tr>
                             <tr>
-                                <td><span class="badge"
-                                        style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: none;">PATCH</span>
-                                </td>
+                                <td><span class="badge badge-patch">PATCH</span></td>
                                 <td><code>/:id</code></td>
                                 <td>Update an existing record partially. Supports file updates on S3 routers.</td>
                             </tr>
                             <tr>
-                                <td><span class="badge"
-                                        style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: none;">DELETE</span>
-                                </td>
+                                <td><span class="badge badge-delete">DELETE</span></td>
                                 <td><code>/:id</code></td>
                                 <td>Permanently remove a record from the database.</td>
                             </tr>
@@ -1014,7 +1011,7 @@ fetch('/api/products?page=2&pageSize=20&sort=-price&status=active')
         console.log(data.data); // Array of items
         console.log(data.pagination); // { total, page, pageSize, totalPage }
     });</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                    <button class="copy-btn" aria-live="polite"><i data-lucide="copy"></i> Copy</button>
                 </div>
 
                 <h4>2. Filtering by Numeric Range</h4>
@@ -1030,7 +1027,7 @@ fetch('/api/products?rangeField=price&range=10-100')
 fetch('/api/users?rangeField=age&range=18-')
     .then(res => res.json())
     .then(data => console.log(data.data));</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                    <button class="copy-btn" aria-live="polite"><i data-lucide="copy"></i> Copy</button>
                 </div>
 
                 <h4>3. Dynamic Field Comparison</h4>
@@ -1047,7 +1044,7 @@ fetch('/api/products?compareField=price&compareValue=50&compareOperator=gt')
 fetch('/api/users?status=active&compareField=age&compareValue=30&compareOperator=lte')
     .then(res => res.json())
     .then(data => console.log(data.data));</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                    <button class="copy-btn" aria-live="polite"><i data-lucide="copy"></i> Copy</button>
                 </div>
 
                 <h4>4. Global and Relational Search</h4>
@@ -1058,7 +1055,7 @@ fetch('/api/users?status=active&compareField=age&compareValue=30&compareOperator
 fetch('/api/products?s=wireless')
     .then(res => res.json())
     .then(data => console.log(data.data));</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                    <button class="copy-btn" aria-live="polite"><i data-lucide="copy"></i> Copy</button>
                 </div>
 
                 <h4>5. Creating a Record with File Upload</h4>
@@ -1075,7 +1072,7 @@ fetch('/api/users', {
     // Note: Don't set Content-Type header manually, 
     // fetch will set it for multipart/form-data with boundary automatically.
 }).then(res => res.json());</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                    <button class="copy-btn" aria-live="polite"><i data-lucide="copy"></i> Copy</button>
                 </div>
             </section>
 
@@ -1085,6 +1082,10 @@ fetch('/api/users', {
                 </footer>
         </main>
     </div>
+
+    <button id="back-to-top" class="back-to-top" aria-label="Back to top">
+        <i data-lucide="arrow-up"></i>
+    </button>
 
     <script>
         // Initialize Lucide icons on load and after DOM content is ready
@@ -1178,21 +1179,72 @@ fetch('/api/users', {
             });
         });
 
-        window.addEventListener('scroll', () => {
-            let current = '';
-            sections.forEach(section => {
-                const sectionTop = section.offsetTop;
-                if (pageYOffset >= (sectionTop - 150)) {
-                    current = section.getAttribute('id');
+        // Active nav tracking via IntersectionObserver (robust against
+        // sections of varying height, unlike a fixed scroll-offset check)
+        const setActiveLink = (id) => {
+            navLinks.forEach(link => {
+                const isActive = id && link.getAttribute('href') === `#${id}`;
+                link.classList.toggle('active', isActive);
+                if (isActive) {
+                    link.setAttribute('aria-current', 'page');
+                } else {
+                    link.removeAttribute('aria-current');
                 }
             });
-            navLinks.forEach(link => {
-                link.classList.remove('active');
-                if (current && link.getAttribute('href') === `#${current}`) {
-                    link.classList.add('active');
-                }
+        };
+
+        const sectionObserver = new IntersectionObserver((entries) => {
+            const visible = entries
+                .filter(entry => entry.isIntersecting)
+                .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+            if (visible.length > 0) {
+                setActiveLink(visible[0].target.getAttribute('id'));
+            }
+        }, { rootMargin: '-15% 0px -70% 0px', threshold: 0 });
+
+        sections.forEach(section => sectionObserver.observe(section));
+
+        // Reading progress bar
+        const progressBar = document.getElementById('scroll-progress-bar');
+        const backToTopBtn = document.getElementById('back-to-top');
+
+        window.addEventListener('scroll', () => {
+            const scrollTop = window.scrollY;
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+            if (progressBar) progressBar.style.width = `${progress}%`;
+            if (backToTopBtn) backToTopBtn.classList.toggle('visible', scrollTop > 600);
+        }, { passive: true });
+
+        if (backToTopBtn) {
+            backToTopBtn.addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+
+        // Auto-label table cells from their headers so tables can be
+        // reflowed into stacked cards on narrow screens (see style.css)
+        document.querySelectorAll('.table-container table').forEach(table => {
+            const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+            table.querySelectorAll('tbody tr').forEach(row => {
+                Array.from(row.children).forEach((cell, i) => {
+                    if (headers[i]) cell.setAttribute('data-label', headers[i]);
+                });
             });
         });
+
+        // Fade content blocks up into place as they enter the viewport
+        const revealTargets = document.querySelectorAll('.code-block, .table-container, .callout, .badges');
+        revealTargets.forEach(el => el.classList.add('reveal'));
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+        revealTargets.forEach(el => revealObserver.observe(el));
     </script>
 </body>
 
