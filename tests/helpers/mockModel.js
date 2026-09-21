@@ -84,6 +84,8 @@ export const createMockModel = ({ modelName = "Mock", refPaths = {} } = {}) => {
         lastLean: false,
         lastUpdate: null,
         lastMaxTimeMS: null,
+        lastAllowDiskUse: false,
+        lastBatchSize: null,
         counts: { exact: 0, estimated: 0 },
     };
 
@@ -120,6 +122,14 @@ export const createMockModel = ({ modelName = "Mock", refPaths = {} } = {}) => {
             maxTimeMS(value) {
                 state.maxTimeMS = value;
                 calls.lastMaxTimeMS = value;
+                return query;
+            },
+            allowDiskUse(value) {
+                calls.lastAllowDiskUse = value;
+                return query;
+            },
+            batchSize(value) {
+                calls.lastBatchSize = value;
                 return query;
             },
             then(resolve, reject) {

@@ -9,6 +9,11 @@ export const DEFAULT_PAGE_SIZE = 50;
 export const DEFAULT_MAX_SEARCH_LENGTH = 128;
 
 const COUNT_STRATEGIES = ["exact", "estimated", "none"];
+const PAGINATION_MODES = ["offset", "cursor"];
+
+// An unbounded `$in` from a relational search is the one query whose size grows
+// with the collection rather than with the page.
+const DEFAULT_MAX_RELATION_MATCHES = 1000;
 
 export const defaultLogger = {
     warn: (...args) => console.warn(...args),
@@ -87,6 +92,13 @@ export function buildConfig(options) {
         defaultSort: orderBy && orderBy !== "none" ? Object.freeze(sortSpecFor(orderBy)) : null,
         maxLimit: positiveIntOption(options.maxLimit, DEFAULT_MAX_LIMIT),
         maxPage: positiveIntOption(options.maxPage, null),
+        pagination: PAGINATION_MODES.includes(options.pagination) ? options.pagination : "offset",
+        maxRelationMatches: positiveIntOption(
+            options.maxRelationMatches,
+            DEFAULT_MAX_RELATION_MATCHES,
+        ),
+        allowDiskUse: options.allowDiskUse === true,
+        batchSize: positiveIntOption(options.batchSize, null),
         defaultPageSize: positiveIntOption(options.defaultPageSize, DEFAULT_PAGE_SIZE),
         maxSearchLength: positiveIntOption(options.maxSearchLength, DEFAULT_MAX_SEARCH_LENGTH),
         allowRawRegex: options.allowRawRegex === true,

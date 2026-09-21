@@ -7,12 +7,26 @@ const bounded = (query, config) => {
     return typeof query?.maxTimeMS === "function" ? query.maxTimeMS(config.maxTimeMS) : query;
 };
 
+// Applied only when configured, and only when the driver exposes them, so a
+// custom model double is never handed a method it does not implement.
+const tuned = (query, config) => {
+    let shapedQuery = query;
+    // Sorts above 100MB fail outright without this; on a large collection that
+    // is the difference between a slow page and no page.
+    if (config.allowDiskUse && typeof shapedQuery.allowDiskUse === "function") {
+        shapedQuery = shapedQuery.allowDiskUse(true);
+    }
+    if (config.batchSize && typeof shapedQuery.batchSize === "function") {
+        shapedQuery = shapedQuery.batchSize(config.batchSize);
+    }
+    return bounded(shapedQuery, config);
+};
+
 // `populate` and `select` run even when empty: Mongoose treats those as no-ops,
 // and skipping them would make the call sequence depend on what `onGet` returned.
 const shaped = (query, { populates = [], selects = "" }, config) => {
     const withOptions = query.populate(populates).select(selects);
-    const leaned = config.lean ? withOptions.lean() : withOptions;
-    return bounded(leaned, config);
+    return tuned(config.lean ? withOptions.lean() : withOptions, config);
 };
 
 export const validateObjectId = (id) => {
@@ -87,6 +101,34 @@ export const findPage = async ({ filters, sort, page, pageSize, shape, config })
             totalRecords,
         },
     };
+};
+
+// The anchor a cursor points at, read back for its sort values. One primary-key
+// lookup, which is what lets the cursor itself stay tamper-proof.
+export const findCursorAnchor = async ({ id, sortKeys, config }) => {
+    const projection = Object.fromEntries(sortKeys.map((key) => [key, 1]));
+    const anchor = await bounded(
+        config.model.findById(id).select(projection).lean(),
+        config,
+    );
+
+    if (!anchor) {
+        throw new HttpError(
+            400,
+            "The record this cursor points at no longer exists. Start the scan again.",
+        );
+    }
+    return anchor;
+};
+
+// One keyset page. No `skip` and no count, so the cost is the same on page one
+// and page one million.
+export const findKeysetPage = async ({ filters, sort, pageSize, shape, config }) => {
+    const query = config.model.find(filters).sort(sort).limit(pageSize + 1);
+    const documents = await shaped(query, shape, config);
+
+    const hasMore = documents.length > pageSize;
+    return { documents: hasMore ? documents.slice(0, pageSize) : documents, hasMore };
 };
 
 export const insertOne = ({ payload, config }) => config.model.create(payload);

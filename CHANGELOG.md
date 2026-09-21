@@ -56,6 +56,29 @@ leaves every public behaviour as it was in 3.0.0.
   `ValidationError`, by Mongoose validation failures, and by duplicate-key conflicts. Clients
   that do not look for it see exactly the shape they always have, and it is never sent on a 5xx.
 
+### Added — cursor pagination, for collections that keep growing
+
+- **`pagination: 'cursor'`** switches a list endpoint from offset to keyset paging. `?page=N`
+  makes the database walk every skipped index entry, so page 4,000 costs 4,000 pages' worth of
+  work; a keyset page is one index seek at any depth, and runs no count. Measured on 200,000
+  documents: **page 4,000 takes 47.8 ms by offset and 0.9 ms by cursor**, and the gap widens
+  linearly as the collection grows.
+  - The first page takes no parameter. Responses carry
+    `pagination: { pageSize, hasMore, nextCursor }`; pass `nextCursor` back as `?cursor=` (or
+    `"cursor"` in a QUERY body) for the next one.
+  - The sort gains `_id` as a tiebreaker automatically, so documents sharing a sort value are
+    neither skipped nor repeated at a page boundary — the failure that makes hand-rolled
+    keyset pagination quietly lose records.
+  - A cursor carries only the anchor document's `_id`; the server re-reads that record for its
+    sort values. A client therefore cannot craft a cursor that range-filters a field it was
+    never allowed to filter on.
+  - `?page=` in cursor mode is a `400`, as is `?cursor=` in offset mode: silently serving the
+    other kind of page would corrupt a scan.
+- **`maxRelationMatches`** (default 1000) caps the ids a relational search pulls from a
+  referenced collection. That `$in` grew with the collection rather than with the page, which
+  made `search: ['author.name']` the slowest thing in the library at scale.
+- **`allowDiskUse`** and **`batchSize`** for large sorts and large result sets.
+
 ### Added — read cost controls
 
 - **`countStrategy`**: `'exact'` (default, unchanged), `'estimated'` (O(1) collection
@@ -80,14 +103,21 @@ leaves every public behaviour as it was in 3.0.0.
   ordinary field names. All three are now refused wherever a key is read: request bodies,
   nested values, QUERY filters, and the return value of a `validate` hook.
 
-### Changed — internals
+### Changed — structure
 
-- `ControllerSets` is now composed from single-purpose modules under `src/core/` — `config`
-  (options in, one frozen config out), `readParams` (request → filters, sort, page window;
-  pure), `search`, `write` (field policy, then your validator), `dataAccess` (every Mongoose
-  call, with the caps applied) and `respond` (the envelope). Each handler is a short
-  composition of those steps, so a rule lives in one place and a new endpoint cannot skip it.
-- No public behaviour changed: the same options, routes, responses and error messages. The
+- `ControllerSets` is now the surface only: one method per route, each delegating to its own
+  module. The logic lives in `src/core/` — `getAll`, `query`, `get`, `create`, `update`,
+  `delete` for the routes; `list` for the retrieval both reads share; `config`, `readParams`,
+  `search`, `write`, `dataAccess`, `cursor`, `respond`, `handler` beneath them.
+- `GET /` and `QUERY /` now run the same `core/list.js`, so the two cannot diverge in what
+  they return, what they cap, or what they cost.
+- `core/index.js` is the barrel everything outside `core/` imports from. Modules inside it
+  import each other directly, so the dependency graph stays acyclic and readable.
+- **`getById` is now `get`, and `queryAll` is now `query`.** Both old names remain as
+  deprecated aliases, so existing routers keep working.
+- The `controller.query` property — the array of names passed as the `query` option — is gone,
+  because the name now belongs to the QUERY handler. Read it from `controller.config.query`.
+- No behaviour changed otherwise: the same options, routes, responses and error messages. The
   full suite that covered 3.0 passes unmodified.
 
 ### Behaviour worth knowing

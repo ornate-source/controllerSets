@@ -24,14 +24,26 @@ const clauseFor = async (field, term, config) => {
 
     try {
         const refModel = mongoose.model(refName);
+        // Capped: the `$in` this builds grows with the referenced collection, not
+        // with the page, so an uncapped match is the one clause that gets slower
+        // as the data grows. Beyond the cap the search narrows rather than stalls.
         const matched = await refModel
             .find({ [childPath]: regexFor(term, config) })
             .select("_id")
+            .limit(config.maxRelationMatches)
             .lean();
 
-        return matched.length > 0
-            ? { [relation]: { $in: matched.map((doc) => doc._id) } }
-            : null;
+        if (matched.length === 0) return null;
+
+        if (matched.length === config.maxRelationMatches) {
+            config.logger.warn(
+                `[ControllerSets] Relational search on '${field}' hit the ` +
+                    `${config.maxRelationMatches}-match cap; results are partial. ` +
+                    `Raise 'maxRelationMatches' or search a narrower term.`,
+            );
+        }
+
+        return { [relation]: { $in: matched.map((doc) => doc._id) } };
     } catch (err) {
         config.logger.error(
             `[ControllerSets] Failed to resolve relational search for '${field}': ${err.message}`,

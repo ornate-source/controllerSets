@@ -75,6 +75,17 @@ export type ValidatePolicy<T extends Document = any> =
  */
 export type CountStrategy = "exact" | "estimated" | "none";
 
+/**
+ * How a list endpoint paginates.
+ *
+ * - `offset` — `?page=` / `?pageSize=`, with totals. Familiar, but the database
+ *   walks every skipped record, so deep pages get slower as the data grows.
+ * - `cursor` — keyset pagination. Each page is one index seek whatever its
+ *   depth, and no count runs. The first page takes no parameter; follow
+ *   `pagination.nextCursor` from there.
+ */
+export type PaginationMode = "offset" | "cursor";
+
 /** A value a client may put in a QUERY filter. */
 export type FilterScalar = string | number | boolean | null;
 
@@ -110,6 +121,8 @@ export interface QueryRequestBody {
     pageSize?: number;
     /** Cap on an unpaginated read, itself capped at `maxLimit`. */
     limit?: number;
+    /** Keyset cursor from a previous response. Only in `pagination: "cursor"` mode. */
+    cursor?: string;
 }
 
 /** The runtime mapping from a QUERY filter operator to its MongoDB operator. */
@@ -154,6 +167,17 @@ export interface ControllerOptions<T extends Document = any> {
     maxPage?: number;
     /** How a paginated read counts matches. Default `"exact"`. */
     countStrategy?: CountStrategy;
+    /** Offset or keyset pagination. Default `"offset"`. */
+    pagination?: PaginationMode;
+    /**
+     * Cap on ids pulled from a referenced collection by a relational search.
+     * Default 1000 — that `$in` grows with the collection, not with the page.
+     */
+    maxRelationMatches?: number;
+    /** Let MongoDB sort on disk. Sorts above 100MB fail outright without it. */
+    allowDiskUse?: boolean;
+    /** Driver batch size, for walking large result sets in fewer round trips. */
+    batchSize?: number;
     /**
      * Server-side time limit per query, in milliseconds. Off by default.
      * The only bound on a query that is slow in the database rather than here.
@@ -175,7 +199,8 @@ export interface ControllerOptions<T extends Document = any> {
 /** Pagination block returned with a paginated read. */
 export type Pagination =
     | { currentPage: number; pageSize: number; totalPages: number; totalRecords: number }
-    | { currentPage: number; pageSize: number; hasMore: boolean };
+    | { currentPage: number; pageSize: number; hasMore: boolean }
+    | { pageSize: number; hasMore: boolean; nextCursor: string | null };
 
 /**
  * ControllerSets - Express CRUD logic for Mongoose models.
@@ -199,13 +224,22 @@ export class ControllerSets<T extends Document = any> {
         populates: string | PopulateOptions | (string | PopulateOptions)[];
         selects: string;
     }>;
+    /** GET / */
     getAll(req: Request, res: Response): Promise<Response | void>;
-    /** HTTP QUERY handler: a read whose parameters arrive in a JSON body. */
-    queryAll(req: Request, res: Response): Promise<Response | void>;
-    getById(req: Request, res: Response): Promise<Response | void>;
+    /** QUERY / — a read whose parameters arrive in a JSON body. */
+    query(req: Request, res: Response): Promise<Response | void>;
+    /** GET /:id */
+    get(req: Request, res: Response): Promise<Response | void>;
+    /** POST / */
     create(req: Request, res: Response): Promise<Response | void>;
+    /** PATCH /:id */
     update(req: Request, res: Response): Promise<Response | void>;
+    /** DELETE /:id */
     delete(req: Request, res: Response): Promise<Response | void>;
+    /** @deprecated Renamed to `get`. */
+    getById(req: Request, res: Response): Promise<Response | void>;
+    /** @deprecated Renamed to `query`. */
+    queryAll(req: Request, res: Response): Promise<Response | void>;
 }
 
 export interface UploadField {

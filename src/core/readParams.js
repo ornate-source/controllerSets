@@ -8,11 +8,25 @@ import {
 // Pure request → filters, sort, page window. No database, no response, no `this`,
 // so GET and QUERY share one set of rules.
 
-export const QUERY_BODY_KEYS = ["filter", "search", "sort", "page", "pageSize", "limit"];
+export const QUERY_BODY_KEYS = [
+    "filter",
+    "search",
+    "sort",
+    "page",
+    "pageSize",
+    "limit",
+    "cursor",
+];
 
 export const MAX_SORT_KEYS = 5;
 
 const COMPARE_OPERATORS = { gt: "$gt", gte: "$gte", lt: "$lt", lte: "$lte", ne: "$ne", eq: "$eq" };
+
+const OFFSET_IN_CURSOR_MODE =
+    "This endpoint paginates by cursor. Omit 'page' for the first page, then " +
+    "follow 'pagination.nextCursor'.";
+const CURSOR_IN_OFFSET_MODE =
+    "This endpoint paginates by page. Use 'page' and 'pageSize'.";
 
 export const sortSpecFor = (field) => {
     const descending = field.startsWith("-");
@@ -111,9 +125,24 @@ export const sortFromQueryString = (query, config) => {
     return spec;
 };
 
+// `pagination: 'cursor'` swaps offset paging for keyset paging wholesale: the
+// first page needs no parameter, and `?page=` is refused rather than silently
+// served, since the two cannot be mixed within one scan.
 export const pagingFromQueryString = (query, config) => {
+    if (config.pagination === "cursor") {
+        if (query.page) throw new HttpError(400, OFFSET_IN_CURSOR_MODE);
+        return {
+            mode: "cursor",
+            cursor: query.cursor,
+            pageSize: parseInt(query.pageSize, 10) || config.defaultPageSize,
+        };
+    }
+
+    if (query.cursor) throw new HttpError(400, CURSOR_IN_OFFSET_MODE);
     if (!query.page) return null;
+
     return {
+        mode: "offset",
         page: parseInt(query.page, 10) || 1,
         pageSize: parseInt(query.pageSize, 10) || config.defaultPageSize,
     };
@@ -187,7 +216,15 @@ export const parseQueryBody = (req, config) => {
         throw new HttpError(400, "Use either 'limit' or 'page'/'pageSize', not both.");
     }
 
-    return { filter: body.filter, search: body.search, sort: body.sort, page, pageSize, limit };
+    return {
+        filter: body.filter,
+        search: body.search,
+        sort: body.sort,
+        cursor: body.cursor,
+        page,
+        pageSize,
+        limit,
+    };
 };
 
 export const filtersFromBody = (filter, config) => {
@@ -231,6 +268,21 @@ export const sortFromBody = (sort, config) => {
 };
 
 export const pagingFromBody = (body, config) => {
+    if (config.pagination === "cursor") {
+        if (body.page !== undefined) throw new HttpError(400, OFFSET_IN_CURSOR_MODE);
+        return {
+            mode: "cursor",
+            cursor: body.cursor,
+            pageSize: body.pageSize ?? config.defaultPageSize,
+        };
+    }
+
+    if (body.cursor !== undefined) throw new HttpError(400, CURSOR_IN_OFFSET_MODE);
     if (body.page === undefined && body.pageSize === undefined) return null;
-    return { page: body.page ?? 1, pageSize: body.pageSize ?? config.defaultPageSize };
+
+    return {
+        mode: "offset",
+        page: body.page ?? 1,
+        pageSize: body.pageSize ?? config.defaultPageSize,
+    };
 };

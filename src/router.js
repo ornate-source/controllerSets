@@ -35,7 +35,7 @@ const registerQueryRoute = (router, controller, logger) => {
             res.setHeader("Accept-Query", "application/json");
             next();
         });
-        router.query("/", controller.queryAll);
+        router.query("/", controller.query);
         return true;
     }
 
@@ -63,7 +63,7 @@ export const createRouter = (options = {}) => {
     router.get("/", controller.getAll);
     if (enableQuery) registerQueryRoute(router, controller, options.logger);
     router.post("/", controller.create);
-    router.get("/:id", controller.getById);
+    router.get("/:id", controller.get);
     router.patch("/:id", controller.update);
     router.delete("/:id", controller.delete);
 
@@ -95,7 +95,7 @@ export const createRouterS3upload = (options = {}) => {
     // QUERY is a read, so it never runs the upload middleware.
     if (enableQuery) registerQueryRoute(router, controller, options.logger);
     router.post("/", uploadMiddleware, controller.create);
-    router.get("/:id", controller.getById);
+    router.get("/:id", controller.get);
     router.patch("/:id", uploadMiddleware, controller.update);
     router.delete("/:id", controller.delete);
 

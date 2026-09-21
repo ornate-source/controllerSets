@@ -286,12 +286,20 @@ test("Relational search resolves nested paths at full depth", async () => {
         { _id: objectId(11), profile: { name: "Ada" } },
         { _id: objectId(12), profile: { name: "Grace" } },
     ];
-    // Minimal ref model: the controller only calls find().select().lean() on it.
+    // Minimal ref model: the controller calls find().select().limit().lean().
+    let appliedLimit = null;
     const refModel = {
         find: (filters) => {
             const pattern = new RegExp(filters["profile.name"].$regex, "i");
             const matched = authors.filter((a) => pattern.test(a.profile.name));
-            const q = { select: () => q, lean: () => Promise.resolve(matched) };
+            const q = {
+                select: () => q,
+                limit: (value) => {
+                    appliedLimit = value;
+                    return q;
+                },
+                lean: () => Promise.resolve(matched),
+            };
             return q;
         },
     };
@@ -313,6 +321,8 @@ test("Relational search resolves nested paths at full depth", async () => {
             assert.deepStrictEqual(model.calls.lastFilters.$or, [
                 { author: { $in: [objectId(11)] } },
             ]);
+            // The `$in` grows with the referenced collection, so it is capped.
+            assert.strictEqual(appliedLimit, 1000);
         });
     } finally {
         mongoose.model = originalModel;
