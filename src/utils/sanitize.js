@@ -131,3 +131,108 @@ export const pickWritable = (body, rules) => {
     }
     return out;
 };
+
+/**
+ * Operators a client may use inside a QUERY request body.
+ *
+ * The keys are deliberately un-prefixed: a client never writes `$gte`, it writes
+ * `gte`, and this table is the only thing that can turn a word into a Mongo
+ * operator. A body that contains a literal `$` key is therefore never one
+ * operator away from being executed — it fails the lookup and is rejected.
+ */
+export const QUERY_FILTER_OPERATORS = Object.freeze({
+    eq: "$eq",
+    ne: "$ne",
+    gt: "$gt",
+    gte: "$gte",
+    lt: "$lt",
+    lte: "$lte",
+    in: "$in",
+    nin: "$nin",
+});
+
+/** Operators taking a list rather than a single value. */
+const LIST_OPERATORS = new Set(["in", "nin"]);
+
+/** Upper bound on `in` / `nin` list length. An unbounded list is an unbounded query. */
+export const MAX_FILTER_LIST_LENGTH = 100;
+
+const isScalar = (value) =>
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean";
+
+const requireScalar = (value, field, operator) => {
+    if (!isScalar(value)) {
+        throw new HttpError(400, `Operator '${operator}' on '${field}' expects a single value.`);
+    }
+    return value;
+};
+
+const assertScalarList = (value, field, operator) => {
+    if (!Array.isArray(value)) {
+        throw new HttpError(400, `Operator '${operator}' on '${field}' expects a list.`);
+    }
+    if (value.length === 0) {
+        throw new HttpError(400, `Operator '${operator}' on '${field}' expects a non-empty list.`);
+    }
+    if (value.length > MAX_FILTER_LIST_LENGTH) {
+        throw new HttpError(
+            400,
+            `Operator '${operator}' on '${field}' exceeds ${MAX_FILTER_LIST_LENGTH} values.`,
+        );
+    }
+    if (!value.every(isScalar)) {
+        throw new HttpError(400, `Operator '${operator}' on '${field}' expects scalar values.`);
+    }
+    return value;
+};
+
+/**
+ * Translates one entry of a QUERY body's `filter` object into a Mongo clause.
+ *
+ * Accepts a scalar (equality), a list (treated as `in`, matching how repeated
+ * query-string params behave), or a flat object of allowlisted operators.
+ * Anything else — nested objects, functions, `$`-prefixed keys, mixed shapes —
+ * is a 400 rather than something to interpret generously.
+ */
+export const sanitizeStructuredFilter = (value, field) => {
+    if (value === undefined) return undefined;
+
+    if (isScalar(value)) return value;
+
+    if (Array.isArray(value)) {
+        return { $in: assertScalarList(value, field, "in") };
+    }
+
+    if (typeof value !== "object" || value instanceof Date) {
+        throw new HttpError(400, `Invalid value for filter '${field}'.`);
+    }
+
+    const entries = Object.entries(value);
+    if (entries.length === 0) {
+        throw new HttpError(400, `Filter '${field}' has no conditions.`);
+    }
+
+    const clause = {};
+    for (const [operator, operand] of entries) {
+        const mongoOp = Object.hasOwn(QUERY_FILTER_OPERATORS, operator)
+            ? QUERY_FILTER_OPERATORS[operator]
+            : undefined;
+
+        if (!mongoOp) {
+            throw new HttpError(
+                400,
+                `Unknown operator '${operator}' on '${field}'. Allowed: ` +
+                    `${Object.keys(QUERY_FILTER_OPERATORS).join(", ")}.`,
+            );
+        }
+
+        clause[mongoOp] = LIST_OPERATORS.has(operator)
+            ? assertScalarList(operand, field, operator)
+            : requireScalar(operand, field, operator);
+    }
+
+    return clause;
+};

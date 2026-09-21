@@ -35,6 +35,9 @@ const matchValue = (actual, expected) => {
             case "$in":
                 if (!operand.some((item) => String(item) === String(actual))) return false;
                 break;
+            case "$nin":
+                if (operand.some((item) => String(item) === String(actual))) return false;
+                break;
             case "$regex":
                 if (!new RegExp(operand, expected.$options ?? "").test(String(actual ?? "")))
                     return false;

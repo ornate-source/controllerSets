@@ -1908,6 +1908,14 @@ details[open] summary::before {
     border-color: var(--danger-dim);
 }
 
+/* QUERY is a read like GET, but body-borne, so it gets a colour of its own
+   rather than borrowing the GET green. */
+.m-query {
+    color: var(--primary-soft);
+    background: var(--primary-dim);
+    border-color: var(--primary-dim);
+}
+
 /* ---------- Back to top ---------- */
 
 .back-to-top {

@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert";
 import express from "express";
 import mongoose from "mongoose";
-import { createRouter, errorHandler } from "../src/index.js";
+import { createRouter, errorHandler, isQueryMethodSupported } from "../src/index.js";
 import { withServer } from "./helpers/mockModel.js";
 
 /**
@@ -224,6 +224,68 @@ test(
                 assert.strictEqual(body.data.length, 5);
             });
         });
+
+        await t.test(
+            "QUERY runs against a real collection",
+            { skip: isQueryMethodSupported() ? false : "runtime has no QUERY method" },
+            async () => {
+                await User.create([
+                    { name: "q-alpha", email: "q-alpha@example.com", age: 21, tag: "queryset" },
+                    { name: "q-beta", email: "q-beta@example.com", age: 34, tag: "queryset" },
+                    { name: "q-gamma", email: "q-gamma@example.com", age: 47, tag: "queryset" },
+                ]);
+
+                const app = buildApp({
+                    query: ["tag"],
+                    filterableFields: ["tag", "age"],
+                    sortableFields: ["age", "name"],
+                    search: ["name"],
+                });
+
+                const query = (base, body) =>
+                    fetch(`${base}/users`, {
+                        method: "QUERY",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(body),
+                    });
+
+                await withServer(app, async (base) => {
+                    // Operators reach the driver as real operators, and Mongoose casts
+                    // the operands against the schema — including the string "30".
+                    const res = await query(base, {
+                        filter: { tag: "queryset", age: { gte: "30", lte: 50 } },
+                        sort: "-age",
+                    });
+                    const body = await res.json();
+
+                    assert.strictEqual(res.status, 200);
+                    assert.deepStrictEqual(
+                        body.data.map((doc) => doc.name),
+                        ["q-gamma", "q-beta"],
+                    );
+                    // The toJSON transform applies to QUERY exactly as it does to GET.
+                    assert.ok(!JSON.stringify(body).includes("password"));
+
+                    const paged = await query(base, {
+                        filter: { tag: "queryset" },
+                        sort: "name",
+                        page: 2,
+                        pageSize: 2,
+                    });
+                    const pagedBody = await paged.json();
+
+                    assert.strictEqual(pagedBody.pagination.totalRecords, 3);
+                    assert.deepStrictEqual(
+                        pagedBody.data.map((doc) => doc.name),
+                        ["q-gamma"],
+                    );
+
+                    // A field the API never exposed stays unreachable through the body.
+                    const denied = await query(base, { filter: { password: "hunter2" } });
+                    assert.strictEqual(denied.status, 400);
+                });
+            },
+        );
 
         await t.test("update and delete 404 on a valid but absent id", async () => {
             const app = buildApp({ allowedFields: ["name"] });

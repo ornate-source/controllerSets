@@ -7,6 +7,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.1.0] — 2026-09-21
+
+Adds the HTTP **QUERY** method: a read whose parameters travel in a JSON body instead of the
+URL. Nothing else changes — existing routes, responses and options behave exactly as in 3.0.0.
+
+### Added
+
+- **`QUERY /` on every generated router.** QUERY ([RFC 10008](https://www.rfc-editor.org/rfc/rfc10008.html))
+  is safe and idempotent — GET with a body — for filters that are too long for a URL, too
+  structured to flatten into a query string, or too sensitive to leave in proxy and access
+  logs. The response is identical to the equivalent `GET /`.
+- **A structured `filter` body.** Field-to-condition pairs, where a condition is a scalar
+  (equality), a list (`in`), or an object of operators: `eq`, `ne`, `gt`, `gte`, `lt`, `lte`,
+  `in`, `nin`. Operators are written *without* `$` and translated through a fixed table, so a
+  client can never hand MongoDB an operator this library did not author. Fields must appear in
+  `filterableFields` (which defaults to `query`) — and that allowlist is enforced even under
+  `legacyMode`, because QUERY has no 2.x behaviour to stay compatible with.
+- **Multi-key sorting**, which the query string cannot express: `"sort": ["category", "-price"]`,
+  up to five keys, each checked against `sortableFields`.
+- **`limit`** in the body for an unpaginated read, capped at `maxLimit` like everything else,
+  and rejected when combined with paging. `page` / `pageSize` behave as they do on GET and
+  return the same `pagination` envelope.
+- **`enableQuery`** router option (default `true`) to leave the route unmounted.
+- **`isQueryMethodSupported()`** export. Serving QUERY needs Node 22.2+: an older runtime
+  rejects the method in its HTTP parser before Express sees it, and its Express router has no
+  matching verb. When unsupported, the route is skipped and a warning is logged once, rather
+  than the router failing to build.
+- **`Accept-Query: application/json`** on `OPTIONS /` and on a `415`, per RFC 10008 §4, so a
+  client can discover the accepted format. The generated `Allow` header now lists `QUERY`.
+- **`QUERY_FILTER_OPERATORS`** export, and `ControllerSets#queryAll` for hand-wired routers.
+- TypeScript types for all of the above: `QueryRequestBody`, `FilterCondition`,
+  `FilterOperators`, `FilterScalar`.
+
+### Behaviour worth knowing
+
+- An unknown key in a QUERY body is a `400`, not something ignored. A quietly ignored
+  `{"filters": …}` is a request to return the whole collection.
+- A body sent without a JSON content type is a `415`; so is a JSON body that no mounted parser
+  handled, which is the honest answer when `express.json()` is missing rather than a silent
+  unfiltered read.
+- A QUERY with no body at all is a valid request for an unfiltered, still-capped list.
+- `QUERY` is a collection method only. `QUERY /:id` is not routed.
+
+### Changed
+
+- Internal only: `GET /` and `QUERY /` now share one filter, search, sort and pagination path,
+  so a future hardening applies to both. `getPaginatedResults` keeps its signature, and page
+  bounds are clamped in one place.
+- `?sort=` with a non-string value (a repeated `?sort=a&sort=b`) now returns `400` instead of
+  a `500`, and the literal `?sort=none` is now validated like any other field name rather than
+  being read as "no sorting" — `none` is a sentinel for the `orderBy` option, not a field a
+  client can name.
+
+---
+
 ## [3.0.0] — 2026-07-20
 
 Security release. Several defaults in 2.x were exploitable on any public endpoint.

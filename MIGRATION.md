@@ -186,6 +186,32 @@ stops doing so.
 
 ---
 
+## New in 3.1: the QUERY method
+
+3.1 adds one route to every generated router — `QUERY /`, a read whose parameters travel in a
+JSON body — and changes nothing else. Two things are worth knowing while upgrading:
+
+- **`legacyMode` does not relax it.** The bridge above re-enables 2.x behaviour on routes that
+  existed in 2.x. QUERY did not, so its `filter` and `sort` always resolve against
+  `filterableFields` and `sortableFields`. If you are still on `legacyMode` and have declared
+  neither, a QUERY body carrying a filter returns `400` — declare the fields, or pass
+  `enableQuery: false`.
+- **The route appears automatically.** If a proxy, WAF or API gateway in front of your app
+  rejects unrecognised methods, nothing changes for you; if you would rather it were never
+  mounted, pass `enableQuery: false`. On Node older than 22 it is skipped anyway, with one
+  warning, because the runtime cannot parse the method (QUERY needs Node 22.2+).
+
+```js
+createRouter({
+    model: Product,
+    filterableFields: ["price", "category"],  // what a QUERY filter may name
+    sortableFields: ["price", "createdAt"],   // what a QUERY sort may name
+    enableQuery: true,                        // the default
+});
+```
+
+---
+
 ## Constructor form
 
 The positional signature still works but is deprecated:

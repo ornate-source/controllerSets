@@ -2,13 +2,22 @@ import mongoose from "mongoose";
 import {
     HttpError,
     escapeRegex,
+    isUnsafeKey,
     pickWritable,
     resolveFieldPolicy,
     sanitizeFilterValue,
+    sanitizeStructuredFilter,
 } from "./utils/sanitize.js";
 
 const DEFAULT_MAX_LIMIT = 100;
 const DEFAULT_MAX_SEARCH_LENGTH = 128;
+const DEFAULT_PAGE_SIZE = 50;
+
+/** Keys a QUERY request body may contain. Anything else is a typo or an attempt. */
+const QUERY_BODY_KEYS = ["filter", "search", "sort", "page", "pageSize", "limit"];
+
+/** Upper bound on sort keys in one QUERY body. */
+const MAX_SORT_KEYS = 5;
 
 const defaultLogger = {
     warn: (...args) => console.warn(...args),
@@ -114,8 +123,8 @@ class ControllerSets {
         return { $regex: value, $options: "i" };
     }
 
-    #searchTermFrom(req) {
-        const term = req.query.s ?? req.query.search;
+    /** Shared by `?s=` and the QUERY body's `search`, so both obey the same cap. */
+    #normalizeSearchTerm(term) {
         if (term === undefined || term === null || term === "") return null;
         if (typeof term !== "string") {
             throw new HttpError(400, "Search term must be a string.");
@@ -124,6 +133,10 @@ class ControllerSets {
             throw new HttpError(400, `Search term exceeds ${this.maxSearchLength} characters.`);
         }
         return term;
+    }
+
+    #searchTermFrom(req) {
+        return this.#normalizeSearchTerm(req.query.s ?? req.query.search);
     }
 
     #buildFilters(req) {
@@ -186,8 +199,7 @@ class ControllerSets {
         return mongoOp === "$eq" ? value : { [mongoOp]: value };
     }
 
-    async #applySearch(filters, req) {
-        const term = this.#searchTermFrom(req);
+    async #applySearchTerm(filters, term) {
         if (!term) return;
 
         if (!Array.isArray(this.search)) {
@@ -239,20 +251,24 @@ class ControllerSets {
         }
     }
 
+    /** The author's own `orderBy`, which is never checked against the allowlist. */
+    #defaultSort() {
+        if (!this.orderBy || this.orderBy === "none") return {};
+        return sortSpecFor(this.orderBy);
+    }
+
     #buildSort(req) {
-        const active = req.query.sort || this.orderBy;
-        if (!active || active === "none") return {};
+        const requested = req.query.sort;
+        if (!requested) return this.#defaultSort();
 
-        const descending = active.startsWith("-");
-        const key = descending ? active.slice(1) : active;
-
-        // A configured `orderBy` is the author's own choice and is always permitted;
-        // only a client-supplied `?sort=` is checked against the allowlist.
-        if (req.query.sort) {
-            this.#assertAllowed(key, this.sortableFields, "sortable");
+        if (typeof requested !== "string") {
+            throw new HttpError(400, "Sort must be a single field name.");
         }
 
-        return { [key]: descending ? -1 : 1 };
+        // Only a client-supplied `?sort=` is checked against the allowlist.
+        const spec = sortSpecFor(requested);
+        this.#assertAllowed(Object.keys(spec)[0], this.sortableFields, "sortable");
+        return spec;
     }
 
     #applyReadOptions(query, populates, selects) {
@@ -293,7 +309,7 @@ class ControllerSets {
      */
     getAll = this.#guard(async (req, res) => {
         const filters = this.#buildFilters(req);
-        await this.#applySearch(filters, req);
+        await this.#applySearchTerm(filters, this.#searchTermFrom(req));
         const sort = this.#buildSort(req);
 
         const { populates, selects } = await this.getPopulates(req, res);
@@ -308,6 +324,179 @@ class ControllerSets {
 
         return res.status(200).json({ success: true, data: result });
     });
+
+    /**
+     * QUERY / - A read whose parameters travel in the body instead of the URL.
+     *
+     * QUERY (RFC 10008) is safe and idempotent: it is GET with a body, for filters
+     * that are too long for a URL, too structured to flatten into a query string,
+     * or too sensitive to leave in proxy and access logs. The response is
+     * byte-for-byte what the equivalent GET would return.
+     *
+     * The body is deliberately *not* a Mongo query. Field names are checked against
+     * the same allowlists the query string uses, operators are spelled without `$`
+     * and translated through a fixed table, and a body carrying a literal `$` key
+     * fails that lookup rather than reaching the driver.
+     */
+    queryAll = this.#guard(async (req, res) => {
+        const body = this.#queryBodyFrom(req, res);
+
+        const filters = this.#buildStructuredFilters(body.filter);
+        await this.#applySearchTerm(filters, this.#normalizeSearchTerm(body.search));
+        const sort = this.#buildQuerySort(body.sort);
+
+        const { populates, selects } = await this.getPopulates(req, res);
+
+        if (body.page !== undefined || body.pageSize !== undefined) {
+            return await this.#paginate(res, {
+                filters,
+                sort,
+                populates,
+                selects,
+                page: body.page,
+                pageSize: body.pageSize,
+            });
+        }
+
+        const limit = Math.min(this.maxLimit, body.limit ?? this.maxLimit);
+        const query = this.model.find(filters).sort(sort).limit(limit);
+        const result = await this.#applyReadOptions(query, populates, selects);
+
+        return res.status(200).json({ success: true, data: result });
+    });
+
+    /**
+     * Validates the envelope of a QUERY request and returns its recognised keys.
+     *
+     * An unknown key is a 400 rather than something to ignore: `{"filters": {...}}`
+     * ignored quietly is a request to return the entire collection, which is the
+     * one failure mode a read endpoint must not have.
+     */
+    #queryBodyFrom(req, res) {
+        const headers = req.headers ?? {};
+        const declaredLength = Number(headers["content-length"] ?? 0);
+        const hasBody = declaredLength > 0 || headers["transfer-encoding"] !== undefined;
+
+        // A bodyless QUERY is a well-formed request for an unfiltered list.
+        if (!hasBody) return {};
+
+        const mediaType = String(headers["content-type"] ?? "")
+            .split(";")[0]
+            .trim()
+            .toLowerCase();
+
+        if (!/^application\/([\w.+-]+\+)?json$/.test(mediaType)) {
+            throw this.#unsupportedMediaType(res, "QUERY body must be sent as application/json.");
+        }
+
+        if (req.body === undefined) {
+            // The body arrived but nothing parsed it. That is a server
+            // misconfiguration, and the log is the only place to say so.
+            this.logger.error(
+                "[ControllerSets] QUERY received an unparsed body. " +
+                    "Mount express.json() before this router.",
+            );
+            throw this.#unsupportedMediaType(
+                res,
+                "QUERY body was not parsed as JSON. No body parser handled this Content-Type.",
+            );
+        }
+
+        const body = req.body;
+        if (body === null || typeof body !== "object" || Array.isArray(body)) {
+            throw new HttpError(400, "QUERY body must be a JSON object.");
+        }
+
+        for (const key of Object.keys(body)) {
+            if (!QUERY_BODY_KEYS.includes(key)) {
+                throw new HttpError(
+                    400,
+                    `Unknown key '${key}' in QUERY body. Allowed: ${QUERY_BODY_KEYS.join(", ")}.`,
+                );
+            }
+        }
+
+        const page = this.#positiveInteger(body.page, "page");
+        const pageSize = this.#positiveInteger(body.pageSize, "pageSize");
+        const limit = this.#positiveInteger(body.limit, "limit");
+
+        // `limit` caps an unpaginated read, so pairing it with paging is a
+        // contradiction rather than a precedence puzzle to resolve silently.
+        if (limit !== undefined && (page !== undefined || pageSize !== undefined)) {
+            throw new HttpError(400, "Use either 'limit' or 'page'/'pageSize', not both.");
+        }
+
+        return { filter: body.filter, search: body.search, sort: body.sort, page, pageSize, limit };
+    }
+
+    /**
+     * RFC 10008 defines `Accept-Query` as the way a resource states which query
+     * format it takes, so a 415 says what would have worked instead of only
+     * what did not.
+     */
+    #unsupportedMediaType(res, message) {
+        res?.setHeader?.("Accept-Query", "application/json");
+        return new HttpError(415, message);
+    }
+
+    #positiveInteger(value, name) {
+        if (value === undefined || value === null) return undefined;
+        if (!Number.isInteger(value) || value < 1) {
+            throw new HttpError(400, `'${name}' must be a positive integer.`);
+        }
+        return value;
+    }
+
+    /**
+     * Turns the body's `filter` into a Mongo filter document.
+     *
+     * Unlike the query string, the allowlist is enforced even under `legacyMode`:
+     * QUERY has no 2.x behaviour to stay compatible with, so there is no reason to
+     * ship it with the gate open.
+     */
+    #buildStructuredFilters(filter) {
+        if (filter === undefined || filter === null) return {};
+        if (typeof filter !== "object" || Array.isArray(filter)) {
+            throw new HttpError(400, "'filter' must be a JSON object.");
+        }
+
+        const filters = {};
+        for (const [field, value] of Object.entries(filter)) {
+            if (isUnsafeKey(field) || !this.filterableFields.includes(field)) {
+                throw new HttpError(400, `Field '${field}' is not filterable.`);
+            }
+            const clause = sanitizeStructuredFilter(value, field);
+            if (clause !== undefined) filters[field] = clause;
+        }
+        return filters;
+    }
+
+    /**
+     * Sort from a QUERY body: one field name, or a list for multi-key sorting —
+     * which the query string cannot express. Every key is allowlisted.
+     */
+    #buildQuerySort(sort) {
+        if (sort === undefined || sort === null) return this.#defaultSort();
+
+        const requested = Array.isArray(sort) ? sort : [sort];
+        if (requested.length === 0) return this.#defaultSort();
+        if (requested.length > MAX_SORT_KEYS) {
+            throw new HttpError(400, `'sort' accepts at most ${MAX_SORT_KEYS} fields.`);
+        }
+
+        const spec = {};
+        for (const entry of requested) {
+            if (typeof entry !== "string" || entry === "" || entry === "-") {
+                throw new HttpError(400, "'sort' must be a field name, or a list of them.");
+            }
+            const [key, direction] = Object.entries(sortSpecFor(entry))[0];
+            if (!this.sortableFields.includes(key)) {
+                throw new HttpError(400, `Field '${key}' is not sortable.`);
+            }
+            spec[key] = direction;
+        }
+        return spec;
+    }
 
     /**
      * GET /:id - Retrieves a single record by its ID.
@@ -402,14 +591,27 @@ class ControllerSets {
      * Internal pagination logic.
      */
     getPaginatedResults = async (req, res, filters, sort, populates = [], selects = "") => {
-        const page = Math.max(1, parseInt(req.query.page) || 1);
-        const pageSize = Math.min(
-            this.maxLimit,
-            Math.max(1, parseInt(req.query.pageSize) || 50),
-        );
-        const skip = (page - 1) * pageSize;
+        return this.#paginate(res, {
+            filters,
+            sort,
+            populates,
+            selects,
+            page: parseInt(req.query.page) || 1,
+            pageSize: parseInt(req.query.pageSize) || DEFAULT_PAGE_SIZE,
+        });
+    };
 
-        const query = this.model.find(filters).skip(skip).limit(pageSize).sort(sort);
+    /**
+     * One paginated read, whichever method asked for it. Page bounds are clamped
+     * here rather than at each call site, so `pageSize` can never exceed
+     * `maxLimit` no matter how the request expressed it.
+     */
+    async #paginate(res, { filters, sort, populates = [], selects = "", page, pageSize }) {
+        const safePage = Math.max(1, page ?? 1);
+        const safeSize = Math.min(this.maxLimit, Math.max(1, pageSize ?? DEFAULT_PAGE_SIZE));
+        const skip = (safePage - 1) * safeSize;
+
+        const query = this.model.find(filters).skip(skip).limit(safeSize).sort(sort);
 
         const [totalRecords, result] = await Promise.all([
             this.model.countDocuments(filters),
@@ -420,13 +622,13 @@ class ControllerSets {
             success: true,
             data: result,
             pagination: {
-                currentPage: page,
-                pageSize,
-                totalPages: Math.ceil(totalRecords / pageSize),
+                currentPage: safePage,
+                pageSize: safeSize,
+                totalPages: Math.ceil(totalRecords / safeSize),
                 totalRecords,
             },
         });
-    };
+    }
 
     /**
      * Standard error reporter for the controller.
@@ -434,6 +636,13 @@ class ControllerSets {
     sendErrorResponse = (res, statusCode, message) => {
         return res.status(statusCode).json({ success: false, error: message });
     };
+}
+
+/** `"-createdAt"` -> `{ createdAt: -1 }`. */
+function sortSpecFor(field) {
+    const descending = field.startsWith("-");
+    const key = descending ? field.slice(1) : field;
+    return { [key]: descending ? -1 : 1 };
 }
 
 /** Sorting defaults to the filterable set plus whatever `orderBy` already names. */

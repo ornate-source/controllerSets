@@ -42,7 +42,7 @@
                     <span class="logo-mark" aria-hidden="true">{}</span>
                     <span class="logo-titles">
                         <span class="logo-text">controller-sets</span>
-                        <span class="logo-sub">v3.0.0 · docs</span>
+                        <span class="logo-sub">v3.1.0 · docs</span>
                     </span>
                 </div>
                 <button class="icon-btn mobile-only" id="menu-close" aria-label="Close menu">
@@ -73,10 +73,12 @@
 
                 <p class="nav-group-title">Reading data</p>
                 <ul>
-                    <li><a href="#endpoints"><i data-lucide="network"></i> The five endpoints</a></li>
+                    <li><a href="#endpoints"><i data-lucide="network"></i> The six endpoints</a></li>
                     <li><a href="#filtering"><i data-lucide="filter"></i> Filtering</a></li>
                     <li><a href="#search"><i data-lucide="search"></i> Search</a></li>
                     <li><a href="#sorting-paging"><i data-lucide="arrow-down-up"></i> Sorting &amp; pagination</a></li>
+                    <li><a href="#http-query"><i data-lucide="file-search"></i> HTTP QUERY <span
+                                class="nav-star">NEW</span></a></li>
                     <li><a href="#on-get"><i data-lucide="git-branch"></i> Shaping responses</a></li>
                 </ul>
 
@@ -118,11 +120,11 @@
 
             <!-- ============================ HERO ============================ -->
             <section class="hero" id="what-is-this">
-                <span class="hero-eyebrow"><span class="hero-eyebrow-dot"></span> v3.0 — the security release</span>
+                <span class="hero-eyebrow"><span class="hero-eyebrow-dot"></span> v3.1 — now with HTTP QUERY</span>
                 <h1><span class="line">One model in,</span><span class="line grad">a whole REST API out.</span></h1>
-                <p class="lead">Express Controller Sets is a Node.js library that turns a Mongoose model into five
-                    working endpoints — list, read, create, update, delete — with filtering, search, pagination and
-                    optional S3 file uploads already wired up. You write the model and the rules; it writes the
+                <p class="lead">Express Controller Sets is a Node.js library that turns a Mongoose model into six
+                    working endpoints — list, query, read, create, update, delete — with filtering, search, pagination
+                    and optional S3 file uploads already wired up. You write the model and the rules; it writes the
                     controller.</p>
                 <div class="hero-actions">
                     <a class="btn btn-primary" href="#install"><i data-lucide="rocket"></i> Get started <i
@@ -149,6 +151,8 @@
                         <ul class="hero-routes">
                             <li><span class="m m-get">GET</span><code>/products</code><span class="hero-route-note">filter
                                     · search · page</span></li>
+                            <li><span class="m m-query">QUERY</span><code>/products</code><span
+                                    class="hero-route-note">the same read, from a JSON body</span></li>
                             <li><span class="m m-post">POST</span><code>/products</code><span
                                     class="hero-route-note">create</span></li>
                             <li><span class="m m-get">GET</span><code>/products/:id</code><span
@@ -163,7 +167,7 @@
 
                 <div class="hero-badges">
                     <span class="badge badge-accent" style="--b:0"><i data-lucide="network"></i>
-                        <span class="counter" data-to="5">0</span>&nbsp;endpoints per call</span>
+                        <span class="counter" data-to="6">0</span>&nbsp;endpoints per call</span>
                     <span class="badge" style="--b:1"><i data-lucide="box"></i> Node 18+</span>
                     <span class="badge" style="--b:2"><i data-lucide="zap"></i> Express 5 · Mongoose 9</span>
                     <span class="badge" style="--b:3"><i data-lucide="type"></i> TypeScript included</span>
@@ -262,12 +266,12 @@
                     <div class="card reveal">
                         <div class="card-icon"><i data-lucide="route"></i></div>
                         <h4>createRouter()</h4>
-                        <p>Five REST endpoints for one model, ready to mount.</p>
+                        <p>Six REST endpoints for one model, ready to mount — including HTTP <code>QUERY</code>.</p>
                     </div>
                     <div class="card reveal">
                         <div class="card-icon"><i data-lucide="upload-cloud"></i></div>
                         <h4>createRouterS3upload()</h4>
-                        <p>The same five, plus file uploads to S3 on <code>POST</code> and <code>PATCH</code>.</p>
+                        <p>The same six, plus file uploads to S3 on <code>POST</code> and <code>PATCH</code>.</p>
                     </div>
                     <div class="card reveal">
                         <div class="card-icon"><i data-lucide="alert-circle"></i></div>
@@ -351,7 +355,7 @@ npm install sharp</code></pre>
             <!-- ====================== FIRST API ====================== -->
             <section class="section reveal" id="first-api">
                 <h2><i data-lucide="rocket"></i> Your first API, end to end</h2>
-                <p class="section-intro">Four steps from an empty file to five working endpoints.</p>
+                <p class="section-intro">Four steps from an empty file to six working endpoints.</p>
 
                 <ol class="steps">
                     <li>
@@ -494,6 +498,11 @@ curl -X POST localhost:3000/api/products \
                     upload router the file middleware runs first and replaces the file with its URL, and the request
                     body is filtered down to the fields you allowed before it reaches Mongoose.</p>
 
+                <p>A <a href="#http-query"><code>QUERY</code></a> read walks the same track from the second step
+                    onward. Only the first differs: the filters are built from a JSON body rather than the query
+                    string, against the same allowlists. Everything after that — search, <code>onGet</code>, the
+                    <code>maxLimit</code> cap, the response shape — is one shared implementation.</p>
+
                 <div class="callout callout-plain">
                     <i data-lucide="corner-down-right"></i>
                     <div>
@@ -544,7 +553,8 @@ curl -X POST localhost:3000/api/products \
                                 <td class="no">Nothing is filterable</td>
                             </tr>
                             <tr>
-                                <td>Compare or range a field</td>
+                                <td>Compare or range a field, or name it in a
+                                    <a href="#http-query">QUERY</a> <code>filter</code></td>
                                 <td><code>filterableFields</code></td>
                                 <td>Falls back to <code>query</code></td>
                             </tr>
@@ -562,6 +572,12 @@ curl -X POST localhost:3000/api/products \
                                 <td>Write a field</td>
                                 <td><code>allowedFields</code> / <code>blockedFields</code></td>
                                 <td class="maybe">Everything writable — plus a startup warning</td>
+                            </tr>
+                            <tr>
+                                <td>Read with a body instead of a URL</td>
+                                <td><code>enableQuery</code></td>
+                                <td class="maybe">Mounted — but its filter and sort still obey the two allowlists
+                                    above, even in <code>legacyMode</code></td>
                             </tr>
                             <tr>
                                 <td>Read the whole collection</td>
@@ -626,13 +642,14 @@ curl -X POST localhost:3000/api/products \
             <!-- ====================== OPTIONS OVERVIEW ====================== -->
             <section class="section reveal" id="options">
                 <h2><i data-lucide="sliders-horizontal"></i> Options at a glance</h2>
-                <p class="section-intro">Both router factories take one object. Five keys are consumed by the router
+                <p class="section-intro">Both router factories take one object. Six keys are consumed by the router
                     itself; everything else is passed straight through to the controller.</p>
 
                 <div class="code-block" data-lang="javascript">
                     <pre><code>createRouterS3upload({
   // ---- router-level ----
   middlewares: [requireAuth],          // run before every route in this router
+  enableQuery: true,                   // mount the HTTP QUERY route on /
   path: 'products/',                   // S3 key prefix           (upload routers)
   fields: [{ name: 'image', maxCount: 1 }],  //  form fields      (upload routers)
   imgOptimizations: 'medium',          // compression level       (upload routers)
@@ -666,7 +683,7 @@ curl -X POST localhost:3000/api/products \
 
             <!-- ====================== ENDPOINTS ====================== -->
             <section class="section reveal" id="endpoints">
-                <h2><i data-lucide="network"></i> The five endpoints</h2>
+                <h2><i data-lucide="network"></i> The six endpoints</h2>
                 <p class="section-intro">Identical for every model, whether you use <code>createRouter</code> or
                     <code>createRouterS3upload</code>.</p>
 
@@ -685,6 +702,13 @@ curl -X POST localhost:3000/api/products \
                                 <td><span class="m m-get">GET</span></td>
                                 <td><code>/</code></td>
                                 <td>List records. Filter, search, sort, paginate.</td>
+                                <td class="center">200</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-query">QUERY</span></td>
+                                <td><code>/</code></td>
+                                <td>The same list, described by a JSON body instead of a URL.
+                                    <a href="#http-query">Details</a>.</td>
                                 <td class="center">200</td>
                             </tr>
                             <tr>
@@ -1002,6 +1026,411 @@ GET /api/users?status=active&amp;compareField=age&amp;compareValue=30&amp;compar
                 </div>
             </section>
 
+            <!-- ====================== HTTP QUERY ====================== -->
+            <section class="section reveal" id="http-query">
+                <h2><i data-lucide="file-search"></i> HTTP <code>QUERY</code></h2>
+                <p class="section-intro">The same read as <code>GET /</code>, described by a JSON body instead of a
+                    URL — for filters that are too long, too structured, or too sensitive to put in a query string.</p>
+
+                <p><code>QUERY</code> is a real HTTP method
+                    (<a href="https://www.rfc-editor.org/rfc/rfc10008.html" target="_blank"
+                        rel="noopener">RFC 10008</a>), and like
+                    <code>GET</code> it is <strong>safe</strong> and <strong>idempotent</strong>: it never writes
+                    anything. The difference is only where the parameters live.</p>
+
+                <div class="card-grid">
+                    <div class="card reveal">
+                        <div class="card-icon"><i data-lucide="ruler"></i></div>
+                        <h4>URLs run out</h4>
+                        <p>Proxies and servers cap request lines around 4–8&nbsp;KB. Two hundred ids in an
+                            <code>in</code> list is not a URL.</p>
+                    </div>
+                    <div class="card reveal">
+                        <div class="card-icon"><i data-lucide="eye-off"></i></div>
+                        <h4>URLs get logged</h4>
+                        <p>Query strings land in access logs, proxy logs, browser history and <code>Referer</code>
+                            headers. Bodies do not.</p>
+                    </div>
+                    <div class="card reveal">
+                        <div class="card-icon"><i data-lucide="braces"></i></div>
+                        <h4>Structure survives</h4>
+                        <p>Two bounds on one field, a multi-key sort, a list of values — all say what they mean,
+                            without encoding tricks.</p>
+                    </div>
+                </div>
+
+                <h3>A request</h3>
+                <div class="code-block" data-lang="http">
+                    <pre><code>QUERY /api/products HTTP/1.1
+Content-Type: application/json
+
+{
+  "filter": {
+    "category": "65af…",
+    "price":    { "gte": 50, "lte": 250 },
+    "tag":      ["sale", "clearance"]
+  },
+  "search": "office chair",
+  "sort":   ["-price", "name"],
+  "page":   1,
+  "pageSize": 20
+}</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>The response is exactly what the equivalent <code>GET</code> would have returned — same envelope,
+                    same <code>pagination</code> block, same <a href="#on-get"><code>onGet</code></a> shaping, same
+                    <code>maxLimit</code> cap. Nothing about the read changes; only the request does.</p>
+
+                <div class="callout callout-plain">
+                    <i data-lucide="lightbulb"></i>
+                    <div>
+                        <p><strong>The body is not a MongoDB query.</strong> Operators are written without
+                            <code>$</code> and looked up in a fixed table, so a body carrying <code>$where</code> or
+                            <code>$function</code> fails that lookup instead of reaching the driver. Field names are
+                            checked against the same allowlists <code>?sort=</code> and <code>?rangeField=</code> use.
+                        </p>
+                    </div>
+                </div>
+
+                <h3>What the body may contain</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Key</th>
+                                <th>Type</th>
+                                <th>Meaning</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>filter</code></td>
+                                <td>object</td>
+                                <td>Field → condition. Every field must be in <code>filterableFields</code> (which
+                                    defaults to <code>query</code>).</td>
+                            </tr>
+                            <tr>
+                                <td><code>search</code></td>
+                                <td>string</td>
+                                <td>Same term, same fields and same escaping as <code>?s=</code>. Capped by
+                                    <code>maxSearchLength</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>sort</code></td>
+                                <td>string · string[]</td>
+                                <td><code>"price"</code> or <code>"-price"</code>. A list sorts on several keys, up to
+                                    five, each checked against <code>sortableFields</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>page</code></td>
+                                <td>integer ≥ 1</td>
+                                <td>Switches on the paginated response. Cannot be combined with <code>limit</code>.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><code>pageSize</code></td>
+                                <td>integer ≥ 1</td>
+                                <td>Records per page, clamped to <code>maxLimit</code>. On its own it implies
+                                    <code>page: 1</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>limit</code></td>
+                                <td>integer ≥ 1</td>
+                                <td>Caps an unpaginated read. Also clamped to <code>maxLimit</code>.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>Every key is optional. An empty body — or no body at all — is a plain list request, still capped at
+                    <code>maxLimit</code>. An <strong>unrecognised key is a 400</strong>, deliberately: a
+                    <code>{"filters": …}</code> typo quietly ignored is a request to return the entire collection.</p>
+
+                <h3>Conditions</h3>
+                <p>A condition is one of three shapes.</p>
+
+                <div class="code-block" data-lang="json">
+                    <pre><code>{
+  "filter": {
+    "category": "65af…",                  // scalar  → equality
+    "tag":      ["sale", "clearance"],    // list    → in
+    "price":    { "gte": 50, "lte": 250 } // object  → operators
+  }
+}</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Operator</th>
+                                <th>Takes</th>
+                                <th>Matches</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>eq</code></td><td>a value</td><td>Equal to it.</td></tr>
+                            <tr><td><code>ne</code></td><td>a value</td><td>Not equal to it.</td></tr>
+                            <tr><td><code>gt</code> · <code>gte</code></td><td>a value</td><td>Greater than, or
+                                    greater than or equal.</td></tr>
+                            <tr><td><code>lt</code> · <code>lte</code></td><td>a value</td><td>Less than, or less than
+                                    or equal.</td></tr>
+                            <tr><td><code>in</code></td><td>a list, 1–100 values</td><td>Any of them.</td></tr>
+                            <tr><td><code>nin</code></td><td>a list, 1–100 values</td><td>None of them.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>Values are strings, numbers, booleans or <code>null</code>. Mongoose casts them against your schema
+                    on the way in, so <code>"gte": "50"</code> on a <code>Number</code> field works exactly as
+                    <code>50</code> does. Anything else — a nested object, an empty condition, an unknown operator
+                    name — is a <strong>400</strong> rather than something to interpret generously.</p>
+
+                <h3>The same read, both ways</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Query string</th>
+                                <th>QUERY body</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>?category=65af…</code></td>
+                                <td><code>{ "filter": { "category": "65af…" } }</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>?tag=sale&amp;tag=new</code></td>
+                                <td><code>{ "filter": { "tag": ["sale", "new"] } }</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>?rangeField=price&amp;range=10-100</code></td>
+                                <td><code>{ "filter": { "price": { "gte": 10, "lte": 100 } } }</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>?compareField=price&amp;compareOperator=gt&amp;compareValue=50</code></td>
+                                <td><code>{ "filter": { "price": { "gt": 50 } } }</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>?s=chair</code></td>
+                                <td><code>{ "search": "chair" }</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>?sort=-price</code></td>
+                                <td><code>{ "sort": "-price" }</code></td>
+                            </tr>
+                            <tr>
+                                <td>— <em>not expressible</em></td>
+                                <td><code>{ "sort": ["category", "-price"] }</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>?page=2&amp;pageSize=20</code></td>
+                                <td><code>{ "page": 2, "pageSize": 20 }</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>One body can also do what no query string can: two bounds and an exclusion on different fields, a
+                    hundred ids, and a multi-key sort, all in one request that no proxy will truncate.</p>
+
+                <h3>Calling it</h3>
+                <div class="tabs">
+                    <div class="tab-list" role="tablist" aria-label="QUERY clients">
+                        <button class="tab-btn" role="tab" aria-selected="true" data-tab="q-fetch">fetch</button>
+                        <button class="tab-btn" role="tab" aria-selected="false" data-tab="q-curl">curl</button>
+                        <button class="tab-btn" role="tab" aria-selected="false" data-tab="q-axios">axios</button>
+                    </div>
+
+                    <div class="tab-panel" id="q-fetch" role="tabpanel">
+                        <div class="code-block" data-lang="javascript">
+                            <pre><code>const res = await fetch('/api/products', {
+  method: 'QUERY',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    filter: { price: { gte: 50, lte: 250 } },
+    sort: '-price',
+    pageSize: 20,
+  }),
+});
+
+const { data, pagination } = await res.json();</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                        <p>Browsers and Node's <code>fetch</code> both send <code>QUERY</code> as written — it is a
+                            valid method token, not a special case.</p>
+                    </div>
+
+                    <div class="tab-panel" id="q-curl" role="tabpanel">
+                        <div class="code-block" data-lang="bash">
+                            <pre><code>curl -X QUERY http://localhost:3000/api/products \
+  -H 'Content-Type: application/json' \
+  -d '{"filter":{"price":{"gte":50}},"sort":"-price","pageSize":20}'</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                        <p>Handy while developing: <code>-X QUERY</code> with <code>-d</code> is all it takes.</p>
+                    </div>
+
+                    <div class="tab-panel" id="q-axios" role="tabpanel">
+                        <div class="code-block" data-lang="javascript">
+                            <pre><code>const { data } = await axios.request({
+  url: '/api/products',
+  method: 'QUERY',
+  data: { filter: { tag: ['sale', 'new'] }, sort: ['category', '-price'] },
+});</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                        <p>Axios forwards any method string, but it only serialises <code>data</code> for methods it
+                            considers body-bearing — pass the object as <code>data</code> and set the
+                            <code>Content-Type</code> explicitly if your version leaves it off.</p>
+                    </div>
+                </div>
+
+                <h3>Asking whether it's there</h3>
+                <p>A client does not have to guess. <code>OPTIONS</code> on the collection lists the methods, and
+                    RFC 10008's <code>Accept-Query</code> names the format the body must be in — this library sends
+                    it on <code>OPTIONS</code> and on every <code>415</code>:</p>
+
+                <div class="code-block" data-lang="http">
+                    <pre><code>OPTIONS /api/products HTTP/1.1
+
+HTTP/1.1 200 OK
+Allow: GET, HEAD, POST, QUERY
+Accept-Query: application/json</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>If <code>QUERY</code> is missing from <code>Allow</code>, either the route was turned off, the
+                    runtime is too old, or something between the client and the app stripped it.</p>
+
+                <h3>What gets refused</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Request</th>
+                                <th class="center">Status</th>
+                                <th>Why</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>{ "filter": { "secretToken": "x" } }</code></td>
+                                <td class="center">400</td>
+                                <td>Not in <code>filterableFields</code>. Same rule as <code>?rangeField=</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>{ "filter": { "$where": "…" } }</code></td>
+                                <td class="center">400</td>
+                                <td>A <code>$</code>-prefixed or dotted key is never a field name.</td>
+                            </tr>
+                            <tr>
+                                <td><code>{ "filter": { "price": { "$gte": 1 } } }</code></td>
+                                <td class="center">400</td>
+                                <td>Operators are spelled <code>gte</code>, not <code>$gte</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>{ "sort": "createdBy" }</code></td>
+                                <td class="center">400</td>
+                                <td>Not in <code>sortableFields</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>{ "filters": { … } }</code></td>
+                                <td class="center">400</td>
+                                <td>Unknown key. Ignoring it would mean returning everything.</td>
+                            </tr>
+                            <tr>
+                                <td><code>{ "page": "2" }</code></td>
+                                <td class="center">400</td>
+                                <td>JSON has numbers; <code>page</code>, <code>pageSize</code> and <code>limit</code>
+                                    must be positive integers.</td>
+                            </tr>
+                            <tr>
+                                <td>Body sent as <code>text/plain</code></td>
+                                <td class="center">415</td>
+                                <td>A QUERY body must be JSON.</td>
+                            </tr>
+                            <tr>
+                                <td>JSON body, no parser mounted</td>
+                                <td class="center">415</td>
+                                <td>Nothing parsed it. Mount <code>express.json()</code> — the alternative would be
+                                    silently ignoring the filter.</td>
+                            </tr>
+                            <tr>
+                                <td><code>QUERY /api/products/65af…</code></td>
+                                <td class="center">404</td>
+                                <td>QUERY is a collection method. Read one record with <code>GET /:id</code>.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>Before you rely on it</h3>
+                <div class="callout callout-warn">
+                    <i data-lucide="box"></i>
+                    <div>
+                        <p><strong>Node 22.2 or newer.</strong> An older runtime rejects <code>QUERY</code> inside its
+                            HTTP parser, before Express ever sees the request, and its Express router has no matching
+                            verb. The route is then skipped with a single warning rather than breaking the router —
+                            the rest of your API is unaffected. Check at runtime:</p>
+                        <div class="code-block" data-lang="javascript">
+                            <pre><code>import { isQueryMethodSupported } from 'express-controller-sets';
+
+isQueryMethodSupported();   // → true on Node 22.2+ with Express 5</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="callout callout-warn">
+                    <i data-lucide="shield-alert"></i>
+                    <div>
+                        <p><strong>What's in front of your app matters more than your app.</strong> Some proxies,
+                            CDNs, WAFs and API gateways pass only the methods they recognise, and a
+                            <code>QUERY</code> request may never reach you. Test through your real edge before
+                            shipping a client that depends on it, and keep <code>GET</code> as the fallback — both
+                            routes serve the same read.</p>
+                    </div>
+                </div>
+
+                <div class="callout callout-plain">
+                    <i data-lucide="toggle-left"></i>
+                    <div>
+                        <p><strong>Turning it off.</strong> <code>enableQuery: false</code> leaves the route
+                            unmounted, on either router factory. Everything else is unchanged.</p>
+                        <div class="code-block" data-lang="javascript">
+                            <pre><code>createRouter({ model: Product, enableQuery: false });</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="callout callout-danger">
+                    <i data-lucide="lock"></i>
+                    <div>
+                        <p><strong><code>legacyMode</code> does not open this door.</strong> Everywhere else that flag
+                            restores permissive 2.x behaviour. QUERY has no 2.x behaviour to restore, so its
+                            allowlists are enforced unconditionally: a <code>filter</code> or <code>sort</code> naming
+                            a field you never declared is a 400, legacy mode or not. Declare
+                            <code>filterableFields</code> and <code>sortableFields</code>, or pass
+                            <code>enableQuery: false</code>.</p>
+                    </div>
+                </div>
+
+                <div class="callout callout-tip">
+                    <i data-lucide="database-zap"></i>
+                    <div>
+                        <p><strong>Caching.</strong> RFC 10008 makes QUERY responses cacheable, but only for a
+                            cache that keys on the request content — and most deployed caches key on the URL alone,
+                            where every QUERY to a collection looks identical. Don't put a naive shared cache in
+                            front of it. When you need cache keys, keep those reads on <code>GET</code>.</p>
+                    </div>
+                </div>
+            </section>
+
             <!-- ====================== ONGET ====================== -->
             <section class="section reveal" id="on-get">
                 <h2><i data-lucide="git-branch"></i> Shaping responses with <code>onGet</code></h2>
@@ -1092,6 +1521,7 @@ createRouter({ model: Product, onGet });   // reuse across routers</code></pre>
                         </thead>
                         <tbody>
                             <tr><td><span class="m m-get">GET</span> <code>/</code></td><td class="center yes">✔</td></tr>
+                            <tr><td><span class="m m-query">QUERY</span> <code>/</code></td><td class="center yes">✔</td></tr>
                             <tr><td><span class="m m-get">GET</span> <code>/:id</code></td><td class="center yes">✔</td></tr>
                             <tr><td><span class="m m-patch">PATCH</span> <code>/:id</code> (the returned document)</td><td class="center yes">✔</td></tr>
                             <tr><td><span class="m m-post">POST</span> <code>/</code></td><td class="center no">✘ — returns the created document as-is</td></tr>
@@ -1301,13 +1731,20 @@ app.use(errorHandler);   // AFTER all routes — Express requires this order</co
                                 <td><code>400</code></td>
                                 <td>Malformed ID, a field that isn't filterable or sortable, an invalid filter value, a
                                     search term over 128 characters, a body with no writable fields, a schema validation
-                                    failure, a rejected file type, or a Multer limit.</td>
+                                    failure, a rejected file type, a Multer limit, or an unknown key, operator or
+                                    non-integer page in a <a href="#http-query">QUERY</a> body.</td>
                                 <td>The caller</td>
                             </tr>
                             <tr>
                                 <td><code>404</code></td>
                                 <td>No record with that ID — on read, update or delete.</td>
                                 <td>The caller</td>
+                            </tr>
+                            <tr>
+                                <td><code>415</code></td>
+                                <td>A <a href="#http-query">QUERY</a> body that isn't JSON, or one no mounted body
+                                    parser handled.</td>
+                                <td>The caller, or you — the message says which</td>
                             </tr>
                             <tr>
                                 <td><code>409</code></td>
@@ -2156,6 +2593,13 @@ new ControllerSets({ model: Model, orderBy: '-createdAt', query: ['category'] })
                                 <td>Express middlewares applied to every route in the router.</td>
                             </tr>
                             <tr>
+                                <td><code>enableQuery</code></td>
+                                <td>both factories</td>
+                                <td><code>true</code></td>
+                                <td>Mount <code>QUERY /</code> — see <a href="#http-query">HTTP QUERY</a>. Skipped
+                                    automatically, with one warning, on runtimes that cannot parse the method.</td>
+                            </tr>
+                            <tr>
                                 <td><code>path</code></td>
                                 <td>S3 router</td>
                                 <td><code>'files/'</code></td>
@@ -2198,7 +2642,7 @@ new ControllerSets({ model: Model, orderBy: '-createdAt', query: ['category'] })
                             <tr>
                                 <td><code>createRouter(options)</code></td>
                                 <td>function</td>
-                                <td>Five CRUD endpoints for a model.</td>
+                                <td>Six CRUD endpoints for a model.</td>
                             </tr>
                             <tr>
                                 <td><code>createRouterS3upload(options)</code></td>
@@ -2235,6 +2679,17 @@ new ControllerSets({ model: Model, orderBy: '-createdAt', query: ['category'] })
                                 <td>function</td>
                                 <td>Escape regex metacharacters in your own queries.</td>
                             </tr>
+                            <tr>
+                                <td><code>isQueryMethodSupported()</code></td>
+                                <td>function</td>
+                                <td>Whether this runtime can serve HTTP <code>QUERY</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>QUERY_FILTER_OPERATORS</code></td>
+                                <td>object</td>
+                                <td>The <code>gte</code> → <code>$gte</code> table a QUERY body is resolved against.
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -2243,7 +2698,8 @@ new ControllerSets({ model: Model, orderBy: '-createdAt', query: ['category'] })
             <!-- ====================== QUERY REFERENCE ====================== -->
             <section class="section reveal" id="query-reference">
                 <h2><i data-lucide="list-checks"></i> Every query parameter</h2>
-                <p class="section-intro">Everything <code>GET /</code> understands.</p>
+                <p class="section-intro">Everything <code>GET /</code> understands. For the body form of the same
+                    read, see <a href="#http-query">HTTP QUERY</a>.</p>
 
                 <div class="table-container">
                     <table>
@@ -2318,12 +2774,26 @@ GET /api/products
                 </div>
                 <p>Filters combine with AND. The search term is the one exception: it becomes an OR across your
                     <code>search</code> fields, and that whole group is ANDed with everything else.</p>
+
+                <p>The same request as a <a href="#http-query">QUERY</a> body — identical result, nothing in the URL:
+                </p>
+                <div class="code-block" data-lang="json">
+                    <pre><code>{
+  "filter": { "isFeatured": true, "price": { "gte": 500, "lte": 1500 } },
+  "search": "laptop",
+  "sort": "price",
+  "page": 2,
+  "pageSize": 20
+}</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
             </section>
 
             <!-- ====================== RESPONSES ====================== -->
             <section class="section reveal" id="responses">
                 <h2><i data-lucide="braces"></i> Response shapes</h2>
-                <p class="section-intro">Four shapes, and <code>success</code> is always there to branch on.</p>
+                <p class="section-intro">Four shapes, and <code>success</code> is always there to branch on. A
+                    <code>QUERY</code> read returns the same list and paginated shapes as <code>GET /</code>.</p>
 
                 <div class="tabs">
                     <div class="tab-list" role="tablist" aria-label="Response shapes">
@@ -2426,7 +2896,28 @@ app.use(errorHandler);</code></pre>
                 <p>Exported types you'll reach for: <code>ControllerOptions</code>, <code>RouterOptions</code>,
                     <code>RouterS3Options</code>, <code>UploadOptions</code>, <code>UploadField</code>,
                     <code>OnGetFn</code>, <code>OnGetResult</code>, <code>FieldPolicy</code>,
-                    <code>ImageOptimizationLevel</code> and <code>Logger</code>.</p>
+                    <code>ImageOptimizationLevel</code> and <code>Logger</code> — plus
+                    <code>QueryRequestBody</code>, <code>FilterCondition</code>, <code>FilterOperators</code> and
+                    <code>FilterScalar</code> for the <a href="#http-query">QUERY</a> body.</p>
+
+                <p>Typing the body on the client side keeps a filter honest before it is ever sent:</p>
+
+                <div class="code-block" data-lang="typescript">
+                    <pre><code>import type { QueryRequestBody } from 'express-controller-sets';
+
+const body: QueryRequestBody = {
+  filter: { price: { gte: 50, lte: 250 }, tag: ['sale'] },
+  sort: ['-price', 'name'],
+  pageSize: 20,
+};
+
+await fetch('/api/products', {
+  method: 'QUERY',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(body),
+});</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
 
                 <div class="callout callout-warn">
                     <i data-lucide="alert-triangle"></i>
@@ -2442,7 +2933,7 @@ app.use(errorHandler);</code></pre>
             <!-- ====================== CUSTOM ROUTES ====================== -->
             <section class="section reveal" id="custom">
                 <h2><i data-lucide="puzzle"></i> Custom routes</h2>
-                <p class="section-intro">When the five generated endpoints aren't quite the shape you need.</p>
+                <p class="section-intro">When the six generated endpoints aren't quite the shape you need.</p>
 
                 <h3>Use the handlers on your own router</h3>
                 <p>Every controller method is a plain Express handler, so you can mount them individually — different
@@ -2462,6 +2953,7 @@ const controller = new ControllerSets({
 const router = express.Router();
 
 router.get('/',      controller.getAll);                    // public
+router.query('/',    controller.queryAll);                  // public, body-borne read
 router.get('/:id',   controller.getById);                   // public
 router.post('/',     requireAuth, controller.create);       // staff only
 router.patch('/:id', requireAuth, controller.update);
@@ -2472,6 +2964,20 @@ router.get('/:id/related', myOwnHandler);
 
 export default router;</code></pre>
                     <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <div class="callout callout-plain">
+                    <i data-lucide="file-search"></i>
+                    <div>
+                        <p><code>router.query()</code> only exists on runtimes that know the method. Wiring handlers
+                            yourself means guarding it yourself:</p>
+                        <div class="code-block" data-lang="javascript">
+                            <pre><code>import { isQueryMethodSupported } from 'express-controller-sets';
+
+if (isQueryMethodSupported()) router.query('/', controller.queryAll);</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                    </div>
                 </div>
 
                 <h3>Add routes to a generated router</h3>
@@ -2528,6 +3034,43 @@ app.post('/api/invoices', requireAuth, upload, (req, res) =&gt; {
                             forgot <code>app.use(express.json())</code> so the body was never parsed at all. On an
                             upload router, also check the multipart field name matches your <code>fields</code>
                             entry.</p>
+                    </div>
+                </details>
+
+                <details>
+                    <summary>My <code>QUERY</code> request returns 404.</summary>
+                    <div class="details-body">
+                        <p>Three likely causes, in order. <strong>One:</strong> you're on Node older than 22 — the
+                            runtime can't parse the method, so the route was never mounted; check with
+                            <code>isQueryMethodSupported()</code> and look for the warning it logs once at startup.
+                            <strong>Two:</strong> you sent it to <code>/:id</code>; QUERY is a collection method
+                            only. <strong>Three:</strong> something between you and the app — a proxy, CDN or
+                            gateway — refused the unrecognised method before it arrived. See
+                            <a href="#http-query">HTTP QUERY</a>.</p>
+                    </div>
+                </details>
+
+                <details>
+                    <summary>My <code>QUERY</code> filter returns everything, or a 400 I didn't expect.</summary>
+                    <div class="details-body">
+                        <p>If you get <em>everything</em>, the body didn't carry what you think: the only way to
+                            filter is the <code>filter</code> key, and a misspelled top-level key is rejected with
+                            400 rather than ignored — so a 200 with the whole collection means no filter arrived at
+                            all. If you get a <strong>400</strong>, read the message: it names the field or operator
+                            that failed. The usual answers are a field missing from <code>filterableFields</code> /
+                            <code>sortableFields</code>, or an operator written <code>$gte</code> instead of
+                            <code>gte</code>.</p>
+                    </div>
+                </details>
+
+                <details>
+                    <summary>When should I use <code>QUERY</code> instead of <code>GET</code>?</summary>
+                    <div class="details-body">
+                        <p>When the parameters don't belong in a URL: a long list of ids, several conditions on
+                            several fields, a multi-key sort, or a filter you'd rather not leave in access logs and
+                            browser history. For an ordinary list or a link someone can share, <code>GET</code> is
+                            still the right call — it's cacheable, bookmarkable, and understood by everything on the
+                            path. Both routes run identical code.</p>
                     </div>
                 </details>
 

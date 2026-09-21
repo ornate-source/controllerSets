@@ -27,6 +27,46 @@ export interface Logger {
  */
 export type FieldPolicy = string[] | { create?: string[]; update?: string[] };
 
+/** A value a client may put in a QUERY filter. */
+export type FilterScalar = string | number | boolean | null;
+
+/** Operators accepted inside a QUERY body's `filter`, spelled without `$`. */
+export interface FilterOperators {
+    eq?: FilterScalar;
+    ne?: FilterScalar;
+    gt?: FilterScalar;
+    gte?: FilterScalar;
+    lt?: FilterScalar;
+    lte?: FilterScalar;
+    in?: FilterScalar[];
+    nin?: FilterScalar[];
+}
+
+/** One entry of `filter`: equality, an implicit `in`, or an operator object. */
+export type FilterCondition = FilterScalar | FilterScalar[] | FilterOperators;
+
+/**
+ * Body of an HTTP QUERY request. Every key is optional; an empty body is an
+ * unfiltered list, capped at `maxLimit`. Unknown keys are rejected with 400.
+ */
+export interface QueryRequestBody {
+    /** Field-to-condition map. Fields must appear in `filterableFields`. */
+    filter?: Record<string, FilterCondition>;
+    /** Search term, applied to the configured `search` fields. */
+    search?: string;
+    /** `"price"` or `"-price"`; a list sorts on several keys, up to five. */
+    sort?: string | string[];
+    /** 1-based page number. Mutually exclusive with `limit`. */
+    page?: number;
+    /** Records per page, capped at `maxLimit`. Implies `page: 1`. */
+    pageSize?: number;
+    /** Cap on an unpaginated read, itself capped at `maxLimit`. */
+    limit?: number;
+}
+
+/** The runtime mapping from a QUERY filter operator to its MongoDB operator. */
+export const QUERY_FILTER_OPERATORS: Readonly<Record<keyof FilterOperators, string>>;
+
 export interface ControllerOptions<T extends Document = any> {
     model: Model<T>;
     orderBy?: string;
@@ -40,9 +80,15 @@ export interface ControllerOptions<T extends Document = any> {
     allowedFields?: FieldPolicy;
     /** Fields a client may never write. Applied after `allowedFields`. */
     blockedFields?: FieldPolicy;
-    /** Fields usable with `?compareField=` / `?rangeField=`. Defaults to `query`. */
+    /**
+     * Fields usable with `?compareField=` / `?rangeField=` and with the `filter`
+     * of an HTTP QUERY body. Defaults to `query`.
+     */
     filterableFields?: string[];
-    /** Fields usable with `?sort=`. Defaults to `query` plus the `orderBy` field. */
+    /**
+     * Fields usable with `?sort=` and with a QUERY body's `sort`.
+     * Defaults to `query` plus the `orderBy` field.
+     */
     sortableFields?: string[];
 
     /** Hard cap on returned documents, paginated or not. Default 100. */
@@ -83,6 +129,8 @@ export class ControllerSets<T extends Document = any> {
         selects: string;
     }>;
     getAll(req: Request, res: Response): Promise<Response | void>;
+    /** HTTP QUERY handler: a read whose parameters arrive in a JSON body. */
+    queryAll(req: Request, res: Response): Promise<Response | void>;
     getById(req: Request, res: Response): Promise<Response | void>;
     create(req: Request, res: Response): Promise<Response | void>;
     update(req: Request, res: Response): Promise<Response | void>;
@@ -113,6 +161,8 @@ export interface UploadOptions {
 
 export interface RouterOptions<T extends Document = any> extends ControllerOptions<T> {
     middlewares?: any[];
+    /** Mount the HTTP QUERY route on `/`. Default true. */
+    enableQuery?: boolean;
 }
 
 export interface RouterS3Options<T extends Document = any> extends RouterOptions<T> {
@@ -134,6 +184,13 @@ export function createRouter<T extends Document = any>(options: RouterOptions<T>
 export function createRouterS3upload<T extends Document = any>(
     options: RouterS3Options<T>,
 ): Router;
+
+/**
+ * Whether this runtime serves the HTTP QUERY method — Node 22.2+ with an Express
+ * build whose router exposes the verb. `createRouter` skips the QUERY route and
+ * warns once when it returns false.
+ */
+export function isQueryMethodSupported(): boolean;
 
 /**
  * S3 file upload middleware.

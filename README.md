@@ -1,6 +1,6 @@
 # Express Controller Sets
 
-An advanced, unified toolkit for Express.js that accelerates API development by providing automated CRUD operations, dynamic routing capabilities, and robust Amazon S3 file upload handling out of the box.
+An advanced, unified toolkit for Express.js that accelerates API development by providing automated CRUD operations, dynamic routing, body-based reads over HTTP QUERY, and robust Amazon S3 file upload handling out of the box.
 
 [![Node Version](https://img.shields.io/badge/Node-20%2B-blue)](https://nodejs.org)
 [![Mongoose Version](https://img.shields.io/badge/Mongoose-9%2B-green)](https://mongoosejs.com)
@@ -14,6 +14,21 @@ Designed to help you build APIs faster by automating repetitive controller logic
 ---
 
 ## 📋 Changelog
+
+### Version 3.1.0 — HTTP QUERY
+
+Adds the **QUERY** method to every generated router. Everything else is unchanged.
+
+- **New**: `QUERY /` — a safe, idempotent read whose parameters travel in a JSON body instead
+  of the URL, for filters too long, too structured, or too sensitive for a query string. The
+  response matches the equivalent `GET /`.
+- **New**: structured `filter` conditions (`eq`, `ne`, `gt`, `gte`, `lt`, `lte`, `in`, `nin`),
+  written without `$` and translated through a fixed table. Fields still have to be in
+  `filterableFields`, and that allowlist holds even in `legacyMode`.
+- **New**: multi-key sorting — `"sort": ["category", "-price"]` — which the query string
+  cannot express.
+- **New**: `enableQuery` option, `isQueryMethodSupported()` export, `ControllerSets#queryAll`.
+  Requires Node 22.2+; on older runtimes the route is skipped with a single warning.
 
 ### Version 3.0.0 — Security release
 
@@ -86,6 +101,38 @@ const productRouter = createRouter({
 app.use('/api/products', productRouter);
 app.use(errorHandler);
 ```
+
+Every router serves six endpoints — `GET /`, `QUERY /`, `POST /`, `GET /:id`, `PATCH /:id`
+and `DELETE /:id`.
+
+### Reading with HTTP QUERY
+
+`QUERY` is GET with a body. Use it when a filter does not belong in a URL:
+
+```http
+QUERY /api/products HTTP/1.1
+Content-Type: application/json
+
+{
+  "filter": {
+    "category": "chairs",
+    "price": { "gte": 50, "lte": 250 }
+  },
+  "sort": ["-price", "name"],
+  "page": 1,
+  "pageSize": 20
+}
+```
+
+The body is not a MongoDB query: operators are spelled without `$` and resolved through a
+fixed table, field names are checked against `filterableFields` and `sortableFields`, and an
+unknown key is a `400` rather than something ignored. The response is byte-for-byte what
+`GET /api/products?...` would have returned.
+
+> [!NOTE]
+> QUERY is [RFC 10008](https://www.rfc-editor.org/rfc/rfc10008.html) and needs Node 22.2 or
+> newer — older runtimes reject the method inside the HTTP parser, before Express sees it.
+> Check with `isQueryMethodSupported()`; when it is false the route is simply not mounted.
 
 > [!IMPORTANT]
 > This package generates **public** endpoints. Authentication and authorization are yours to
