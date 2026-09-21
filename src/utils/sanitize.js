@@ -16,16 +16,48 @@ const MAX_SCAN_DEPTH = 8;
 export const IMMUTABLE_FIELDS = ["_id", "__v", "createdAt", "updatedAt"];
 
 /**
+ * Keys that reach an object's prototype chain rather than its own data.
+ *
+ * `JSON.parse` creates `__proto__` as a real own property, so a body of
+ * `{"__proto__": {"isAdmin": true}}` survives a naive key copy and re-points the
+ * payload's prototype on assignment. These are never field names.
+ */
+export const POLLUTING_KEYS = ["__proto__", "constructor", "prototype"];
+
+const POLLUTING = new Set(POLLUTING_KEYS);
+
+/**
  * Error carrying an HTTP status. `expose` marks a message as deliberately
  * authored for the client, which lets the error handler distinguish it from an
  * internal failure whose message may leak infrastructure detail.
+ *
+ * `headers` carries response headers that belong with the status — a 415 that
+ * names the format it wanted, for instance — so the handler that renders the
+ * error does not need to know why.
  */
 export class HttpError extends Error {
-    constructor(status, message) {
+    constructor(status, message, { headers } = {}) {
         super(message);
         this.name = "HttpError";
         this.status = status;
         this.expose = true;
+        if (headers) this.headers = headers;
+    }
+}
+
+/**
+ * A rejected request body, optionally with per-field messages.
+ *
+ * This is what a custom `validate` hook throws. It is deliberately separate from
+ * Mongoose's own `ValidationError`: that one carries an `errors` map of
+ * `ValidatorError` objects, while this one carries plain strings the API author
+ * wrote for the client.
+ */
+export class ValidationError extends HttpError {
+    constructor(message, fields, status = 400) {
+        super(status, message);
+        this.name = "ValidationError";
+        if (fields && typeof fields === "object") this.fields = fields;
     }
 }
 
@@ -37,11 +69,15 @@ export class HttpError extends Error {
 export const escapeRegex = (value) => String(value).replace(REGEX_SPECIALS, "\\$&");
 
 /**
- * A key is unsafe if Mongo would read it as something other than a plain field:
- * `$` introduces an operator, `.` traverses into a subdocument.
+ * A key is unsafe if it would be read as something other than a plain field:
+ * `$` introduces a Mongo operator, `.` traverses into a subdocument, and
+ * `__proto__` / `constructor` / `prototype` reach the prototype chain.
  */
 export const isUnsafeKey = (key) =>
-    typeof key !== "string" || key.startsWith("$") || key.includes(".");
+    typeof key !== "string" ||
+    key.startsWith("$") ||
+    key.includes(".") ||
+    POLLUTING.has(key);
 
 /** Recursively reports whether any key in a value would be interpreted by Mongo. */
 export const hasUnsafeKeysDeep = (value, depth = 0) => {
@@ -83,6 +119,26 @@ export const sanitizeFilterValue = (value, field) => {
     }
 
     return value;
+};
+
+/**
+ * Strips keys that are syntax rather than data from an object the *server* built
+ * — the return value of a `validate` hook, for example.
+ *
+ * Unlike `pickWritable` this applies no allowlist: code running on the server is
+ * trusted to set fields a client may not. It is only the keys that can change an
+ * object's shape or meaning that are refused, because no legitimate hook needs
+ * them.
+ */
+export const sanitizeAssignable = (value) => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+
+    const out = {};
+    for (const [key, entry] of Object.entries(value)) {
+        if (isUnsafeKey(key)) continue;
+        out[key] = entry;
+    }
+    return out;
 };
 
 /**

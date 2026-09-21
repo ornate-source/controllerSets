@@ -15,9 +15,7 @@ Designed to help you build APIs faster by automating repetitive controller logic
 
 ## 📋 Changelog
 
-### Version 3.1.0 — HTTP QUERY
-
-Adds the **QUERY** method to every generated router. Everything else is unchanged.
+### Version 3.1.0 — HTTP QUERY, custom validation, read cost controls
 
 - **New**: `QUERY /` — a safe, idempotent read whose parameters travel in a JSON body instead
   of the URL, for filters too long, too structured, or too sensitive for a query string. The
@@ -29,6 +27,15 @@ Adds the **QUERY** method to every generated router. Everything else is unchange
   cannot express.
 - **New**: `enableQuery` option, `isQueryMethodSupported()` export, `ControllerSets#queryAll`.
   Requires Node 22.2+; on older runtimes the route is skipped with a single warning.
+- **New**: a `validate` hook for `POST` and `PATCH` — your own rules, running after the field
+  policy and before Mongoose. Throw `ValidationError` for per-field messages; error responses
+  gain an optional `fields` map.
+- **New**: `countStrategy` (`exact` / `estimated` / `none`), `maxTimeMS` and `defaultPageSize`
+  for controlling what a list request costs.
+- **Security**: `__proto__`, `constructor` and `prototype` are refused as field names
+  everywhere. A JSON body could previously pollute the payload object's prototype.
+- **Internal**: the controller is now composed from single-purpose modules under `src/core/`.
+  No public behaviour changed.
 
 ### Version 3.0.0 — Security release
 
@@ -133,6 +140,46 @@ unknown key is a `400` rather than something ignored. The response is byte-for-b
 > QUERY is [RFC 10008](https://www.rfc-editor.org/rfc/rfc10008.html) and needs Node 22.2 or
 > newer — older runtimes reject the method inside the HTTP parser, before Express sees it.
 > Check with `isQueryMethodSupported()`; when it is false the route is simply not mounted.
+
+### Validating writes
+
+The field policy decides what a client *may* set. A `validate` hook decides whether the values
+make sense — it runs after the policy and before Mongoose:
+
+```javascript
+import { createRouter, ValidationError } from 'express-controller-sets';
+
+createRouter({
+    model: Product,
+    allowedFields: ['name', 'price'],
+
+    validate: {
+        create: (payload, { req }) => {
+            if (payload.price < 0) {
+                throw new ValidationError('Check the submitted values.', {
+                    price: 'must not be negative',
+                });
+            }
+            // Return an object to replace the payload: normalise input, or set
+            // server-owned fields no client is allowed to send.
+            return { ...payload, name: payload.name.trim(), ownerId: req.user.id };
+        },
+        update: (payload) => { /* … */ },
+    },
+});
+```
+
+A rejected write answers `400` (or whatever status you pass) with the field map beside the
+message:
+
+```json
+{ "success": false, "error": "Check the submitted values.",
+  "fields": { "price": "must not be negative" } }
+```
+
+Your schema's own Mongoose validators still run afterwards, as the last line of defence. Note
+that the hook runs *before* them — which is what lets it supply a `required` field like
+`ownerId` — so a field the schema marks required may still be absent when your hook sees it.
 
 > [!IMPORTANT]
 > This package generates **public** endpoints. Authentication and authorization are yours to

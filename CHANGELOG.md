@@ -9,10 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.1.0] — 2026-09-21
 
-Adds the HTTP **QUERY** method: a read whose parameters travel in a JSON body instead of the
-URL. Nothing else changes — existing routes, responses and options behave exactly as in 3.0.0.
+Three things: the HTTP **QUERY** method, a **custom validation hook** for writes, and
+**read cost controls**. Plus a prototype-pollution fix, and an internal restructure that
+leaves every public behaviour as it was in 3.0.0.
 
-### Added
+### Added — the QUERY method
 
 - **`QUERY /` on every generated router.** QUERY ([RFC 10008](https://www.rfc-editor.org/rfc/rfc10008.html))
   is safe and idempotent — GET with a body — for filters that are too long for a URL, too
@@ -39,6 +40,55 @@ URL. Nothing else changes — existing routes, responses and options behave exac
 - **`QUERY_FILTER_OPERATORS`** export, and `ControllerSets#queryAll` for hand-wired routers.
 - TypeScript types for all of the above: `QueryRequestBody`, `FilterCondition`,
   `FilterOperators`, `FilterScalar`.
+
+### Added — custom write validation
+
+- **`validate`** option: a hook that checks a create or an update before it reaches Mongoose,
+  as one function or `{ create, update }`. It receives the payload *after* the field policy
+  has been applied, so it never sees a field the client was not allowed to send.
+  - Return nothing to accept the payload, or a plain object to replace it — which is how a
+    hook normalises values or sets server-owned fields (`ownerId`, `slug`) that no client may
+    write. A replacement is still stripped of `$`-prefixed, dotted and prototype keys.
+  - Throw **`ValidationError`** (new export) to reject with per-field messages, or any
+    `HttpError` for a plain status. Anything else thrown is a 500 with no detail leaked.
+  - Mongoose's own schema validators still run afterwards, unchanged.
+- Error responses carry an optional **`fields`** map alongside `error`. It is populated by a
+  `ValidationError`, by Mongoose validation failures, and by duplicate-key conflicts. Clients
+  that do not look for it see exactly the shape they always have, and it is never sent on a 5xx.
+
+### Added — read cost controls
+
+- **`countStrategy`**: `'exact'` (default, unchanged), `'estimated'` (O(1) collection
+  metadata, used only when a page has no filter, since an estimate cannot see one), or
+  `'none'` (no count query at all — the `pagination` block carries `hasMore` instead of
+  `totalPages` / `totalRecords`, answered by fetching one extra document).
+- **`maxTimeMS`**: a server-side time limit applied to every read, including the count beside
+  it. Off by default. It is the only bound on a query that is slow in the database rather than
+  in this process.
+- **`defaultPageSize`**: the page size used when `?page=` arrives without `pageSize`.
+  Default 50, still clamped by `maxLimit`.
+- **`maxPage`**: the highest page a client may request, refused with 400 beyond it. Off by
+  default. `?page=9999999` is a cheap request that makes the database walk every skipped index
+  entry before returning anything; this and `maxTimeMS` are what bound it.
+
+### Security
+
+- **Prototype pollution in request bodies.** `JSON.parse` makes `__proto__` a real own
+  property, so `{"__proto__": {"isAdmin": true}}` survived the field filter and re-pointed the
+  payload object's prototype on assignment — after which `payload.isAdmin` read `true` without
+  the key ever appearing in `Object.keys`. `constructor` and `prototype` passed through as
+  ordinary field names. All three are now refused wherever a key is read: request bodies,
+  nested values, QUERY filters, and the return value of a `validate` hook.
+
+### Changed — internals
+
+- `ControllerSets` is now composed from single-purpose modules under `src/core/` — `config`
+  (options in, one frozen config out), `readParams` (request → filters, sort, page window;
+  pure), `search`, `write` (field policy, then your validator), `dataAccess` (every Mongoose
+  call, with the caps applied) and `respond` (the envelope). Each handler is a short
+  composition of those steps, so a rule lives in one place and a new endpoint cannot skip it.
+- No public behaviour changed: the same options, routes, responses and error messages. The
+  full suite that covered 3.0 passes unmodified.
 
 ### Behaviour worth knowing
 

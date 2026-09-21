@@ -2,7 +2,12 @@ import test from "node:test";
 import assert from "node:assert";
 import express from "express";
 import mongoose from "mongoose";
-import { createRouter, errorHandler, isQueryMethodSupported } from "../src/index.js";
+import {
+    ValidationError,
+    createRouter,
+    errorHandler,
+    isQueryMethodSupported,
+} from "../src/index.js";
 import { withServer } from "./helpers/mockModel.js";
 
 /**
@@ -286,6 +291,92 @@ test(
                 });
             },
         );
+
+        await t.test("a custom validator runs against real Mongoose writes", async () => {
+            const app = buildApp({
+                allowedFields: ["name", "email", "age"],
+                validate: {
+                    create: (payload) => {
+                        if (payload.age !== undefined && payload.age < 18) {
+                            throw new ValidationError("Check the submitted values.", {
+                                age: "must be 18 or older",
+                            });
+                        }
+                        return { ...payload, name: payload.name.trim(), role: "verified" };
+                    },
+                },
+            });
+
+            await withServer(app, async (base) => {
+                const post = (body) =>
+                    fetch(`${base}/users`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(body),
+                    });
+
+                const rejected = await post({
+                    name: "Kid",
+                    email: "kid@example.com",
+                    age: 12,
+                });
+                assert.strictEqual(rejected.status, 400);
+                assert.deepStrictEqual((await rejected.json()).fields, {
+                    age: "must be 18 or older",
+                });
+                assert.strictEqual(await User.countDocuments({ email: "kid@example.com" }), 0);
+
+                const accepted = await post({
+                    name: "  Grown Up  ",
+                    email: "grown@example.com",
+                    age: 30,
+                    role: "admin", // not writable: the policy strips it first
+                });
+                assert.strictEqual(accepted.status, 201);
+
+                // The hook normalised the name and set a field the client cannot.
+                const stored = await User.findOne({ email: "grown@example.com" }).lean();
+                assert.strictEqual(stored.name, "Grown Up");
+                assert.strictEqual(stored.role, "verified");
+            });
+        });
+
+        await t.test("countStrategy and maxTimeMS survive a real driver", async () => {
+            await User.create([
+                { name: "count-a", email: "count-a@example.com", tag: "counted" },
+                { name: "count-b", email: "count-b@example.com", tag: "counted" },
+                { name: "count-c", email: "count-c@example.com", tag: "counted" },
+            ]);
+
+            const options = {
+                query: ["tag"],
+                sortableFields: ["name"],
+                maxTimeMS: 5000,
+            };
+
+            await withServer(buildApp({ ...options, countStrategy: "none" }), async (base) => {
+                const res = await fetch(`${base}/users?tag=counted&page=1&pageSize=2&sort=name`);
+                const body = await res.json();
+
+                assert.strictEqual(res.status, 200);
+                assert.deepStrictEqual(body.pagination, {
+                    currentPage: 1,
+                    pageSize: 2,
+                    hasMore: true,
+                });
+                assert.deepStrictEqual(
+                    body.data.map((doc) => doc.name),
+                    ["count-a", "count-b"],
+                );
+            });
+
+            await withServer(buildApp({ ...options, countStrategy: "estimated" }), async (base) => {
+                const body = await (await fetch(`${base}/users?page=1&pageSize=2`)).json();
+                // An estimate reads collection metadata, so it must at least see
+                // the documents we just wrote.
+                assert.ok(body.pagination.totalRecords >= 3);
+            });
+        });
 
         await t.test("update and delete 404 on a valid but absent id", async () => {
             const app = buildApp({ allowedFields: ["name"] });

@@ -27,6 +27,54 @@ export interface Logger {
  */
 export type FieldPolicy = string[] | { create?: string[]; update?: string[] };
 
+/** Which write a hook is running for. */
+export type WriteOperation = "create" | "update";
+
+/** What a `validate` hook is told about the request it is checking. */
+export interface ValidateContext<T extends Document = any> {
+    req: Request;
+    res: Response;
+    operation: WriteOperation;
+    model: Model<T>;
+    /** The target document's id on an update; `undefined` on a create. */
+    id?: string;
+}
+
+/**
+ * Checks a write before it reaches Mongoose.
+ *
+ * Receives the payload *after* `allowedFields` / `blockedFields` have been
+ * applied, so it never sees a field a client was not allowed to send.
+ *
+ * It runs *before* the schema, so a field your schema marks `required` may still
+ * be absent here — check before dereferencing.
+ *
+ * Return nothing to accept it as-is, or a plain object to replace it — which is
+ * how a hook normalises values or sets server-owned fields such as `ownerId`.
+ * Throw `ValidationError` to reject with per-field messages, or any `HttpError`
+ * for a plain status. Anything else thrown becomes a 500.
+ */
+export type ValidateFn<T extends Document = any> = (
+    payload: Record<string, any>,
+    context: ValidateContext<T>,
+) => void | Record<string, any> | Promise<void | Record<string, any>>;
+
+/** One validator for both writes, or one per write. */
+export type ValidatePolicy<T extends Document = any> =
+    | ValidateFn<T>
+    | { create?: ValidateFn<T>; update?: ValidateFn<T> };
+
+/**
+ * How a paginated read learns how many records matched.
+ *
+ * - `exact` — `countDocuments`; correct, and the default.
+ * - `estimated` — collection metadata, O(1), but blind to filters, so a filtered
+ *   read still counts exactly.
+ * - `none` — no count query at all. `pagination` carries `hasMore` in place of
+ *   `totalPages` / `totalRecords`.
+ */
+export type CountStrategy = "exact" | "estimated" | "none";
+
 /** A value a client may put in a QUERY filter. */
 export type FilterScalar = string | number | boolean | null;
 
@@ -91,8 +139,26 @@ export interface ControllerOptions<T extends Document = any> {
      */
     sortableFields?: string[];
 
+    /** Checks a write before it reaches Mongoose. See {@link ValidateFn}. */
+    validate?: ValidatePolicy<T>;
+
     /** Hard cap on returned documents, paginated or not. Default 100. */
     maxLimit?: number;
+    /** Page size when `?page=` is given without `pageSize`. Default 50, capped by `maxLimit`. */
+    defaultPageSize?: number;
+    /**
+     * Highest page a client may request. Off by default.
+     * A deep page costs the database a full index walk to skip; beyond this one
+     * the request is refused with 400 rather than served.
+     */
+    maxPage?: number;
+    /** How a paginated read counts matches. Default `"exact"`. */
+    countStrategy?: CountStrategy;
+    /**
+     * Server-side time limit per query, in milliseconds. Off by default.
+     * The only bound on a query that is slow in the database rather than here.
+     */
+    maxTimeMS?: number;
     /** Maximum accepted length of a search term. Default 128. */
     maxSearchLength?: number;
     /** Pass search terms to MongoDB unescaped. Unsafe for untrusted callers. Default false. */
@@ -105,6 +171,11 @@ export interface ControllerOptions<T extends Document = any> {
     legacyMode?: boolean;
     logger?: Logger;
 }
+
+/** Pagination block returned with a paginated read. */
+export type Pagination =
+    | { currentPage: number; pageSize: number; totalPages: number; totalRecords: number }
+    | { currentPage: number; pageSize: number; hasMore: boolean };
 
 /**
  * ControllerSets - Express CRUD logic for Mongoose models.
@@ -228,9 +299,20 @@ export const errorHandler: ErrorRequestHandler;
 
 /** Error carrying an HTTP status whose message is safe to return to the client. */
 export class HttpError extends Error {
-    constructor(status: number, message: string);
+    constructor(status: number, message: string, options?: { headers?: Record<string, string> });
     status: number;
     expose: true;
+    /** Response headers that belong with this status, if any. */
+    headers?: Record<string, string>;
+}
+
+/**
+ * A rejected request body, optionally with per-field messages. Throw this from a
+ * `validate` hook; the response carries `fields` alongside `error`.
+ */
+export class ValidationError extends HttpError {
+    constructor(message: string, fields?: Record<string, string>, status?: number);
+    fields?: Record<string, string>;
 }
 
 /** Escapes regex metacharacters so user input matches literally. */

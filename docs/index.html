@@ -85,6 +85,8 @@
                 <p class="nav-group-title">Writing data</p>
                 <ul>
                     <li><a href="#writing"><i data-lucide="pencil"></i> Create &amp; update</a></li>
+                    <li><a href="#validation"><i data-lucide="check-check"></i> Validating writes <span
+                                class="nav-star">NEW</span></a></li>
                     <li><a href="#after-create"><i data-lucide="zap"></i> After-create hook</a></li>
                     <li><a href="#errors"><i data-lucide="alert-circle"></i> Errors &amp; status codes</a></li>
                 </ul>
@@ -624,6 +626,9 @@ curl -X POST localhost:3000/api/products \
                     <span class="chip chip-no"><i data-lucide="x"></i> <code>updatedAt</code></span>
                     <span class="chip chip-no"><i data-lucide="x"></i> any <code>$</code>-prefixed key</span>
                     <span class="chip chip-no"><i data-lucide="x"></i> any key containing <code>.</code></span>
+                    <span class="chip chip-no"><i data-lucide="x"></i> <code>__proto__</code></span>
+                    <span class="chip chip-no"><i data-lucide="x"></i> <code>constructor</code></span>
+                    <span class="chip chip-no"><i data-lucide="x"></i> <code>prototype</code></span>
                 </div>
 
                 <div class="callout callout-plain">
@@ -635,6 +640,12 @@ curl -X POST localhost:3000/api/products \
                             <code>{"owner.role": "admin"}</code> is an instruction, not data. The check runs on nested
                             values too, up to eight levels deep — beyond that the value is refused rather than vouched
                             for.</p>
+                        <p><strong>And why <code>__proto__</code> does.</strong> <code>JSON.parse</code> makes it a
+                            real own property, so <code>{"__proto__": {"isAdmin": true}}</code> survives a naive key
+                            copy and re-points the payload object's prototype on assignment — after which
+                            <code>payload.isAdmin</code> reads <code>true</code> while
+                            <code>Object.keys(payload)</code> shows nothing amiss. It, <code>constructor</code> and
+                            <code>prototype</code> are refused wherever a key is read.</p>
                     </div>
                 </div>
             </section>
@@ -664,7 +675,12 @@ curl -X POST localhost:3000/api/products \
   blockedFields: ['isFeatured'],
   filterableFields: ['price'],
   sortableFields: ['price', 'createdAt'],
+  validate: { create: (payload, ctx) =&gt; {}, update: (payload, ctx) =&gt; {} },
   maxLimit: 100,
+  defaultPageSize: 50,
+  maxPage: 200,                        // off by default
+  countStrategy: 'exact',              // 'estimated' | 'none'
+  maxTimeMS: 5000,                     // off by default
   maxSearchLength: 128,
   allowRawRegex: false,
   lean: false,
@@ -1629,6 +1645,203 @@ createRouter({
                 </div>
             </section>
 
+            <!-- ====================== VALIDATION ====================== -->
+            <section class="section reveal" id="validation">
+                <h2><i data-lucide="check-check"></i> Validating writes</h2>
+                <p class="section-intro">Two gates stand between a request body and your collection, and they answer
+                    different questions.</p>
+
+                <div class="card-grid">
+                    <div class="card reveal">
+                        <div class="card-icon"><i data-lucide="key-round"></i></div>
+                        <h4>The field policy</h4>
+                        <p><code>allowedFields</code> decides <em>what a client may set</em>. A question of
+                            authority — not yours to delegate.</p>
+                    </div>
+                    <div class="card reveal">
+                        <div class="card-icon"><i data-lucide="check-check"></i></div>
+                        <h4>Your validator</h4>
+                        <p><code>validate</code> decides <em>whether the values make sense</em>. A question only your
+                            domain can answer.</p>
+                    </div>
+                    <div class="card reveal">
+                        <div class="card-icon"><i data-lucide="database"></i></div>
+                        <h4>The schema</h4>
+                        <p>Mongoose's own validators run last, unchanged — types, <code>required</code>,
+                            <code>enum</code>, your custom paths.</p>
+                    </div>
+                </div>
+
+                <p>The order matters: your hook is handed the payload <strong>after</strong> the field policy has
+                    filtered it, so it never has to wonder whether <code>role</code> in front of it came from an
+                    admin or from a stranger. It cannot be there.</p>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>import { createRouter, ValidationError } from 'express-controller-sets';
+
+createRouter({
+  model: Product,
+  allowedFields: ['name', 'price', 'sku'],
+
+  validate: {
+    create: async (payload, { req }) =&gt; {
+      if (payload.price &lt; 0) {
+        throw new ValidationError('Check the submitted values.', {
+          price: 'must not be negative',
+        });
+      }
+
+      if (await Product.exists({ sku: payload.sku })) {
+        throw new ValidationError('That SKU is taken.', { sku: 'already in use' });
+      }
+
+      // Returning an object replaces the payload: normalise what came in,
+      // and set fields the client is not allowed to send.
+      return { ...payload, name: payload.name.trim(), ownerId: req.user.id };
+    },
+
+    update: (payload) =&gt; {
+      if (payload.price === 0) throw new ValidationError('Price cannot be zero.');
+    },
+  },
+});</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>Pass a single function instead of <code>{ create, update }</code> to run the same rules on both.</p>
+
+                <h3>What the hook receives</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Argument</th>
+                                <th>What it holds</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>payload</code></td>
+                                <td>The body, already filtered to the fields this client may write. Never empty — an
+                                    empty one is a 400 before the hook runs.</td>
+                            </tr>
+                            <tr>
+                                <td><code>context.req</code> · <code>context.res</code></td>
+                                <td>The Express request and response, for <code>req.user</code>, headers, uploaded
+                                    files.</td>
+                            </tr>
+                            <tr>
+                                <td><code>context.operation</code></td>
+                                <td><code>'create'</code> or <code>'update'</code> — useful when one function serves
+                                    both.</td>
+                            </tr>
+                            <tr>
+                                <td><code>context.id</code></td>
+                                <td>The target document's id on an update; <code>undefined</code> on a create.</td>
+                            </tr>
+                            <tr>
+                                <td><code>context.model</code></td>
+                                <td>The Mongoose model, so a uniqueness check needs no extra import.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>What it may return, and what it may throw</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>The hook…</th>
+                                <th>Result</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>returns nothing</td>
+                                <td>The payload is written as filtered. The common case.</td>
+                            </tr>
+                            <tr>
+                                <td>returns an object</td>
+                                <td>That object is written instead — your chance to normalise values or add
+                                    server-owned fields.</td>
+                            </tr>
+                            <tr>
+                                <td>throws <code>ValidationError</code></td>
+                                <td><strong>400</strong> (or the status you pass) with a <code>fields</code> map.</td>
+                            </tr>
+                            <tr>
+                                <td>throws any <code>HttpError</code></td>
+                                <td>That status, with your message. Use it for <code>403</code> and friends.</td>
+                            </tr>
+                            <tr>
+                                <td>throws anything else</td>
+                                <td><strong>500</strong>, with the detail kept in your log and out of the
+                                    response.</td>
+                            </tr>
+                            <tr>
+                                <td>is <code>async</code></td>
+                                <td>Awaited. Query the database in it if the rule needs to.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>The rejection a client sees</h3>
+                <div class="code-block" data-lang="json">
+                    <pre><code>// 400 Bad Request
+{
+  "success": false,
+  "error": "Check the submitted values.",
+  "fields": { "price": "must not be negative" }
+}</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p><code>fields</code> appears only when there is one, so a client that never looks for it sees the
+                    shape it always has. Mongoose validation failures and duplicate-key conflicts fill it in too, which
+                    means one rendering path on the client covers every rejected write. It is never sent on a
+                    <strong>5xx</strong> — an internal failure's detail is not the caller's business.</p>
+
+                <div class="callout callout-warn">
+                    <i data-lucide="alert-triangle"></i>
+                    <div>
+                        <p><strong>Your hook runs before the schema, so required fields may be missing.</strong>
+                            That ordering is deliberate — it is what lets a hook supply a <code>required</code> field
+                            like <code>ownerId</code> before Mongoose checks for it. The corollary is that
+                            <code>payload.name.trim()</code> throws when the client omitted <code>name</code>, and an
+                            unexpected throw is a 500. Check before you dereference:</p>
+                        <div class="code-block" data-lang="javascript">
+                            <pre><code>validate: (payload) =&gt; ({
+  ...payload,
+  // not payload.name.trim() — `name` may not be here yet
+  ...(payload.name ? { name: payload.name.trim() } : {}),
+});</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="callout callout-warn">
+                    <i data-lucide="shield-alert"></i>
+                    <div>
+                        <p><strong>A validator is not a substitute for <code>allowedFields</code>.</strong> It runs
+                            on what the policy already let through, so a model with no policy hands your hook every
+                            schema field and trusts you to remember which ones a stranger may set. Configure both.</p>
+                    </div>
+                </div>
+
+                <div class="callout callout-plain">
+                    <i data-lucide="shield"></i>
+                    <div>
+                        <p><strong>A returned object is trusted, but not blindly.</strong> Your hook runs on the
+                            server, so it may set fields no client can. Keys that are syntax rather than data —
+                            <code>$</code>-prefixed, dotted, or <code>__proto__</code> — are still stripped from what
+                            it returns. No legitimate hook needs them as field names.</p>
+                    </div>
+                </div>
+            </section>
+
             <!-- ====================== AFTER CREATE ====================== -->
             <section class="section reveal" id="after-create">
                 <h2><i data-lucide="zap"></i> The after-create hook</h2>
@@ -2275,6 +2488,13 @@ createRouter({
                     </div>
                     <div class="card reveal">
                         <div class="card-icon"><i data-lucide="gauge"></i></div>
+                        <h4>Bound the slow reads</h4>
+                        <p>Set <code>maxTimeMS</code>, and <code>maxPage</code> if the collection is large.
+                            <code>?page=9999999</code> is a cheap request that makes the database walk every skipped
+                            index entry; these are what stop it.</p>
+                    </div>
+                    <div class="card reveal">
+                        <div class="card-icon"><i data-lucide="gauge"></i></div>
                         <h4>Check <code>maxLimit</code></h4>
                         <p>100 by default. Raise it only as far as your slowest collection tolerates.</p>
                     </div>
@@ -2515,11 +2735,46 @@ new ControllerSets({ model: Model, orderBy: '-createdAt', query: ['category'] })
                                 <td>Fields usable with <code>?sort=</code>.</td>
                             </tr>
                             <tr>
+                                <td><code>validate</code></td>
+                                <td>function · {create, update}</td>
+                                <td><em>none</em></td>
+                                <td>Your own check on a write, run after the field policy and before Mongoose. See
+                                    <a href="#validation">Validating writes</a>.</td>
+                            </tr>
+                            <tr>
                                 <td><code>maxLimit</code></td>
                                 <td>number</td>
                                 <td><code>100</code></td>
                                 <td>Hard cap on documents returned, paginated or not. Also caps
                                     <code>?pageSize=</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>defaultPageSize</code></td>
+                                <td>number</td>
+                                <td><code>50</code></td>
+                                <td>Page size when <code>?page=</code> arrives without <code>pageSize</code>. Still
+                                    clamped by <code>maxLimit</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>maxPage</code></td>
+                                <td>number</td>
+                                <td><em>off</em></td>
+                                <td>Highest page a client may ask for. Beyond it, <strong>400</strong> — a deep page
+                                    costs the database a full index walk to skip.</td>
+                            </tr>
+                            <tr>
+                                <td><code>countStrategy</code></td>
+                                <td><code>'exact' | 'estimated' | 'none'</code></td>
+                                <td><code>'exact'</code></td>
+                                <td>How a paginated read counts matches. <code>'none'</code> returns
+                                    <code>hasMore</code> instead of totals and runs no count query.</td>
+                            </tr>
+                            <tr>
+                                <td><code>maxTimeMS</code></td>
+                                <td>number</td>
+                                <td><em>off</em></td>
+                                <td>Server-side time limit per query, including the count beside a page. The only
+                                    bound on a query that is slow in the database rather than here.</td>
                             </tr>
                             <tr>
                                 <td><code>maxSearchLength</code></td>
@@ -2675,6 +2930,12 @@ new ControllerSets({ model: Model, orderBy: '-createdAt', query: ['category'] })
                                 <td>An error carrying a status whose message is safe to return.</td>
                             </tr>
                             <tr>
+                                <td><code>ValidationError</code></td>
+                                <td>class</td>
+                                <td>A rejected body, with optional per-field messages. Throw it from
+                                    <code>validate</code>.</td>
+                            </tr>
+                            <tr>
                                 <td><code>escapeRegex(value)</code></td>
                                 <td>function</td>
                                 <td>Escape regex metacharacters in your own queries.</td>
@@ -2793,7 +3054,9 @@ GET /api/products
             <section class="section reveal" id="responses">
                 <h2><i data-lucide="braces"></i> Response shapes</h2>
                 <p class="section-intro">Four shapes, and <code>success</code> is always there to branch on. A
-                    <code>QUERY</code> read returns the same list and paginated shapes as <code>GET /</code>.</p>
+                    <code>QUERY</code> read returns the same list and paginated shapes as <code>GET /</code>. Under
+                    <code>countStrategy: 'none'</code> the <code>pagination</code> block carries <code>hasMore</code>
+                    in place of <code>totalPages</code> and <code>totalRecords</code>.</p>
 
                 <div class="tabs">
                     <div class="tab-list" role="tablist" aria-label="Response shapes">
@@ -2849,12 +3112,22 @@ GET /api/products
 { "success": true, "message": "Item successfully deleted." }
 
 // Any failure
-{ "success": false, "error": "Entry not found.", "requestId": "0f2a…" }</code></pre>
+{ "success": false, "error": "Entry not found.", "requestId": "0f2a…" }
+
+// A rejected write, when the failure was per-field
+{
+  "success": false,
+  "error": "Check the submitted values.",
+  "fields": { "price": "must not be negative" },
+  "requestId": "0f2a…"
+}</code></pre>
                             <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
                         </div>
                         <p><code>requestId</code> appears on errors that pass through <code>errorHandler</code>. Errors
                             answered directly by the controller carry <code>success</code> and <code>error</code>
-                            only.</p>
+                            only. <code>fields</code> appears only when there is one — from a
+                            <a href="#validation"><code>ValidationError</code></a>, a Mongoose validation failure or a
+                            duplicate key — and never on a 5xx.</p>
                     </div>
                 </div>
 
@@ -2898,7 +3171,10 @@ app.use(errorHandler);</code></pre>
                     <code>OnGetFn</code>, <code>OnGetResult</code>, <code>FieldPolicy</code>,
                     <code>ImageOptimizationLevel</code> and <code>Logger</code> — plus
                     <code>QueryRequestBody</code>, <code>FilterCondition</code>, <code>FilterOperators</code> and
-                    <code>FilterScalar</code> for the <a href="#http-query">QUERY</a> body.</p>
+                    <code>FilterScalar</code> for the <a href="#http-query">QUERY</a> body, and
+                    <code>ValidateFn</code>, <code>ValidateContext</code>, <code>ValidatePolicy</code>,
+                    <code>WriteOperation</code>, <code>CountStrategy</code> and <code>Pagination</code> for
+                    <a href="#validation">validation</a> and paging.</p>
 
                 <p>Typing the body on the client side keeps a filter honest before it is ever sent:</p>
 
@@ -2979,6 +3255,55 @@ if (isQueryMethodSupported()) router.query('/', controller.queryAll);</code></pr
                         </div>
                     </div>
                 </div>
+
+                <h3>How the handlers are put together</h3>
+                <p>Each handler is a short composition of the same four steps, and every step lives in its own module
+                    under <code>src/core/</code>. Reach for them when you are writing an endpoint this library does
+                    not generate — a rule enforced in one of these applies to anything built on it.</p>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Module</th>
+                                <th>Responsibility</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>core/config.js</code></td>
+                                <td>Options in, one frozen config out. Every default is resolved once, here.</td>
+                            </tr>
+                            <tr>
+                                <td><code>core/readParams.js</code></td>
+                                <td>Request → filters, sort, page window. Pure: no database, no response, no
+                                    <code>this</code>. Shared by <code>GET</code> and <code>QUERY</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>core/search.js</code></td>
+                                <td>Search terms, escaped, including across referenced models.</td>
+                            </tr>
+                            <tr>
+                                <td><code>core/write.js</code></td>
+                                <td>Body → payload: the field policy, then your <a href="#validation">validator</a>.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><code>core/dataAccess.js</code></td>
+                                <td>Every Mongoose call, with <code>maxLimit</code>, <code>maxTimeMS</code>,
+                                    <code>lean</code> and <code>onGet</code> already applied.</td>
+                            </tr>
+                            <tr>
+                                <td><code>core/respond.js</code></td>
+                                <td>The response envelope, so no endpoint can invent a fifth shape.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>The split is why <code>GET /</code> and <code>QUERY /</code> cannot drift apart: they differ only
+                    in which <code>readParams</code> function turns the request into parameters, and agree on
+                    everything after that.</p>
 
                 <h3>Add routes to a generated router</h3>
                 <p>A generated router is an ordinary Express router. Mount your own routes on the same path — declare

@@ -83,10 +83,12 @@ export const createMockModel = ({ modelName = "Mock", refPaths = {} } = {}) => {
         lastSelect: null,
         lastLean: false,
         lastUpdate: null,
+        lastMaxTimeMS: null,
+        counts: { exact: 0, estimated: 0 },
     };
 
     const makeQuery = (resolver) => {
-        const state = { sort: null, skip: 0, limit: 0, lean: false };
+        const state = { sort: null, skip: 0, limit: 0, lean: false, maxTimeMS: null };
         const query = {
             sort(value) {
                 state.sort = value;
@@ -113,6 +115,11 @@ export const createMockModel = ({ modelName = "Mock", refPaths = {} } = {}) => {
             lean() {
                 state.lean = true;
                 calls.lastLean = true;
+                return query;
+            },
+            maxTimeMS(value) {
+                state.maxTimeMS = value;
+                calls.lastMaxTimeMS = value;
                 return query;
             },
             then(resolve, reject) {
@@ -191,10 +198,18 @@ export const createMockModel = ({ modelName = "Mock", refPaths = {} } = {}) => {
             return Promise.resolve(existing ?? null);
         },
 
+        // Mongoose returns a Query from both counters, so they are chainable
+        // here too — otherwise `maxTimeMS` could not be observed on a count.
         countDocuments(filters = {}) {
-            return Promise.resolve(
-                [...store.values()].filter((doc) => matchDocument(doc, filters)).length,
+            calls.counts.exact += 1;
+            return makeQuery(
+                () => [...store.values()].filter((doc) => matchDocument(doc, filters)).length,
             );
+        },
+
+        estimatedDocumentCount() {
+            calls.counts.estimated += 1;
+            return makeQuery(() => store.size);
         },
     };
 
