@@ -3,7 +3,6 @@ import assert from "node:assert";
 import express from "express";
 import {
     createRouter,
-    createRouterS3upload,
     errorHandler,
     isQueryMethodSupported,
 } from "../src/index.js";
@@ -437,13 +436,13 @@ test("HTTP QUERY", { skip: isQueryMethodSupported() ? false : "runtime has no QU
         assert.strictEqual(res.status, 404);
     });
 
-    await t.test("QUERY never reaches the upload middleware on an S3 router", async () => {
+    await t.test("QUERY never reaches the upload middleware on an upload router", async () => {
         const model = seedItems(createMockModel());
         const app = express();
         app.use(express.json());
         app.use(
             "/files",
-            createRouterS3upload({
+            createRouter({
                 model,
                 logger: silentLogger,
                 query: ["category"],

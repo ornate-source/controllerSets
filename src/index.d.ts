@@ -306,13 +306,25 @@ export interface UploadOptions {
     allowClientImageOptions?: boolean;
 }
 
+/** File uploads on a `createRouter` router: `POST /` and `PATCH /:id` accept multipart. */
+export interface RouterUploadOptions extends Omit<UploadOptions, "uploadPath"> {
+    /** Folder in the bucket. Default `'files/'`. */
+    path?: string;
+}
+
 export interface RouterOptions<T extends Document = any> extends ControllerOptions<T> {
     middlewares?: any[];
     /** Mount the HTTP QUERY route on `/`. Default true. */
     enableQuery?: boolean;
+    /**
+     * Accept files on `POST /` and `PATCH /:id` and store them in S3. `true` uses
+     * every default; an object overrides the ones it names. Off when omitted.
+     */
+    upload?: boolean | RouterUploadOptions;
 }
 
-export interface RouterS3Options<T extends Document = any> extends RouterOptions<T> {
+/** @deprecated since 3.3.0, removed in 4.0. Use `RouterOptions` with `upload`. */
+export interface RouterS3Options<T extends Document = any> extends Omit<RouterOptions<T>, "upload"> {
     path?: string;
     fields?: UploadField[];
     imgOptimizations?: ImageOptimizationLevel;
@@ -330,12 +342,14 @@ export function createMemoryCacheStore(options?: { maxEntries?: number }): Cache
 export function createRedisCacheStore(options: { url?: string; client?: unknown; logger?: Logger }): CacheStore;
 
 /**
- * Creates a standard Express router for the given model.
+ * Creates an Express CRUD router for the given model. Pass `upload` to accept
+ * files on `POST /` and `PATCH /:id`.
  */
 export function createRouter<T extends Document = any>(options: RouterOptions<T>): ControllerRouter;
 
 /**
  * Creates an Express router with S3 upload support for the given model.
+ * @deprecated since 3.3.0, removed in 4.0. Use `createRouter({ upload: { path, fields, ... } })`.
  */
 export function createRouterS3upload<T extends Document = any>(
     options: RouterS3Options<T>,

@@ -1,4 +1,5 @@
 import http from "node:http";
+import { deprecate } from "node:util";
 import express from "express";
 import { ControllerSets } from "./ControllerSets.js";
 import { fileUploadMiddleware } from "./s3upload.js";
@@ -12,6 +13,10 @@ const ROUTER_ONLY_OPTIONS = [
     "upload",
     "enableQuery",
 ];
+
+// The 3.x `createRouterS3upload` took these at the top level; `createRouter` reads
+// them from `upload`.
+const LEGACY_UPLOAD_OPTIONS = ["path", "fields", "imgOptimizations"];
 
 const controllerOptionsFrom = (options) =>
     Object.fromEntries(
@@ -50,6 +55,38 @@ const registerQueryRoute = (router, controller, logger) => {
     return false;
 };
 
+let strayUploadOptionsWarned = false;
+
+/**
+ * Resolves the `upload` option to `fileUploadMiddleware` options, or null when
+ * the router takes no files. `true` means every default; an object turns uploads
+ * on and overrides the defaults it names.
+ */
+const uploadOptionsFrom = (options) => {
+    const { upload } = options;
+
+    const stray = LEGACY_UPLOAD_OPTIONS.filter((key) => options[key] !== undefined);
+    if (stray.length > 0 && !strayUploadOptionsWarned) {
+        strayUploadOptionsWarned = true;
+        (options.logger ?? console).warn(
+            `[ControllerSets] createRouter ignores top-level ${stray.map((k) => `'${k}'`).join(", ")}. ` +
+                `Move ${stray.length > 1 ? "them" : "it"} into 'upload', e.g. ` +
+                `upload: { ${stray[0]}: ... }.`,
+        );
+    }
+
+    if (upload === undefined || upload === false || upload === null) return null;
+    if (upload === true) return {};
+    if (typeof upload !== "object" || Array.isArray(upload)) {
+        throw new TypeError(
+            "createRouter: 'upload' must be true or an options object.",
+        );
+    }
+
+    const { path, ...rest } = upload;
+    return path === undefined ? rest : { ...rest, uploadPath: path };
+};
+
 export const createRouter = (options = {}) => {
     const { middlewares = [], enableQuery = true } = options;
 
@@ -60,46 +97,40 @@ export const createRouter = (options = {}) => {
 
     const controller = new ControllerSets(controllerOptionsFrom(options));
 
+    const uploadOptions = uploadOptionsFrom(options);
+    // Only writes take files; reads, QUERY included, never run the upload middleware.
+    const writeMiddleware = uploadOptions
+        ? [(req, res, next) => fileUploadMiddleware(req, res, next, uploadOptions)]
+        : [];
+
     router.get("/", controller.getAll);
     if (enableQuery) registerQueryRoute(router, controller, options.logger);
-    router.post("/", controller.create);
+    router.post("/", ...writeMiddleware, controller.create);
     router.get("/:id", controller.get);
-    router.patch("/:id", controller.update);
+    router.patch("/:id", ...writeMiddleware, controller.update);
     router.delete("/:id", controller.delete);
 
     router.invalidateCache = controller.invalidateCache;
     return router;
 };
 
-export const createRouterS3upload = (options = {}) => {
-    const {
-        middlewares = [],
-        path = "files/",
-        fields = [{ name: "file", maxCount: 1 }],
-        imgOptimizations = undefined,
-        upload = {},
-        enableQuery = true,
-    } = options;
-
-    const router = express.Router();
-    if (middlewares.length > 0) {
-        router.use(middlewares);
-    }
-
-    const controller = new ControllerSets(controllerOptionsFrom(options));
-
-    const uploadOptions = { ...upload, uploadPath: path, fields, imgOptimizations };
-    const uploadMiddleware = (req, res, next) =>
-        fileUploadMiddleware(req, res, next, uploadOptions);
-
-    router.get("/", controller.getAll);
-    // QUERY is a read, so it never runs the upload middleware.
-    if (enableQuery) registerQueryRoute(router, controller, options.logger);
-    router.post("/", uploadMiddleware, controller.create);
-    router.get("/:id", controller.get);
-    router.patch("/:id", uploadMiddleware, controller.update);
-    router.delete("/:id", controller.delete);
-
-    router.invalidateCache = controller.invalidateCache;
-    return router;
-};
+/**
+ * @deprecated since 3.3.0, removed in 4.0. Use `createRouter({ upload: { ... } })`.
+ */
+export const createRouterS3upload = deprecate(
+    (options = {}) => {
+        const { path, fields, imgOptimizations, upload = {}, ...rest } = options;
+        return createRouter({
+            ...rest,
+            upload: {
+                ...upload,
+                ...(path !== undefined && { path }),
+                ...(fields !== undefined && { fields }),
+                ...(imgOptimizations !== undefined && { imgOptimizations }),
+            },
+        });
+    },
+    "createRouterS3upload() is deprecated and will be removed in express-controller-sets 4.0. " +
+        "Use createRouter({ upload: { path, fields, imgOptimizations, ... } }) instead.",
+    "ECS_DEP001",
+);

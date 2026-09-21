@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.3.0] — 2026-09-21
+
+One router for CRUD with or without files.
+
+### Added
+
+- **`createRouter({ upload })`** accepts files on `POST /` and `PATCH /:id` and stores them in
+  S3. `upload: true` uses every default; an object takes `path`, `fields`,
+  `imgOptimizations`, `acl`, `allowedMimeTypes`, `maxFileSize`, `maxFiles` and
+  `allowClientImageOptions`. Reads, `QUERY` included, never run the upload step.
+- `RouterUploadOptions` type for the `upload` object.
+
+### Deprecated
+
+- **`createRouterS3upload`** — use `createRouter` with `upload`. It now forwards to
+  `createRouter`, emits a `DeprecationWarning` (`ECS_DEP001`) once per process, and is
+  **removed in 4.0**. `RouterS3Options` is deprecated with it. See
+  [MIGRATION.md](MIGRATION.md).
+
+### Changed
+
+- `createRouter` warns once when given top-level `path`, `fields` or `imgOptimizations`,
+  which it ignores; they belong in `upload`.
+- Docs: the "Dynamic Router" guide is now "createRouter".
+
+---
+
 ## [3.2.0] — 2026-09-21
 
 Adds authentication: register, sign-in by any identifier, social sign-in, password change,

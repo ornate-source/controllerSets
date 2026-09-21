@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dynamic Router · express-controller-sets</title>
-  <meta name="description" content="Every option of createRouter and createRouterS3upload, why you would use it, and every API endpoint they create.">
+  <title>createRouter · express-controller-sets</title>
+  <meta name="description" content="Every option of createRouter — including file uploads — why you would use it, and every API endpoint it creates.">
   <link rel="canonical" href="https://ornate-source.github.io/controllerSets/router.html">
-  <meta property="og:title" content="Dynamic Router · express-controller-sets">
-  <meta property="og:description" content="Every option of createRouter and createRouterS3upload, why you would use it, and every API endpoint they create.">
+  <meta property="og:title" content="createRouter · express-controller-sets">
+  <meta property="og:description" content="Every option of createRouter — including file uploads — why you would use it, and every API endpoint it creates.">
   <meta property="og:type" content="website">
   <link rel="alternate" type="text/plain" title="LLM guide" href="llms-full.txt">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -55,7 +55,7 @@
         </div>
 <div class="nav-group" data-group="guides">
           <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="book-open"></i><span>Guides</span><i data-lucide="chevron-down" class="chev"></i></button>
-          <ul class="nav-pages"><li class="nav-page-item is-open"><a class="nav-page" href="router.html" aria-current="page"><i data-lucide="route"></i><span class="nav-page-label">Dynamic Router</span></a><ul class="nav-sections"><li><a class="nav-section" href="#router-options" data-target="router-options">Options available in createRouter (no file upload)</a></li><li><a class="nav-section" href="#opts-core" data-target="opts-core">Model &amp; response</a></li><li><a class="nav-section" href="#opts-read" data-target="opts-read">Filtering, search &amp; sorting</a></li><li><a class="nav-section" href="#opts-paging" data-target="opts-paging">Pagination &amp; limits</a></li><li><a class="nav-section" href="#opts-write" data-target="opts-write">Writing &amp; validation</a></li><li><a class="nav-section" href="#opts-cache" data-target="opts-cache">Cache</a></li><li><a class="nav-section" href="#opts-router" data-target="opts-router">Router options</a></li><li><a class="nav-section" href="#s3-router" data-target="s3-router">S3 upload router</a></li><li><a class="nav-section" href="#api-overview" data-target="api-overview">API endpoints</a></li><li><a class="nav-section" href="#api-filtering" data-target="api-filtering">Filtering</a></li><li><a class="nav-section" href="#api-search" data-target="api-search">Searching</a></li><li><a class="nav-section" href="#api-sorting" data-target="api-sorting">Sorting</a></li><li><a class="nav-section" href="#api-pagination" data-target="api-pagination">Pagination</a></li><li><a class="nav-section" href="#api-combined" data-target="api-combined">Putting it together</a></li><li><a class="nav-section" href="#api-query" data-target="api-query">QUERY: filters in a JSON body</a></li><li><a class="nav-section" href="#api-single" data-target="api-single">Read, create, update, delete</a></li><li><a class="nav-section" href="#api-errors" data-target="api-errors">Errors</a></li><li><a class="nav-section" href="#patterns" data-target="patterns">Patterns &amp; more detail</a></li></ul></li>
+          <ul class="nav-pages"><li class="nav-page-item is-open"><a class="nav-page" href="router.html" aria-current="page"><i data-lucide="route"></i><span class="nav-page-label">createRouter</span></a><ul class="nav-sections"><li><a class="nav-section" href="#router-options" data-target="router-options">Options available in createRouter</a></li><li><a class="nav-section" href="#opts-core" data-target="opts-core">Model &amp; response</a></li><li><a class="nav-section" href="#opts-read" data-target="opts-read">Filtering, search &amp; sorting</a></li><li><a class="nav-section" href="#opts-paging" data-target="opts-paging">Pagination &amp; limits</a></li><li><a class="nav-section" href="#opts-write" data-target="opts-write">Writing &amp; validation</a></li><li><a class="nav-section" href="#opts-cache" data-target="opts-cache">Cache</a></li><li><a class="nav-section" href="#opts-router" data-target="opts-router">Router options</a></li><li><a class="nav-section" href="#s3-router" data-target="s3-router">S3 uploads</a></li><li><a class="nav-section" href="#api-overview" data-target="api-overview">API endpoints</a></li><li><a class="nav-section" href="#api-filtering" data-target="api-filtering">Filtering</a></li><li><a class="nav-section" href="#api-search" data-target="api-search">Searching</a></li><li><a class="nav-section" href="#api-sorting" data-target="api-sorting">Sorting</a></li><li><a class="nav-section" href="#api-pagination" data-target="api-pagination">Pagination</a></li><li><a class="nav-section" href="#api-combined" data-target="api-combined">Putting it together</a></li><li><a class="nav-section" href="#api-query" data-target="api-query">QUERY: filters in a JSON body</a></li><li><a class="nav-section" href="#api-single" data-target="api-single">Read, create, update, delete</a></li><li><a class="nav-section" href="#api-errors" data-target="api-errors">Errors</a></li><li><a class="nav-section" href="#patterns" data-target="patterns">Patterns &amp; more detail</a></li></ul></li>
 <li class="nav-page-item"><a class="nav-page" href="cache.html"><i data-lucide="zap"></i><span class="nav-page-label">Redis cache</span></a></li>
 <li class="nav-page-item"><a class="nav-page" href="uploads.html"><i data-lucide="upload-cloud"></i><span class="nav-page-label">S3 Upload</span></a></li>
 <li class="nav-page-item"><a class="nav-page" href="auth.html"><i data-lucide="key-round"></i><span class="nav-page-label">Auth setup</span></a></li>
@@ -73,12 +73,12 @@
     <main class="doc" id="main" tabindex="-1">
       <article class="doc-inner">
         <header class="page-header">
-          <p class="breadcrumb">Guides <i data-lucide="chevron-right"></i> Dynamic Router</p>
-          <h1>Dynamic Router</h1>
-          <p class="page-summary">Every option of createRouter and createRouterS3upload, why you would use it, and every API endpoint they create.</p>
+          <p class="breadcrumb">Guides <i data-lucide="chevron-right"></i> createRouter</p>
+          <h1>createRouter</h1>
+          <p class="page-summary">Every option of createRouter — including file uploads — why you would use it, and every API endpoint it creates.</p>
         </header>
         <section class="section" id="router-options">
-<h2>Options available in createRouter (no file upload)<a class="anchor" href="#router-options" aria-label="Link to this section">#</a></h2>
+<h2>Options available in createRouter<a class="anchor" href="#router-options" aria-label="Link to this section">#</a></h2>
 <p>Every option <code>createRouter</code> accepts. Only <code>model</code> is required — start with <code>model</code> and <code>allowedFields</code>, and add the rest as you need them. Each one is explained below.</p>
 <div class="code-block" data-lang="javascript">
 <pre><code class="language-javascript">createRouter({
@@ -122,6 +122,9 @@
   middlewares: [],
   enableQuery: true,
   legacyMode: false,
+
+  // File upload (off when omitted) — see S3 uploads below
+  upload: { path: 'products/', fields: [{ name: 'cover', maxCount: 1 }] },
 });</code></pre>
 </div>
 <p>The router it returns serves six routes: <code>GET /</code>, <code>QUERY /</code>, <code>POST /</code>, <code>GET /:id</code>, <code>PATCH /:id</code> and <code>DELETE /:id</code> — see <a href="#api-overview">API endpoints</a>.</p>
@@ -136,17 +139,6 @@
 <tr><td><code>lean</code></td><td><code>false</code></td><td>Faster reads and less memory on large lists, when you don't need schema virtuals or <code>toJSON</code> transforms.</td></tr>
 <tr><td><code>logger</code></td><td>console</td><td>Send the library's warnings to your own logger (pino, winston) instead of the console.</td></tr>
 </tbody></table></div>
-<div class="code-block" data-lang="javascript">
-<pre><code class="language-javascript">createRouter({
-  model: Book,
-  orderBy: '-publishedAt',
-  onGet: (req) =&gt; ({
-    populates: [{ path: 'author', select: 'name' }],
-    selects: '-internalNotes',
-  }),
-  allowedFields: ['title', 'author'],
-});</code></pre>
-</div>
 </section>
 
 <section class="section" id="opts-read">
@@ -243,6 +235,7 @@ createRouter({
 <tr><td><code>middlewares</code></td><td><code>[]</code></td><td>Auth, rate limiting or logging for every route of this router.</td></tr>
 <tr><td><code>enableQuery</code></td><td><code>true</code></td><td>Turn off the <code>QUERY</code> route when you don't need it, or when a middleware scopes reads through <code>req.query</code>.</td></tr>
 <tr><td><code>legacyMode</code></td><td><code>false</code></td><td>Only while migrating a 2.x app. It removes the allowlists and limits.</td></tr>
+<tr><td><code>upload</code></td><td>off</td><td>Accept files on <code>POST</code> and <code>PATCH</code> and store them in S3 — see <a href="#s3-router">S3 uploads</a>.</td></tr>
 </tbody></table></div>
 <div class="code-block" data-lang="javascript">
 <pre><code class="language-javascript">// Anyone can read; only admins can write — two routers, one model
@@ -256,29 +249,29 @@ app.use('/api/admin/products', createRouter({
 </section>
 
 <section class="section" id="s3-router">
-<h2>S3 upload router<a class="anchor" href="#s3-router" aria-label="Link to this section">#</a></h2>
-<p><code>createRouterS3upload</code> is <code>createRouter</code> plus file uploads: every option above, and the upload options below. <code>POST</code> and <code>PATCH</code> accept <code>multipart/form-data</code>; files go to your bucket and their URLs are saved on the record.</p>
+<h2>S3 uploads<a class="anchor" href="#s3-router" aria-label="Link to this section">#</a></h2>
+<p>Add <code>upload</code> to <code>createRouter</code> and <code>POST</code> and <code>PATCH</code> accept <code>multipart/form-data</code>; files go to your bucket and their URLs are saved on the record. Every option above still applies. <code>upload: true</code> takes every default; an object overrides the ones it names. Reads — <code>GET</code> and <code>QUERY</code> — never run the upload step.</p>
+<div class="callout callout-warn"><i data-lucide="info"></i><div><p><code>createRouterS3upload</code> is deprecated since 3.3.0 and is removed in 4.0. Move <code>path</code>, <code>fields</code> and <code>imgOptimizations</code> into <code>upload</code> and call <code>createRouter</code> — see <a href="https://github.com/ornate-source/controllerSets/blob/main/MIGRATION.md">MIGRATION.md</a>.</p></div></div>
 <div class="code-block" data-lang="bash">
 <pre><code class="language-bash">npm install multer @aws-sdk/client-s3     # plus sharp for image compression</code></pre>
 </div>
 <div class="code-block" data-lang="javascript">
-<pre><code class="language-javascript">import { createRouterS3upload } from 'express-controller-sets';
+<pre><code class="language-javascript">import { createRouter } from 'express-controller-sets';
 
-createRouterS3upload({
-  // Every createRouter option above works here too, for example:
+createRouter({
+  // Every option above works here too, for example:
   model: Product,
   middlewares: [auth.requireAuth],
   allowedFields: ['name', 'price', 'cover', 'gallery'],   // include the file fields
 
-  // File upload
-  path: 'products/',                                      // folder in the bucket
-  fields: [
-    { name: 'cover', maxCount: 1 },                       // saved as a URL string
-    { name: 'gallery', maxCount: 6 },                     // saved as an array of URLs
-    { name: 'manual', maxCount: 1, formatToUrlObject: true },  // saved as { url }
-  ],
-  imgOptimizations: 'medium',                             // 'low' | 'medium' | 'high' (needs sharp)
   upload: {
+    path: 'products/',                                    // folder in the bucket
+    fields: [
+      { name: 'cover', maxCount: 1 },                     // saved as a URL string
+      { name: 'gallery', maxCount: 6 },                   // saved as an array of URLs
+      { name: 'manual', maxCount: 1, formatToUrlObject: true },  // saved as { url }
+    ],
+    imgOptimizations: 'medium',                           // 'low' | 'medium' | 'high' (needs sharp)
     acl: 'private',                                       // or 'public-read'
     allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
     maxFileSize: 10 * 1024 * 1024,                        // per file, bytes
@@ -288,10 +281,10 @@ createRouterS3upload({
 });</code></pre>
 </div>
 <div class="table-container"><table><thead><tr><th>Option</th><th>Default</th><th>Why use it</th></tr></thead><tbody>
-<tr><td><code>path</code></td><td><code>'files/'</code></td><td>Keep each model's files in their own folder of the bucket.</td></tr>
-<tr><td><code>fields</code></td><td><code>[{ name: 'file', maxCount: 1 }]</code></td><td>Name the form fields that carry files. <code>maxCount: 1</code> saves a string; more saves an array.</td></tr>
-<tr><td><code>fields[].formatToUrlObject</code></td><td><code>false</code></td><td>Save <code>{ url }</code> instead of a string, when your schema stores file objects.</td></tr>
-<tr><td><code>imgOptimizations</code></td><td>off</td><td>Shrink JPEG, PNG and WebP images before storing them — smaller bills, faster pages.</td></tr>
+<tr><td><code>upload.path</code></td><td><code>'files/'</code></td><td>Keep each model's files in their own folder of the bucket.</td></tr>
+<tr><td><code>upload.fields</code></td><td><code>[{ name: 'file', maxCount: 1 }]</code></td><td>Name the form fields that carry files. <code>maxCount: 1</code> saves a string; more saves an array.</td></tr>
+<tr><td><code>upload.fields[].formatToUrlObject</code></td><td><code>false</code></td><td>Save <code>{ url }</code> instead of a string, when your schema stores file objects.</td></tr>
+<tr><td><code>upload.imgOptimizations</code></td><td>off</td><td>Shrink JPEG, PNG and WebP images before storing them — smaller bills, faster pages.</td></tr>
 <tr><td><code>upload.acl</code></td><td><code>'private'</code></td><td>Private by default. <code>'public-read'</code> when the URL should open in a browser, like product photos.</td></tr>
 <tr><td><code>upload.allowedMimeTypes</code></td><td>JPEG, PNG, GIF, WebP, AVIF, PDF</td><td>Accept only the file types you expect. Checked from the file bytes, not the client's claim.</td></tr>
 <tr><td><code>upload.maxFileSize</code></td><td>10 MB</td><td>Stop oversized uploads before they reach your bucket.</td></tr>
@@ -336,7 +329,7 @@ console.log(data.cover, data.gallery);</code></pre>
 <tr><td><span class="m m-patch">PATCH</span></td><td><code>/api/products/:id</code></td><td>JSON fields to change</td><td>200 record</td></tr>
 <tr><td><span class="m m-delete">DELETE</span></td><td><code>/api/products/:id</code></td><td>—</td><td>200 message</td></tr>
 </tbody></table></div>
-<div class="callout callout-warn"><i data-lucide="info"></i><div><p>A parameter only works on fields the server allows — in <code>query</code>, <code>search</code>, <code>filterableFields</code> or <code>sortableFields</code>. An equality filter on any other field is ignored; a range, compare or sort on one is a <strong>400</strong> naming the field. See <a href="#opts-read">Dynamic Router</a>.</p></div></div>
+<div class="callout callout-warn"><i data-lucide="info"></i><div><p>A parameter only works on fields the server allows — in <code>query</code>, <code>search</code>, <code>filterableFields</code> or <code>sortableFields</code>. An equality filter on any other field is ignored; a range, compare or sort on one is a <strong>400</strong> naming the field. See <a href="#opts-read">Filtering, search &amp; sorting</a>.</p></div></div>
 </section>
 
 <section class="section" id="api-filtering">

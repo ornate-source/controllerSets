@@ -24,8 +24,7 @@ npm install express-controller-sets express mongoose
 
 ```js
 import {
-  createRouter,          // CRUD router for one model
-  createRouterS3upload,  // CRUD router + multipart S3 uploads
+  createRouter,          // CRUD router for one model; pass `upload` for multipart S3 uploads
   ControllerSets,        // the handlers, for custom routers
   createAuthRouter,      // authentication API
   errorHandler,          // JSON error middleware — mount LAST
@@ -212,20 +211,25 @@ schema-`required` field may still be missing there.
 ## Uploads (S3-compatible)
 
 ```js
-import { createRouterS3upload } from 'express-controller-sets';
+import { createRouter } from 'express-controller-sets';
 
-app.use('/api/documents', createRouterS3upload({
+app.use('/api/documents', createRouter({
   model: Document,
-  path: 'documents/',                                  // key prefix
-  fields: [{ name: 'file', maxCount: 1 }, { name: 'pages', maxCount: 10, formatToUrlObject: true }],
-  imgOptimizations: 'medium',                          // 'low' | 'medium' | 'high' (needs sharp)
-  upload: { acl: 'private', allowedMimeTypes: ['image/jpeg', 'image/png', 'application/pdf'],
-            maxFileSize: 5 * 1024 * 1024, maxFiles: 5 },
+  upload: {                                            // `upload: true` for every default
+    path: 'documents/',                                // key prefix
+    fields: [{ name: 'file', maxCount: 1 }, { name: 'pages', maxCount: 10, formatToUrlObject: true }],
+    imgOptimizations: 'medium',                        // 'low' | 'medium' | 'high' (needs sharp)
+    acl: 'private',
+    allowedMimeTypes: ['image/jpeg', 'image/png', 'application/pdf'],
+    maxFileSize: 5 * 1024 * 1024,
+    maxFiles: 5,
+  },
   allowedFields: ['title', 'file', 'pages'],
 }));
 ```
 
-Clients send `multipart/form-data`; the file field names must match `fields`. Env:
+Clients send `multipart/form-data`; the file field names must match `upload.fields`.
+`createRouterS3upload` is deprecated (removed in 4.0) — never generate it. Env:
 `S3_ENDPOINT`, `S3_SPACES_KEY`, `S3_SPACES_SECRET`, `S3_BUCKET_NAME`, optional `S3_REGION`.
 Uploads are private by default; types are checked by content sniffing.
 

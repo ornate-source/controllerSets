@@ -55,7 +55,7 @@
         </div>
 <div class="nav-group" data-group="guides">
           <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="book-open"></i><span>Guides</span><i data-lucide="chevron-down" class="chev"></i></button>
-          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="router.html"><i data-lucide="route"></i><span class="nav-page-label">Dynamic Router</span></a></li>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="router.html"><i data-lucide="route"></i><span class="nav-page-label">createRouter</span></a></li>
 <li class="nav-page-item"><a class="nav-page" href="cache.html"><i data-lucide="zap"></i><span class="nav-page-label">Redis cache</span></a></li>
 <li class="nav-page-item is-open"><a class="nav-page" href="uploads.html" aria-current="page"><i data-lucide="upload-cloud"></i><span class="nav-page-label">S3 Upload</span></a><ul class="nav-sections"><li><a class="nav-section" href="#upload-router" data-target="upload-router">Upload router</a></li><li><a class="nav-section" href="#upload-middleware" data-target="upload-middleware">Upload middleware on your own routes</a></li><li><a class="nav-section" href="#s3-setup" data-target="s3-setup">Connect your bucket</a></li><li><a class="nav-section" href="#upload-more" data-target="upload-more">More detail</a></li></ul></li>
 <li class="nav-page-item"><a class="nav-page" href="auth.html"><i data-lucide="key-round"></i><span class="nav-page-label">Auth setup</span></a></li>
@@ -79,11 +79,11 @@
         </header>
         <section class="section" id="upload-router">
 <h2>Upload router<a class="anchor" href="#upload-router" aria-label="Link to this section">#</a></h2>
-<p>For CRUD with files, use <code>createRouterS3upload</code> — every <a href="router.html">Dynamic Router</a> option plus upload options. The full option list and how to send files are on <a href="router.html#s3-router">Dynamic Router → S3 upload router</a>.</p>
+<p>For CRUD with files, pass <code>upload</code> to <a href="router.html"><code>createRouter</code></a>. The full option list and how to send files are on <a href="router.html#s3-router">createRouter → S3 uploads</a>.</p>
 <div class="code-block" data-lang="javascript">
-<pre><code class="language-javascript">app.use('/api/products', createRouterS3upload({
+<pre><code class="language-javascript">app.use('/api/products', createRouter({
   model: Product,
-  fields: [{ name: 'cover', maxCount: 1 }],
+  upload: { fields: [{ name: 'cover', maxCount: 1 }] },
   allowedFields: ['name', 'cover'],
 }));</code></pre>
 </div>
@@ -160,19 +160,21 @@ S3_REGION=us-east-1          # optional</code></pre>
 <p class="section-intro">How files are checked and stored.</p>
 <details class="advanced" id="uploads">
 <summary>How uploads work</summary>
-<div class="details-body"><p class="section-intro">Swap one function name and <code>POST</code>/<code>PATCH</code> start
+<div class="details-body"><p class="section-intro">Add <code>upload</code> and <code>POST</code>/<code>PATCH</code> start
                     accepting files.</p>
 
                 <div class="code-block" data-lang="javascript">
-                    <pre><code class="language-javascript">import { createRouterS3upload } from 'express-controller-sets';
+                    <pre><code class="language-javascript">import { createRouter } from 'express-controller-sets';
 
-const userRouter = createRouterS3upload({
+const userRouter = createRouter({
   model: User,
   allowedFields: ['name', 'email', 'avatar'],   // 'avatar' must be writable!
 
-  path: 'avatars/',                             // key prefix inside the bucket
-  fields: [{ name: 'avatar', maxCount: 1 }],    // the multipart field name
-  imgOptimizations: 'medium',                   // optional compression
+  upload: {
+    path: 'avatars/',                           // key prefix inside the bucket
+    fields: [{ name: 'avatar', maxCount: 1 }],  // the multipart field name
+    imgOptimizations: 'medium',                 // optional compression
+  },
 });
 
 app.use('/api/users', userRouter);</code></pre>
@@ -348,7 +350,7 @@ req.body.gallery === ['https://…', 'https://…']</code></pre>
 
                 <div class="code-block" data-lang="javascript">
                     <pre><code class="language-javascript">// On a router
-createRouterS3upload({ model: Post, imgOptimizations: 'high' });
+createRouter({ model: Post, upload: { imgOptimizations: 'high' } });
 
 // Or directly, on a buffer you already have
 import { compressImage } from 'express-controller-sets';
@@ -404,18 +406,18 @@ const smaller = await compressImage(buffer, 'image/jpeg', 'medium');</code></pre
         and set the <a href="uploads.html">S3 variables</a>. Clients send <code>multipart/form-data</code> with the
         file fields named as below; the stored document gets the URLs.</p>
     <div class="code-block" data-lang="javascript">
-        <pre><code class="language-javascript">import { createRouterS3upload } from 'express-controller-sets';
+        <pre><code class="language-javascript">import { createRouter } from 'express-controller-sets';
 
-app.use('/api/admin/products', createRouterS3upload({
+app.use('/api/admin/products', createRouter({
   model: Product,
   middlewares: [auth.requireAuth, auth.requireRole('admin')],
-  path: 'products/',
-  fields: [
-    { name: 'cover', maxCount: 1 },
-    { name: 'gallery', maxCount: 6 },
-  ],
-  imgOptimizations: 'medium',
   upload: {
+    path: 'products/',
+    fields: [
+      { name: 'cover', maxCount: 1 },
+      { name: 'gallery', maxCount: 6 },
+    ],
+    imgOptimizations: 'medium',
     acl: 'public-read',                                 // product photos are meant to be seen
     allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
     maxFileSize: 5 * 1024 * 1024,

@@ -31,7 +31,7 @@ export const NAV = [
         title: "Guides",
         icon: "book-open",
         pages: [
-            { slug: "router", title: "Dynamic Router", icon: "route", summary: "Every option of createRouter and createRouterS3upload, why you would use it, and every API endpoint they create." },
+            { slug: "router", title: "createRouter", icon: "route", summary: "Every option of createRouter — including file uploads — why you would use it, and every API endpoint it creates." },
             { slug: "cache", title: "Redis cache", icon: "zap", summary: "Answer repeated reads from Redis in milliseconds — cleared automatically on every write." },
             { slug: "uploads", title: "S3 Upload", icon: "upload-cloud", summary: "Upload files on your own routes with the upload middleware, and connect your bucket." },
             { slug: "auth", title: "Auth setup", icon: "key-round", summary: "Sign-up, login, roles, refresh tokens and social sign-in on your own user model." },

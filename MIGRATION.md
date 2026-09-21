@@ -1,3 +1,40 @@
+# Migrating to 4.0: `createRouterS3upload` is removed
+
+`createRouter` takes files itself now, through an `upload` option. `createRouterS3upload` is
+deprecated in 3.3 — it still works and emits a `DeprecationWarning` (code `ECS_DEP001`) once
+per process — and is removed in 4.0.
+
+Move `path`, `fields` and `imgOptimizations` into `upload`, next to the settings already there:
+
+```js
+// 3.x
+createRouterS3upload({
+    model: Product,
+    path: "products/",
+    fields: [{ name: "cover", maxCount: 1 }],
+    imgOptimizations: "medium",
+    upload: { acl: "public-read" },
+});
+
+// 3.3+ and 4.0
+createRouter({
+    model: Product,
+    upload: {
+        path: "products/",
+        fields: [{ name: "cover", maxCount: 1 }],
+        imgOptimizations: "medium",
+        acl: "public-read",
+    },
+});
+```
+
+`upload: true` takes every default (`path: "files/"`, one field named `file`). Without
+`upload`, the router takes no files. `createRouter` logs a warning if it sees `path`, `fields`
+or `imgOptimizations` at the top level, since it ignores them there. In TypeScript,
+`RouterS3Options` is deprecated in favour of `RouterOptions` with `upload`.
+
+---
+
 # Migrating from 2.x to 3.0
 
 3.0 is a security release. It fixes vulnerabilities that let a client read fields your API
@@ -114,10 +151,10 @@ world-readable page executing on your bucket's origin.
 - anything not on a strict inline allowlist is stored `Content-Disposition: attachment`
 
 ```js
-createRouterS3upload({
+createRouter({
     model: Document,
-    path: "docs/",
     upload: {
+        path: "docs/",
         acl: "public-read",                    // opt back in deliberately
         allowedMimeTypes: ["image/jpeg", "image/png", "application/pdf"],
         maxFileSize: 5 * 1024 * 1024,
