@@ -1,11 +1,15 @@
+<section class="section" id="before">
+<h2>Before you start</h2>
+<p>You need Node.js 20.19 or newer and a MongoDB you can connect to — a local <code>mongod</code>, <code>docker run -p 27017:27017 mongo</code>, or a free Atlas cluster. By the end you will have a products API that anyone can read and only an admin can change.</p>
+</section>
+
 <section class="section" id="demo">
 <h2>Build a products API</h2>
-<p>Five steps from an empty folder to a working REST API. Copy each block as you go.</p>
 <ol class="steps"><li><h4>Create the project</h4><div class="code-block" data-lang="bash">
 <pre><code>mkdir shop-api &amp;&amp; cd shop-api
 npm init -y &amp;&amp; npm pkg set type=module
 npm install express-controller-sets express mongoose</code></pre>
-</div></li><li><h4>Define a model</h4><p>A normal Mongoose model — nothing special.</p><div class="code-block" data-lang="javascript">
+</div></li><li><h4>Define a model</h4><p>A normal Mongoose model — nothing library-specific.</p><div class="code-block" data-lang="javascript">
 <pre><code>// models/Product.js
 import mongoose from 'mongoose';
 
@@ -17,7 +21,7 @@ const productSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 export default mongoose.model('Product', productSchema);</code></pre>
-</div></li><li><h4>Create the router</h4><p>One call. Each option is a permission: what clients may write, filter, search and sort.</p><div class="code-block" data-lang="javascript">
+</div></li><li><h4>Mount a router</h4><p>Each option grants clients one permission. Anything you don't list stays closed.</p><div class="code-block" data-lang="javascript">
 <pre><code>// app.js
 import express from 'express';
 import mongoose from 'mongoose';
@@ -25,19 +29,19 @@ import { createRouter, errorHandler } from 'express-controller-sets';
 import Product from './models/Product.js';
 
 const app = express();
-app.use(express.json());                              // 1. parse JSON bodies
+app.use(express.json());                                     // 1. parse JSON bodies — first
 
-app.use('/api/products', createRouter({               // 2. mount the router
+app.use('/api/products', createRouter({                      // 2. mount the router
   model: Product,
-  orderBy: '-createdAt',                              // newest first
-  query: ['category', 'inStock'],                     // ?category=chairs
-  search: ['name'],                                   // ?s=oak
-  filterableFields: ['price', 'category', 'inStock'], // ranges, compares, QUERY filters
-  sortableFields: ['price', 'name', 'createdAt'],     // ?sort=-price
-  allowedFields: ['name', 'price', 'category', 'inStock'],   // writable fields
+  orderBy: '-createdAt',                                     // default order: newest first
+  query: ['category', 'inStock'],                            // may filter: ?category=chairs
+  search: ['name'],                                          // may search:  ?s=oak
+  filterableFields: ['price', 'category', 'inStock'],        // may range/compare: price 50–200
+  sortableFields: ['price', 'name', 'createdAt'],            // may sort:    ?sort=-price
+  allowedFields: ['name', 'price', 'category', 'inStock'],   // may write these fields, nothing else
 }));
 
-app.use(errorHandler);                                // 3. always last
+app.use(errorHandler);                                       // 3. error handler — always last
 
 await mongoose.connect(process.env.MONGODB_URI ?? 'mongodb://localhost:27017/shop');
 app.listen(3000, () =&gt; console.log('http://localhost:3000/api/products'));</code></pre>
@@ -48,18 +52,50 @@ app.listen(3000, () =&gt; console.log('http://localhost:3000/api/products'));</c
 curl -X POST localhost:3000/api/products -H 'Content-Type: application/json' \
   -d '{"name":"Oak chair","price":120,"category":"chairs"}'
 
-# List, filter, search, sort, paginate
+# List: filter, search, sort, paginate
 curl 'localhost:3000/api/products?category=chairs&amp;s=oak&amp;sort=-price&amp;page=1&amp;pageSize=10'
 
 # Read, update, delete one
 curl localhost:3000/api/products/&lt;id&gt;
 curl -X PATCH localhost:3000/api/products/&lt;id&gt; -H 'Content-Type: application/json' -d '{"price":99}'
 curl -X DELETE localhost:3000/api/products/&lt;id&gt;</code></pre>
-</div></li></ol>
+</div></li><li><h4>Lock down writes</h4><p>Right now <strong>anyone can create, change and delete products</strong> — generated routes are public until you add a guard. Split the model into a public read-only router and a guarded admin router:</p><div class="code-block" data-lang="javascript">
+<pre><code>const catalogue = {
+  model: Product,
+  orderBy: '-createdAt',
+  query: ['category', 'inStock'],
+  search: ['name'],
+  filterableFields: ['price', 'category', 'inStock'],
+  sortableFields: ['price', 'name', 'createdAt'],
+};
+
+// Stand-in guard for this tutorial — replace with auth.requireAuth + requireRole('admin')
+const adminOnly = (req, res, next) =&gt;
+  req.get('x-api-key') === process.env.ADMIN_KEY
+    ? next()
+    : res.status(401).json({ success: false, error: 'Unauthorized.' });
+
+// Refuse every method that isn't a read.
+const readOnly = (req, res, next) =&gt;
+  ['GET', 'HEAD', 'OPTIONS', 'QUERY'].includes(req.method)
+    ? next()
+    : res.status(405).json({ success: false, error: 'Method not allowed.' });
+
+// Public: read only.
+app.use('/api/products', createRouter({ ...catalogue, middlewares: [readOnly], allowedFields: [] }));
+
+// Admin: read and write, behind the guard.
+app.use('/api/admin/products', createRouter({
+  ...catalogue,
+  middlewares: [adminOnly],
+  allowedFields: ['name', 'price', 'category', 'inStock'],
+}));</code></pre>
+</div><div class="callout callout-warn"><i data-lucide="alert-triangle"></i><div><p><strong><code>allowedFields: []</code> alone does not make a router read-only.</strong> It stops <code>POST</code> and <code>PATCH</code> from writing any field, but <code>DELETE /:id</code> has no body to filter — without <code>readOnly</code>, anyone could delete products.</p></div></div><p>For real sign-in with JWTs and roles, see <a href="auth.html">Authentication</a>.</p></li></ol>
 </section>
 
 <section class="section" id="demo-responses">
 <h2>What you get back</h2>
+<p>Every response has the same envelope, so a client always branches on <code>success</code>:</p>
 <div class="code-block" data-lang="json">
 <pre><code>// GET /api/products?page=1&amp;pageSize=10
 {
@@ -71,10 +107,18 @@ curl -X DELETE localhost:3000/api/products/&lt;id&gt;</code></pre>
 // Any error
 { "success": false, "error": "Entry not found." }</code></pre>
 </div>
-<p>Every endpoint and parameter a client can use: <a href="router.html#api-overview">API endpoints</a>.</p>
+</section>
+
+<section class="section" id="recap">
+<h2>What just happened</h2>
+<ul>
+<li><code>createRouter</code> built six routes from one model. Options didn't add features — they <strong>granted permissions</strong>. A field not named in <code>query</code> can't be filtered; one not in <code>allowedFields</code> can't be written. That's the <a href="concepts.html#implicit-deny">deny-by-default</a> model.</li>
+<li><code>express.json()</code> goes first, so request bodies are parsed; <code>errorHandler</code> goes last, so unexpected failures become a clean 500 instead of a stack trace.</li>
+<li>Access control is yours: the library builds routes, <code>middlewares</code> decides who may call them.</li>
+</ul>
 </section>
 
 <section class="section" id="demo-next">
 <h2>Where next</h2>
-<div class="path-grid"><a class="path-card" href="router.html"><i data-lucide="route"></i><strong>createRouter</strong><span>Every option: guards, validation, pagination modes, limits.</span></a><a class="path-card" href="router.html#api-overview"><i data-lucide="globe"></i><strong>API endpoints</strong><span>How clients filter, search, sort and paginate.</span></a><a class="path-card" href="uploads.html"><i data-lucide="upload-cloud"></i><strong>S3 Upload</strong><span>Accept files with a record.</span></a><a class="path-card" href="auth.html"><i data-lucide="key-round"></i><strong>Auth setup</strong><span>Sign-up, login and protected routes.</span></a></div>
+<div class="path-grid"><a class="path-card" href="concepts.html"><i data-lucide="lightbulb"></i><strong>Core concepts</strong><span>The mental model behind every option — five minutes.</span></a><a class="path-card" href="router.html"><i data-lucide="route"></i><strong>createRouter</strong><span>Every option, why to use it, and the endpoints it creates.</span></a><a class="path-card" href="protect.html"><i data-lucide="shield-check"></i><strong>Protecting routes</strong><span>Guards, roles and per-user data.</span></a><a class="path-card" href="http-api.html"><i data-lucide="globe"></i><strong>HTTP API</strong><span>Hand this to your front-end team.</span></a></div>
 </section>

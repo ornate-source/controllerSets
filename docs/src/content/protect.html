@@ -1,0 +1,134 @@
+<section class="section" id="middlewares">
+<h2>Add a guard</h2>
+<p>The library builds routes; deciding who may call them is yours. Pass guards in <code>middlewares</code> and they run before <strong>every</strong> route on that router — all six.</p>
+<div class="code-block" data-lang="javascript">
+<pre><code>createRouter({
+  model: Order,
+  middlewares: [auth.requireAuth, auth.requireRole('staff')],
+  allowedFields: ['status', 'note'],
+});</code></pre>
+</div>
+<p><code>auth.requireAuth</code> and <code>auth.requireRole</code> come from <a href="auth.html">createAuthRouter</a>, but any Express middleware works — your own JWT check, <code>express-rate-limit</code>, a tenant resolver. After <code>requireAuth</code>, <code>req.auth</code> holds <code>{ userId, role, claims }</code>.</p>
+<p>Because <code>middlewares</code> applies to every route, <strong>different rules for reads and writes need two routers</strong> (below) or <a href="custom-routes.html">hand-wired routes</a>.</p>
+</section>
+
+<section class="section" id="public-read-admin-write">
+<h2>Public reads, staff writes</h2>
+<p>The most common shape. Mount two routers on one model, each with its own allowlists — share the read configuration, differ on who can write.</p>
+<div class="code-block" data-lang="javascript">
+<pre><code>const catalogue = {
+  model: Product,
+  orderBy: '-createdAt',
+  query: ['category', 'isFeatured'],
+  search: ['name', 'description'],
+  filterableFields: ['price', 'category'],
+  sortableFields: ['price', 'name', 'createdAt'],
+};
+
+// Refuse every method that isn't a read.
+const readOnly = (req, res, next) =&gt;
+  ['GET', 'HEAD', 'OPTIONS', 'QUERY'].includes(req.method)
+    ? next()
+    : res.status(405).json({ success: false, error: 'Method not allowed.' });
+
+// Anyone: read
+app.use('/api/products', createRouter({ ...catalogue, middlewares: [readOnly], allowedFields: [] }));
+
+// Staff: read and write
+app.use('/api/admin/products', createRouter({
+  ...catalogue,
+  middlewares: [auth.requireAuth, auth.requireRole('staff', 'admin')],
+  allowedFields: ['name', 'price', 'description', 'category', 'isFeatured'],
+}));</code></pre>
+</div>
+<div class="callout callout-danger"><i data-lucide="alert-octagon"></i><div><p><strong><code>allowedFields: []</code> does not make a router read-only.</strong> It stops <code>POST</code> and <code>PATCH</code> from writing any field, but <code>DELETE /:id</code> has no body to filter and still deletes. A public router needs the <code>readOnly</code> guard (or hand-wired <code>GET</code> routes only). Keep <code>allowedFields: []</code> as well — it's a second lock if the guard is ever removed.</p></div></div>
+</section>
+
+<section class="section" id="owner-from-token">
+<h2>Server-owned fields</h2>
+<p>Fields like <code>author</code>, <code>ownerId</code> or <code>tenantId</code> come from the signed-in user, never from the body. Keep them <strong>out</strong> of <code>allowedFields</code> — so anything a client sends for them is stripped — and set them in <code>validate.create</code>:</p>
+<div class="code-block" data-lang="javascript">
+<pre><code>app.use('/api/posts', createRouter({
+  model: Post,
+  middlewares: [auth.requireAuth],
+  allowedFields: ['title', 'body', 'tags'],          // no 'author'
+  validate: {
+    create: (payload, { req }) =&gt; ({ ...payload, author: req.auth.userId }),
+  },
+}));</code></pre>
+</div>
+</section>
+
+<section class="section" id="only-my-records">
+<h2>Users see only their own records</h2>
+<p>The library has no concept of ownership, so per-user data takes three pieces. Skip any one and it leaks:</p>
+<ol>
+<li><strong>Lists:</strong> force the owner filter onto every <code>GET /</code>, and turn off <code>QUERY /</code> (its filter comes from the body, which your middleware doesn't touch).</li>
+<li><strong>Single records:</strong> check ownership on every <code>/:id</code> — the list filter doesn't cover them.</li>
+<li><strong>Creates:</strong> stamp the owner from the token.</li>
+</ol>
+<div class="code-block" data-lang="javascript">
+<pre><code>import express from 'express';
+import mongoose from 'mongoose';
+import { createRouter, HttpError } from 'express-controller-sets';
+
+// 1. Lists: pin ownerId to the caller. Express 5 re-parses req.query on every
+//    read, so assigning to it does nothing — shadow it with a real property.
+const onlyMine = (req, res, next) =&gt; {
+  Object.defineProperty(req, 'query', {
+    value: { ...req.query, ownerId: String(req.auth.userId) },
+    writable: true, configurable: true, enumerable: true,
+  });
+  next();
+};
+
+// 2. Single records: 404 unless the caller owns it. 404, not 403 — don't
+//    confirm that someone else's record exists.
+const ownsNote = async (req, res, next) =&gt; {
+  if (!mongoose.isValidObjectId(req.params.id)) return next();   // the handler answers 400
+  const mine = await Note.exists({ _id: req.params.id, ownerId: req.auth.userId });
+  if (!mine) throw new HttpError(404, 'Entry not found.');
+  next();
+};
+
+const notes = express.Router();
+notes.use(auth.requireAuth, onlyMine);
+notes.use('/:id', ownsNote);
+notes.use(createRouter({
+  model: Note,
+  orderBy: '-createdAt',
+  query: ['ownerId'],                                   // the pinned filter must be in query
+  enableQuery: false,                                   // 1b. QUERY would bypass onlyMine
+  allowedFields: ['title', 'body'],                     // no ownerId
+  validate: { create: (p, { req }) =&gt; ({ ...p, ownerId: req.auth.userId }) },   // 3. stamp the owner
+}));
+
+app.use('/api/notes', notes);</code></pre>
+</div>
+<p>Tested end to end: a user cannot list, read, change or delete another user's notes, even by sending <code>?ownerId=</code> themselves. With <a href="cache.html">caching</a> on, the pinned filter is part of the cache key, so users never share entries.</p>
+</section>
+
+<section class="section" id="rate-limits">
+<h2>Rate limits</h2>
+<p>Nothing is rate-limited by default. Add a limiter to <code>middlewares</code>, and a tighter one on anything that gets guessed at — sign-in, password reset:</p>
+<div class="code-block" data-lang="javascript">
+<pre><code>import rateLimit from 'express-rate-limit';
+
+const api = rateLimit({ windowMs: 60_000, limit: 120 });
+createRouter({ model: Product, middlewares: [api], allowedFields: [] });</code></pre>
+</div>
+<p>For the auth routes, see <a href="auth.html#rate-limit">Authentication → Rate-limit sign-in</a>.</p>
+</section>
+
+<section class="section" id="checklist">
+<h2>Before you go to production</h2>
+<ol class="steps">
+<li><h4>Every router has <code>allowedFields</code></h4><p>Or <code>blockedFields</code>. No startup warning about unprotected models. Server-owned fields (<code>role</code>, <code>ownerId</code>) are not in it.</p></li>
+<li><h4>Every write is guarded</h4><p>Routers that accept <code>POST</code>, <code>PATCH</code> or <code>DELETE</code> have an auth guard in <code>middlewares</code>. Public routers have a <code>readOnly</code> guard.</p></li>
+<li><h4>Per-user data checks <code>/:id</code></h4><p>Owner-scoped routers check ownership on single records and set <code>enableQuery: false</code>.</p></li>
+<li><h4>Middleware order is right</h4><p><code>express.json()</code> before the routers, <code>errorHandler</code> after them.</p></li>
+<li><h4>Secrets come from the environment</h4><p><code>token.secret</code> is 32+ characters and not in the repository.</p></li>
+<li><h4><code>legacyMode</code> and <code>allowRawRegex</code> are off</h4><p>On every public router.</p></li>
+<li><h4>Uploads are private unless meant to be public</h4><p><code>upload.acl: 'public-read'</code> only for content like product photos.</p></li>
+</ol>
+</section>

@@ -1,0 +1,109 @@
+<section class="section" id="pieces">
+<h2>The three pieces</h2>
+<p>Everything in the package is one of these. Knowing which one you're holding tells you where its options go.</p>
+<div class="table-container"><table><thead><tr><th>Piece</th><th>What it is</th><th>Use it when</th></tr></thead><tbody>
+<tr><td><code>createRouter(options)</code></td><td>An Express router with six routes already mounted, backed by a controller.</td><td>Almost always. It's the default way to expose a model.</td></tr>
+<tr><td><code>new ControllerSets(options)</code></td><td>The six handlers — <code>getAll</code>, <code>query</code>, <code>get</code>, <code>create</code>, <code>update</code>, <code>delete</code> — without a router.</td><td>You need a different guard per verb, different paths, or only some of the routes. See <a href="custom-routes.html">Custom routes</a>.</td></tr>
+<tr><td><code>createAuthRouter(options)</code></td><td>A separate router for sign-up, login and user management on your user model, plus the <code>requireAuth</code> / <code>requireRole</code> guards.</td><td>You want built-in authentication. See <a href="auth.html">Authentication</a>.</td></tr>
+</tbody></table></div>
+<p><code>createRouter</code> accepts every <code>ControllerSets</code> option plus three router-only ones: <code>middlewares</code>, <code>enableQuery</code> and <code>upload</code>. The <a href="router.html">createRouter</a> page lists them all.</p>
+</section>
+
+<section class="section" id="implicit-deny">
+<h2>Nothing is open until you open it</h2>
+<p>One idea explains almost every option. A generated API that exposes everything by default is convenient on day one and a breach on day ninety: someone filters on <code>passwordResetToken</code>, or POSTs <code>{"role":"admin"}</code>. So here, a field is <strong>not filterable, not sortable and not searchable until you name it</strong>. Reads are capped. Uploads are private. Each option is an allowlist that opens one thing.</p>
+<div class="table-container"><table><thead><tr><th>A client wants to…</th><th>Option that allows it</th><th>If you say nothing</th></tr></thead><tbody>
+<tr><td>Filter by exact value</td><td><code>query</code></td><td class="no">Nothing is filterable</td></tr>
+<tr><td>Range, compare, or filter in a <code>QUERY</code> body</td><td><code>filterableFields</code></td><td>Same fields as <code>query</code></td></tr>
+<tr><td>Sort</td><td><code>sortableFields</code></td><td><code>query</code> fields + the <code>orderBy</code> field</td></tr>
+<tr><td>Search text</td><td><code>search</code></td><td class="no">Search does nothing</td></tr>
+<tr><td>Write a field</td><td><code>allowedFields</code> / <code>blockedFields</code></td><td class="maybe">Every schema field — with a startup warning</td></tr>
+<tr><td>Read the whole collection</td><td><code>maxLimit</code></td><td>Capped at 100 documents</td></tr>
+<tr><td>Send a regular expression</td><td><code>allowRawRegex</code></td><td>Escaped, matched literally</td></tr>
+<tr><td>Upload a file type</td><td><code>upload.allowedMimeTypes</code></td><td>JPEG, PNG, GIF, WebP, AVIF, PDF</td></tr>
+<tr><td>Get a public file URL</td><td><code>upload.acl</code></td><td><code>private</code></td></tr>
+<tr><td>Call the route at all</td><td><code>middlewares</code></td><td class="maybe">Anyone — routes are public</td></tr>
+</tbody></table></div>
+<div class="callout callout-danger"><i data-lucide="alert-octagon"></i><div><p><strong>Two defaults are open, and both are yours to close.</strong> <em>Writable fields</em>: requiring <code>allowedFields</code> would break every existing app on upgrade, so the library warns at startup instead. <em>Who may call a route</em>: the library can't know your users. If you set only two things on every router, make them <code>allowedFields</code> and <code>middlewares</code>.</p></div></div>
+
+<h3>Fields no configuration can unlock</h3>
+<p>Whatever you allow, these are stripped from every request body. They are database bookkeeping or MongoDB syntax, never client data:</p>
+<div class="gateway-badges">
+    <span class="chip chip-no"><i data-lucide="x"></i> <code>_id</code></span>
+    <span class="chip chip-no"><i data-lucide="x"></i> <code>__v</code></span>
+    <span class="chip chip-no"><i data-lucide="x"></i> <code>createdAt</code></span>
+    <span class="chip chip-no"><i data-lucide="x"></i> <code>updatedAt</code></span>
+    <span class="chip chip-no"><i data-lucide="x"></i> any <code>$</code>-prefixed key</span>
+    <span class="chip chip-no"><i data-lucide="x"></i> any key containing <code>.</code></span>
+    <span class="chip chip-no"><i data-lucide="x"></i> <code>__proto__</code></span>
+    <span class="chip chip-no"><i data-lucide="x"></i> <code>constructor</code></span>
+    <span class="chip chip-no"><i data-lucide="x"></i> <code>prototype</code></span>
+</div>
+<p>To MongoDB, <code>$</code> starts an operator and <code>.</code> reaches into a subdocument, so <code>{"$where": "…"}</code> or <code>{"owner.role": "admin"}</code> is an instruction, not data. <code>__proto__</code> survives <code>JSON.parse</code> as a real key and can re-point an object's prototype. The check runs on nested values too, up to eight levels deep; anything deeper is refused.</p>
+</section>
+
+<section class="section" id="lifecycle">
+<h2>A request, step by step</h2>
+<p>What happens between <code>GET /api/products?s=laptop</code> and the JSON that comes back:</p>
+<div class="flow">
+    <div class="flow-track">
+        <div class="flow-node" style="--i:0"><div class="flow-dot"><i data-lucide="shield"></i></div><span class="flow-actor">Your code</span><h5>Middlewares</h5><p>Auth, rate limits, tenancy</p></div>
+        <div class="flow-node" style="--i:1"><div class="flow-dot"><i data-lucide="filter"></i></div><span class="flow-actor">Library</span><h5>Build filters</h5><p>Only allowlisted fields</p></div>
+        <div class="flow-node" style="--i:2"><div class="flow-dot"><i data-lucide="search"></i></div><span class="flow-actor">Library</span><h5>Apply search</h5><p>Escaped, relations resolved</p></div>
+        <div class="flow-node" style="--i:3"><div class="flow-dot"><i data-lucide="git-branch"></i></div><span class="flow-actor">Your hook</span><h5>onGet</h5><p>Choose populate &amp; select</p></div>
+        <div class="flow-node" style="--i:4"><div class="flow-dot"><i data-lucide="database"></i></div><span class="flow-actor">MongoDB</span><h5>Query</h5><p>Capped at maxLimit</p></div>
+        <div class="flow-node" style="--i:5"><div class="flow-dot"><i data-lucide="braces"></i></div><span class="flow-actor">Library</span><h5>JSON out</h5><p>Always the same envelope</p></div>
+    </div>
+</div>
+<p><strong>A write</strong> (<code>POST</code>, <code>PATCH</code>) takes a different middle path:</p>
+<ol>
+<li>Your <code>middlewares</code> run.</li>
+<li>On an upload router, files are checked, stored in S3, and replaced in <code>req.body</code> by their URLs.</li>
+<li>The body is filtered to <code>allowedFields</code>, minus <code>blockedFields</code> and the fields above. If nothing is left: <strong>400</strong>.</li>
+<li>Your <code>validate</code> hook runs on what's left, and may reject or rewrite it.</li>
+<li>Mongoose validates against the schema and saves.</li>
+<li>On create, <code>runAfterCreate</code> runs. With a cache, the model's cached reads are cleared.</li>
+</ol>
+<p><strong>A <code>QUERY</code> read</strong> is identical to <code>GET /</code> except for step two: filters come from a JSON body instead of the query string, checked against the same allowlists.</p>
+</section>
+
+<section class="section" id="envelope">
+<h2>One response envelope</h2>
+<p>Every endpoint answers in the same shape, so a client needs one code path:</p>
+<div class="code-block" data-lang="json">
+<pre><code>// Success: data is an object (one record) or an array (a list)
+{ "success": true, "data": … , "pagination": { … } }   // pagination only on paginated lists
+
+// Delete
+{ "success": true, "message": "Item successfully deleted." }
+
+// Failure
+{ "success": false, "error": "Human-readable message.", "fields": { … }, "requestId": "…" }</code></pre>
+</div>
+<p>Every shape, and when each optional key appears: <a href="http-api.html#responses">HTTP API → Responses</a>.</p>
+</section>
+
+<section class="section" id="error-model">
+<h2>How errors flow</h2>
+<p>There are two kinds of failure, and they take different paths:</p>
+<div class="mode-grid">
+    <div class="mode-card"><span class="mode-eyebrow"><i data-lucide="user"></i> The caller's mistake</span><h4>Answered directly</h4><p>A malformed id, a field that isn't sortable, a failed validation. The handler responds with the right 4xx and a message written to be read — even if you forgot <code>errorHandler</code>.</p></div>
+    <div class="mode-card"><span class="mode-eyebrow"><i data-lucide="server"></i> Your server's problem</span><h4>Thrown to <code>errorHandler</code></h4><p>A database outage, a bug in your hook. Express 5 forwards it to <code>errorHandler</code>, which logs the detail with a <code>requestId</code> and sends the client only <code>"Internal Server Error"</code>.</p></div>
+</div>
+<p>In your own hooks and middleware, throw <code>HttpError(status, message)</code> or <code>ValidationError(message, fields)</code> to produce a deliberate 4xx. Anything else you throw becomes a 500.</p>
+</section>
+
+<section class="section" id="glossary">
+<h2>Words used in these docs</h2>
+<div class="table-container"><table><thead><tr><th>Word</th><th>Meaning here</th></tr></thead><tbody>
+<tr><td><strong>Model</strong></td><td>A Mongoose model, like <code>Product</code>. The only required option.</td></tr>
+<tr><td><strong>Router</strong></td><td>An Express router you mount with <code>app.use('/api/products', router)</code>.</td></tr>
+<tr><td><strong>Controller / handler</strong></td><td>The function that answers a request. <code>ControllerSets</code> holds six of them.</td></tr>
+<tr><td><strong>Middleware / guard</strong></td><td>A function that runs before the handler. A guard is middleware that decides whether the request may continue.</td></tr>
+<tr><td><strong>Allowlist</strong></td><td>A list of what's permitted. Anything not on it is refused or ignored.</td></tr>
+<tr><td><strong>Mass assignment</strong></td><td>A client sending <code>{"role":"admin"}</code> and the database saving it. <code>allowedFields</code> prevents it.</td></tr>
+<tr><td><strong>Server-owned field</strong></td><td>A field whose value comes from the server, never the client — <code>ownerId</code>, <code>author</code>, <code>tenantId</code>.</td></tr>
+<tr><td><strong>QUERY</strong></td><td>An HTTP method (RFC 10008) that reads like <code>GET</code> but carries its parameters in a JSON body.</td></tr>
+<tr><td><strong>Offset / cursor pagination</strong></td><td>Page numbers (<code>?page=4</code>) versus "the page after this record" (<code>?cursor=…</code>).</td></tr>
+</tbody></table></div>
+</section>

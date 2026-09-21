@@ -3,28 +3,39 @@
 // index and llms.txt are all derived from this list.
 //
 // Each page's body lives in content/<slug>.html as a run of
-// <section class="section" id="…"><h2>…</h2>…</section> blocks. Pages open
-// with the short version; deeper material sits in collapsed
-// <details class="advanced"> blocks under an "Advanced" heading.
+// <section class="section" id="…"><h2>…</h2>…</section> blocks.
+//
+// The site is split by what the reader is trying to do:
+//
+//   Get started — read once, in order.
+//   Guides      — task-oriented: "how do I…", with the reasoning behind it.
+//   Reference   — look-up tables: every option, parameter, export and variable.
+//                 Guides link here instead of repeating it.
+//   Help        — when something is wrong, or changing versions.
+
+import { readFileSync } from "node:fs";
+
+const pkg = JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8"));
 
 export const SITE = {
     name: "controller-sets",
-    package: "express-controller-sets",
-    version: "3.2.0",
+    package: pkg.name,
+    version: pkg.version,
     url: "https://ornate-source.github.io/controllerSets/",
     repo: "https://github.com/ornate-source/controllerSets",
     npm: "https://www.npmjs.com/package/express-controller-sets",
     description:
-        "Generate list, read, create, update and delete endpoints for any Mongoose model in one call — with filtering, search, pagination, S3 uploads, authentication and a security model that denies by default.",
+        "Generate list, read, create, update and delete endpoints for any Mongoose model in one call — with filtering, search, pagination, caching, S3 uploads, authentication and a security model that denies by default.",
 };
 
 export const NAV = [
     {
-        title: "Getting started",
+        title: "Get started",
         icon: "rocket",
         pages: [
-            { slug: "index", title: "Overview", icon: "home", summary: "Why controller-sets, and how to install it." },
-            { slug: "how-to-use", title: "How to use", icon: "play", summary: "Build a working products API with createRouter in five steps." },
+            { slug: "index", title: "Overview", icon: "home", summary: "What controller-sets does, which page you need, and how to install it." },
+            { slug: "quickstart", title: "Quickstart", icon: "play", summary: "A working, protected products API in ten minutes." },
+            { slug: "concepts", title: "Core concepts", icon: "lightbulb", summary: "The four ideas every other page assumes: routers, allowlists, the request lifecycle and the response envelope." },
         ],
     },
     {
@@ -32,19 +43,29 @@ export const NAV = [
         icon: "book-open",
         pages: [
             { slug: "router", title: "createRouter", icon: "route", summary: "Every option of createRouter — including file uploads — why you would use it, and every API endpoint it creates." },
-            { slug: "cache", title: "Redis cache", icon: "zap", summary: "Answer repeated reads from Redis in milliseconds — cleared automatically on every write." },
-            { slug: "uploads", title: "S3 Upload", icon: "upload-cloud", summary: "Upload files on your own routes with the upload middleware, and connect your bucket." },
-            { slug: "auth", title: "Auth setup", icon: "key-round", summary: "Sign-up, login, roles, refresh tokens and social sign-in on your own user model." },
-            { slug: "email", title: "Email sender", icon: "mail", summary: "Send password-reset codes by email or SMS, with your own transporter and templates." },
-            { slug: "env", title: ".env.example", icon: "file-cog", summary: "Every environment variable, with ready-made setups for common providers." },
-            { slug: "advanced", title: "Advanced", icon: "wrench", summary: "Use each ControllerSets method — getAll, query, get, create, update, delete — on your own routes." },
+            { slug: "protect", title: "Protecting routes", icon: "shield-check", summary: "Guards, public/admin splits, server-owned fields and per-user data." },
+            { slug: "uploads", title: "File uploads", icon: "upload-cloud", summary: "Accept files on a router or your own route, store them in S3, and compress images." },
+            { slug: "cache", title: "Caching", icon: "zap", summary: "Answer repeated reads from Redis, cleared automatically on every write." },
+            { slug: "auth", title: "Authentication", icon: "key-round", summary: "Sign-up, login, roles, refresh tokens and social sign-in on your own user model." },
+            { slug: "email", title: "Email & SMS", icon: "mail", summary: "Deliver password-reset codes with your own transporter, sender and templates." },
+            { slug: "custom-routes", title: "Custom routes", icon: "wrench", summary: "Use the ControllerSets handlers on routes you wire yourself." },
         ],
     },
     {
-        title: "More",
+        title: "Reference",
+        icon: "library",
+        pages: [
+            { slug: "http-api", title: "HTTP API", icon: "globe", summary: "For client developers: every endpoint, query parameter, QUERY body, response shape and status code." },
+            { slug: "api", title: "JavaScript API", icon: "braces", summary: "Every export of the package, with signatures and TypeScript types." },
+            { slug: "env", title: "Environment variables", icon: "file-cog", summary: "Every variable the library reads, with ready-made setups for common providers." },
+        ],
+    },
+    {
+        title: "Help",
         icon: "circle-help",
         pages: [
-            { slug: "faq", title: "FAQ", icon: "messages-square", summary: "Answers to the questions people hit first." },
+            { slug: "troubleshooting", title: "Troubleshooting", icon: "stethoscope", summary: "Symptoms, causes and fixes for the problems people hit first." },
+            { slug: "upgrading", title: "Upgrading", icon: "arrow-up-circle", summary: "Deprecations in 3.3, and moving from 2.x to 3.x." },
             { slug: "llm", title: "Use with an LLM", icon: "bot", summary: "One prompt so ChatGPT, Claude or Copilot write correct code for this package." },
         ],
     },
@@ -52,3 +73,41 @@ export const NAV = [
 
 /** Every page in reading order, each knowing its group. */
 export const PAGES = NAV.flatMap((group) => group.pages.map((page) => ({ ...page, group: group.title })));
+
+/**
+ * Pages that were renamed. Each old URL is kept as a stub that forwards to its
+ * replacement, so links from READMEs, issues and search engines keep working.
+ * Anchors that moved are mapped too: old-page#old-id → new-page#new-id.
+ */
+export const REDIRECTS = {
+    "how-to-use": { to: "quickstart" },
+    advanced: { to: "custom-routes" },
+    faq: { to: "troubleshooting" },
+};
+
+/** Old anchors on pages that still exist but lost sections to other pages. */
+export const MOVED_ANCHORS = {
+    router: {
+        "api-filtering": "http-api.html#api-filtering",
+        "api-search": "http-api.html#api-search",
+        "api-sorting": "http-api.html#api-sorting",
+        "api-pagination": "http-api.html#api-pagination",
+        "api-combined": "http-api.html#api-combined",
+        "api-query": "http-api.html#api-query",
+        "http-query": "http-api.html#api-query",
+        "api-single": "http-api.html#api-single",
+        "api-errors": "http-api.html#errors",
+        errors: "http-api.html#errors",
+        responses: "http-api.html#responses",
+        "query-reference": "http-api.html#api-filtering",
+        middlewares: "protect.html#middlewares",
+        "public-read-admin-write": "protect.html#public-read-admin-write",
+        "owner-from-token": "protect.html#owner-from-token",
+        "only-my-records": "protect.html#only-my-records",
+    },
+    index: {
+        basics: "concepts.html#glossary",
+        "implicit-deny": "concepts.html#implicit-deny",
+        lifecycle: "concepts.html#lifecycle",
+    },
+};

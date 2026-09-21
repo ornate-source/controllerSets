@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upgrading · express-controller-sets</title>
+  <meta name="description" content="Deprecations in 3.3, and moving from 2.x to 3.x.">
+  <link rel="canonical" href="https://ornate-source.github.io/controllerSets/upgrading.html">
+  <meta property="og:title" content="Upgrading · express-controller-sets">
+  <meta property="og:description" content="Deprecations in 3.3, and moving from 2.x to 3.x.">
+  <meta property="og:type" content="website">
+  <link rel="alternate" type="text/plain" title="LLM guide" href="llms-full.txt">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/components.css?v=10a91d487a">
+  <link rel="stylesheet" href="assets/css/shell.css?v=a1646e50a8">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%236366f1'/%3E%3Ctext x='50' y='68' font-family='monospace' font-size='54' font-weight='700' fill='white' text-anchor='middle'%3E%7B%7D%3C/text%3E%3C/svg%3E">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/http.min.js" defer></script>
+  <script src="assets/search-index.js" defer></script>
+  <script src="assets/js/docs.js?v=901f93388a" defer></script>
+</head>
+<body class="dark" data-page="upgrading">
+  <script>try{var t=localStorage.getItem('controllersets-theme');document.body.className=t||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark')}catch(e){}</script>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <header class="topbar">
+    <button class="icon-btn menu-btn" type="button" id="menu-open" aria-label="Open navigation"><i data-lucide="menu"></i></button>
+    <a class="brand" href="./" aria-label="controller-sets home">
+      <span class="brand-mark" aria-hidden="true">{}</span>
+      <span class="brand-name">controller-sets</span>
+      <span class="brand-version">v3.3.0</span>
+    </a>
+    <button class="search-trigger" type="button" id="search-open" aria-label="Search the docs">
+      <i data-lucide="search"></i><span>Search docs…</span><kbd>⌘K</kbd>
+    </button>
+    <nav class="topbar-links" aria-label="External">
+      <a class="topbar-link is-accent hide-sm" href="llm.html"><i data-lucide="sparkles"></i><span class="label">LLM prompt</span></a>
+      <a class="topbar-link hide-sm" href="https://github.com/ornate-source/controllerSets" target="_blank" rel="noopener"><svg class="gh-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span class="label">GitHub</span></a>
+      <a class="topbar-link hide-sm" href="https://www.npmjs.com/package/express-controller-sets" target="_blank" rel="noopener"><i data-lucide="package"></i><span class="label">npm</span></a>
+      <button class="icon-btn" type="button" id="theme-toggle" aria-label="Toggle colour theme"><i data-lucide="sun" class="sun-icon"></i><i data-lucide="moon" class="moon-icon"></i></button>
+    </nav>
+  </header>
+
+  <div class="nav-overlay" id="nav-overlay"></div>
+
+  <div class="layout">
+    <aside class="sidenav" id="sidenav" aria-label="Documentation">
+      <nav><div class="nav-group" data-group="get-started">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="rocket"></i><span>Get started</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="./"><i data-lucide="home"></i><span class="nav-page-label">Overview</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="quickstart.html"><i data-lucide="play"></i><span class="nav-page-label">Quickstart</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="concepts.html"><i data-lucide="lightbulb"></i><span class="nav-page-label">Core concepts</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="guides">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="book-open"></i><span>Guides</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="router.html"><i data-lucide="route"></i><span class="nav-page-label">createRouter</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="protect.html"><i data-lucide="shield-check"></i><span class="nav-page-label">Protecting routes</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="uploads.html"><i data-lucide="upload-cloud"></i><span class="nav-page-label">File uploads</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="cache.html"><i data-lucide="zap"></i><span class="nav-page-label">Caching</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="auth.html"><i data-lucide="key-round"></i><span class="nav-page-label">Authentication</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="email.html"><i data-lucide="mail"></i><span class="nav-page-label">Email &amp; SMS</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="custom-routes.html"><i data-lucide="wrench"></i><span class="nav-page-label">Custom routes</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="reference">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="library"></i><span>Reference</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="http-api.html"><i data-lucide="globe"></i><span class="nav-page-label">HTTP API</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="api.html"><i data-lucide="braces"></i><span class="nav-page-label">JavaScript API</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="env.html"><i data-lucide="file-cog"></i><span class="nav-page-label">Environment variables</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="help">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="circle-help"></i><span>Help</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="troubleshooting.html"><i data-lucide="stethoscope"></i><span class="nav-page-label">Troubleshooting</span></a></li>
+<li class="nav-page-item is-open"><a class="nav-page" href="upgrading.html" aria-current="page"><i data-lucide="arrow-up-circle"></i><span class="nav-page-label">Upgrading</span></a><ul class="nav-sections"><li><a class="nav-section" href="#versions" data-target="versions">Which section applies to you</a></li><li><a class="nav-section" href="#from-3-2" data-target="from-3-2">Uploads move into createRouter (3.3)</a></li><li><a class="nav-section" href="#before-4" data-target="before-4">Before 4.0</a></li><li><a class="nav-section" href="#from-2" data-target="from-2">From 2.x to 3.x</a></li></ul></li>
+<li class="nav-page-item"><a class="nav-page" href="llm.html"><i data-lucide="bot"></i><span class="nav-page-label">Use with an LLM</span></a></li></ul>
+        </div></nav>
+    </aside>
+
+    <main class="doc" id="main" tabindex="-1">
+      <article class="doc-inner">
+        <header class="page-header">
+          <p class="breadcrumb">Help <i data-lucide="chevron-right"></i> Upgrading</p>
+          <h1>Upgrading</h1>
+          <p class="page-summary">Deprecations in 3.3, and moving from 2.x to 3.x.</p>
+        </header>
+        <section class="section" id="versions">
+<h2>Which section applies to you<a class="anchor" href="#versions" aria-label="Link to this section">#</a></h2>
+<div class="table-container"><table><thead><tr><th>You're on</th><th>Read</th><th>Effort</th></tr></thead><tbody>
+<tr><td>3.0 – 3.2, using <code>createRouterS3upload</code></td><td><a href="#from-3-2">Uploads move into createRouter</a></td><td>Minutes. Not urgent until 4.0.</td></tr>
+<tr><td>3.x, using <code>legacyMode</code> or other deprecated APIs</td><td><a href="#before-4">Before 4.0</a></td><td>Depends on how much you rely on it.</td></tr>
+<tr><td>2.x</td><td><a href="#from-2">From 2.x to 3.x</a></td><td>An afternoon. <strong>Security release — urgent.</strong></td></tr>
+</tbody></table></div>
+<p>The complete guide, with every change explained, is <a href="https://github.com/ornate-source/controllerSets/blob/main/MIGRATION.md" target="_blank" rel="noopener">MIGRATION.md</a>; release notes are in <a href="https://github.com/ornate-source/controllerSets/blob/main/CHANGELOG.md" target="_blank" rel="noopener">CHANGELOG.md</a>.</p>
+</section>
+
+<section class="section" id="from-3-2">
+<h2>Uploads move into createRouter (3.3)<a class="anchor" href="#from-3-2" aria-label="Link to this section">#</a></h2>
+<p><code>createRouterS3upload</code> is deprecated in 3.3 and removed in 4.0. It still works, and emits a <code>DeprecationWarning</code> (code <code>ECS_DEP001</code>) once per process. Move <code>path</code>, <code>fields</code> and <code>imgOptimizations</code> into <code>upload</code>, next to the settings already there:</p>
+<div class="tabs"><div class="tab-list" role="tablist"><button class="tab-btn" type="button" data-tab="up-before" role="tab">Before</button><button class="tab-btn" type="button" data-tab="up-after" role="tab">After</button></div>
+<div class="tab-panel" id="up-before" role="tabpanel"><div class="code-block" data-lang="javascript">
+<pre><code class="language-javascript">createRouterS3upload({
+  model: Product,
+  path: 'products/',
+  fields: [{ name: 'cover', maxCount: 1 }],
+  imgOptimizations: 'medium',
+  upload: { acl: 'public-read' },
+});</code></pre>
+</div></div>
+<div class="tab-panel" id="up-after" role="tabpanel"><div class="code-block" data-lang="javascript">
+<pre><code class="language-javascript">createRouter({
+  model: Product,
+  upload: {
+    path: 'products/',
+    fields: [{ name: 'cover', maxCount: 1 }],
+    imgOptimizations: 'medium',
+    acl: 'public-read',
+  },
+});</code></pre>
+</div></div></div>
+<p><code>createRouter</code> ignores <code>path</code>, <code>fields</code> and <code>imgOptimizations</code> at the top level and logs a warning if it sees them. In TypeScript, replace <code>RouterS3Options</code> with <code>RouterOptions</code>.</p>
+</section>
+
+<section class="section" id="before-4">
+<h2>Before 4.0<a class="anchor" href="#before-4" aria-label="Link to this section">#</a></h2>
+<p>Everything here still works in 3.x. The first two are removed in 4.0; the rest are deprecated, so move off them when you touch the code.</p>
+<div class="table-container"><table><thead><tr><th>Deprecated</th><th>Replace with</th></tr></thead><tbody>
+<tr><td><code>createRouterS3upload(opts)</code></td><td><code>createRouter({ upload })</code> — <a href="#from-3-2">above</a></td></tr>
+<tr><td><code>legacyMode: true</code></td><td>The 3.x options it bypasses: <code>allowedFields</code>, <code>filterableFields</code>, <code>sortableFields</code>, <code>maxLimit</code>.</td></tr>
+<tr><td><code>new ControllerSets(Model, '-createdAt', ['category'], ['name'])</code></td><td><code>new ControllerSets({ model: Model, orderBy: '-createdAt', query: ['category'], search: ['name'] })</code></td></tr>
+<tr><td><code>controller.getById</code> · <code>controller.queryAll</code></td><td><code>controller.get</code> · <code>controller.query</code></td></tr>
+<tr><td><code>fileUploadMiddleware(req, res, next, path, fields, level)</code></td><td><code>fileUploadMiddleware(req, res, next, { uploadPath, fields, imgOptimizations })</code></td></tr>
+<tr><td><code>otp.deliver</code></td><td><code>mail.sender</code> / <code>sms.sender</code> — <a href="email.html#senders">Email &amp; SMS</a></td></tr>
+</tbody></table></div>
+</section>
+
+<section class="section" id="from-2">
+<h2>From 2.x to 3.x<a class="anchor" href="#from-2" aria-label="Link to this section">#</a></h2>
+<div class="callout callout-danger"><i data-lucide="alert-octagon"></i><div><p><strong>If you run 2.x on a public endpoint, treat this as urgent.</strong> In 2.x a client could write any schema field, filter and sort on fields your API never returned, hang the database with a crafted search term, read entire collections in one request, and upload world-readable HTML to your bucket. Every breaking change in 3.0 is a default that used to be unsafe.</p></div></div>
+
+<h3 id="deploy-today-tighten-after">Deploy today, tighten after<a class="anchor" href="#deploy-today-tighten-after" aria-label="Link to this section">#</a></h3>
+<div class="code-block" data-lang="javascript">
+<pre><code class="language-javascript">createRouter({ model: Product, legacyMode: true });</code></pre>
+</div>
+<p><code>legacyMode</code> restores 2.x behaviour so you can upgrade immediately, then remove it router by router as you add the options below. It re-enables every vulnerability listed, so don't leave it on.</p>
+
+<h3 id="what-changed-and-what-to-do">What changed, and what to do<a class="anchor" href="#what-changed-and-what-to-do" aria-label="Link to this section">#</a></h3>
+<div class="table-container"><table><thead><tr><th>What changed</th><th>What to do</th></tr></thead><tbody>
+<tr><td>Request bodies are filtered</td><td>Add <code>allowedFields</code> or <code>blockedFields</code> to every router.</td></tr>
+<tr><td><code>?compareField=</code>, <code>?rangeField=</code>, <code>?sort=</code> are allowlisted</td><td>List fields in <code>filterableFields</code> / <code>sortableFields</code>, or rely on the <code>query</code> default.</td></tr>
+<tr><td>Search terms are escaped and length-capped</td><td>Nothing — unless clients sent real patterns; then <code>allowRawRegex: true</code>, behind auth.</td></tr>
+<tr><td>Unpaginated reads capped at 100</td><td>Paginate, or raise <code>maxLimit</code> deliberately.</td></tr>
+<tr><td>Relational search resolves the full nested path</td><td>Re-check depth-2 paths — they queried the wrong field before.</td></tr>
+<tr><td>String-form <code>search</code> reads <code>?s=</code></td><td>Update clients that searched with <code>?title=</code>.</td></tr>
+<tr><td>Uploads default to private, type sniffed from bytes</td><td>Set <code>upload.acl</code> and <code>upload.allowedMimeTypes</code> if needed. Existing objects keep their old ACL — audit them.</td></tr>
+<tr><td>Clients no longer choose compression level</td><td><code>upload.allowClientImageOptions: true</code> to opt back in.</td></tr>
+<tr><td>GIF and SVG no longer transcoded</td><td>Nothing — they were being corrupted.</td></tr>
+<tr><td>5xx responses no longer echo internals; duplicates are 409</td><td>Update clients that parsed 500 message text.</td></tr>
+<tr><td>Reads are no longer <code>.lean()</code></td><td>Your <code>toJSON</code> transforms now apply. <code>lean: true</code> restores speed — check what those transforms hide first.</td></tr>
+<tr><td>No <code>dotenv.config()</code> at import; <code>multer-s3</code> removed</td><td>Load your environment yourself; uninstall <code>multer-s3</code>.</td></tr>
+</tbody></table></div>
+<div class="callout callout-warn"><i data-lucide="eye"></i><div><p><strong>The <code>lean</code> change is the one most likely to alter responses.</strong> 2.x list endpoints bypassed <code>toJSON</code> transforms. If you strip sensitive fields there, <em>2.x was leaking them on every list request</em>, and 3.x stops. Compare a list response before and after upgrading.</p></div></div>
+</section>
+
+        <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" href="troubleshooting.html"><span class="pager-dir"><i data-lucide="arrow-left"></i> Previous</span><span class="pager-title">Troubleshooting</span></a>
+      <a class="next" href="llm.html"><span class="pager-dir">Next <i data-lucide="arrow-right"></i></span><span class="pager-title">Use with an LLM</span></a>
+    </nav>
+        <footer class="doc-footer">
+          <span>Written for express-controller-sets v3.3.0 · MIT licensed · © 2024–present Sabbir Mahmud</span>
+          <a href="https://github.com/ornate-source/controllerSets/edit/main/docs/src/content/upgrading.html" target="_blank" rel="noopener"><i data-lucide="pencil"></i> Edit this page</a>
+        </footer>
+      </article>
+    </main>
+
+  </div>
+
+  <dialog class="search-dialog" id="search-dialog" aria-label="Search">
+    <div class="search-field"><i data-lucide="search"></i><input id="search-input" type="search" placeholder="Search the docs…" autocomplete="off" spellcheck="false" aria-controls="search-results"><kbd>Esc</kbd></div>
+    <ul class="search-results" id="search-results" role="listbox"></ul>
+    <div class="search-foot"><span><kbd>↑</kbd> <kbd>↓</kbd> to move</span><span><kbd>↵</kbd> to open</span></div>
+  </dialog>
+
+  <button id="back-to-top" class="back-to-top" type="button" aria-label="Back to top"><i data-lucide="arrow-up"></i></button>
+</body>
+</html>

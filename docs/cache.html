@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Redis cache · express-controller-sets</title>
-  <meta name="description" content="Answer repeated reads from Redis in milliseconds — cleared automatically on every write.">
+  <title>Caching · express-controller-sets</title>
+  <meta name="description" content="Answer repeated reads from Redis, cleared automatically on every write.">
   <link rel="canonical" href="https://ornate-source.github.io/controllerSets/cache.html">
-  <meta property="og:title" content="Redis cache · express-controller-sets">
-  <meta property="og:description" content="Answer repeated reads from Redis in milliseconds — cleared automatically on every write.">
+  <meta property="og:title" content="Caching · express-controller-sets">
+  <meta property="og:description" content="Answer repeated reads from Redis, cleared automatically on every write.">
   <meta property="og:type" content="website">
   <link rel="alternate" type="text/plain" title="LLM guide" href="llms-full.txt">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,7 +31,7 @@
     <a class="brand" href="./" aria-label="controller-sets home">
       <span class="brand-mark" aria-hidden="true">{}</span>
       <span class="brand-name">controller-sets</span>
-      <span class="brand-version">v3.2.0</span>
+      <span class="brand-version">v3.3.0</span>
     </a>
     <button class="search-trigger" type="button" id="search-open" aria-label="Search the docs">
       <i data-lucide="search"></i><span>Search docs…</span><kbd>⌘K</kbd>
@@ -48,24 +48,32 @@
 
   <div class="layout">
     <aside class="sidenav" id="sidenav" aria-label="Documentation">
-      <nav><div class="nav-group" data-group="getting-started">
-          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="rocket"></i><span>Getting started</span><i data-lucide="chevron-down" class="chev"></i></button>
+      <nav><div class="nav-group" data-group="get-started">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="rocket"></i><span>Get started</span><i data-lucide="chevron-down" class="chev"></i></button>
           <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="./"><i data-lucide="home"></i><span class="nav-page-label">Overview</span></a></li>
-<li class="nav-page-item"><a class="nav-page" href="how-to-use.html"><i data-lucide="play"></i><span class="nav-page-label">How to use</span></a></li></ul>
+<li class="nav-page-item"><a class="nav-page" href="quickstart.html"><i data-lucide="play"></i><span class="nav-page-label">Quickstart</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="concepts.html"><i data-lucide="lightbulb"></i><span class="nav-page-label">Core concepts</span></a></li></ul>
         </div>
 <div class="nav-group" data-group="guides">
           <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="book-open"></i><span>Guides</span><i data-lucide="chevron-down" class="chev"></i></button>
           <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="router.html"><i data-lucide="route"></i><span class="nav-page-label">createRouter</span></a></li>
-<li class="nav-page-item is-open"><a class="nav-page" href="cache.html" aria-current="page"><i data-lucide="zap"></i><span class="nav-page-label">Redis cache</span></a><ul class="nav-sections"><li><a class="nav-section" href="#cache-setup" data-target="cache-setup">Turn it on</a></li><li><a class="nav-section" href="#cache-how" data-target="cache-how">What gets cached</a></li><li><a class="nav-section" href="#cache-options" data-target="cache-options">Options</a></li><li><a class="nav-section" href="#cache-vary" data-target="cache-vary">Per-user data</a></li><li><a class="nav-section" href="#cache-invalidate" data-target="cache-invalidate">Changes made elsewhere</a></li><li><a class="nav-section" href="#cache-down" data-target="cache-down">When Redis is down</a></li><li><a class="nav-section" href="#cache-local" data-target="cache-local">Without Redis (development)</a></li><li><a class="nav-section" href="#cache-env" data-target="cache-env">Environment</a></li></ul></li>
-<li class="nav-page-item"><a class="nav-page" href="uploads.html"><i data-lucide="upload-cloud"></i><span class="nav-page-label">S3 Upload</span></a></li>
-<li class="nav-page-item"><a class="nav-page" href="auth.html"><i data-lucide="key-round"></i><span class="nav-page-label">Auth setup</span></a></li>
-<li class="nav-page-item"><a class="nav-page" href="email.html"><i data-lucide="mail"></i><span class="nav-page-label">Email sender</span></a></li>
-<li class="nav-page-item"><a class="nav-page" href="env.html"><i data-lucide="file-cog"></i><span class="nav-page-label">.env.example</span></a></li>
-<li class="nav-page-item"><a class="nav-page" href="advanced.html"><i data-lucide="wrench"></i><span class="nav-page-label">Advanced</span></a></li></ul>
+<li class="nav-page-item"><a class="nav-page" href="protect.html"><i data-lucide="shield-check"></i><span class="nav-page-label">Protecting routes</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="uploads.html"><i data-lucide="upload-cloud"></i><span class="nav-page-label">File uploads</span></a></li>
+<li class="nav-page-item is-open"><a class="nav-page" href="cache.html" aria-current="page"><i data-lucide="zap"></i><span class="nav-page-label">Caching</span></a><ul class="nav-sections"><li><a class="nav-section" href="#cache-setup" data-target="cache-setup">Turn it on</a></li><li><a class="nav-section" href="#cache-how" data-target="cache-how">What gets cached</a></li><li><a class="nav-section" href="#cache-options" data-target="cache-options">Options</a></li><li><a class="nav-section" href="#cache-shared-store" data-target="cache-shared-store">One connection for many routers</a></li><li><a class="nav-section" href="#cache-vary" data-target="cache-vary">Per-user data</a></li><li><a class="nav-section" href="#cache-invalidate" data-target="cache-invalidate">Changes made elsewhere</a></li><li><a class="nav-section" href="#cache-down" data-target="cache-down">When Redis is down</a></li><li><a class="nav-section" href="#cache-local" data-target="cache-local">Without Redis (development)</a></li><li><a class="nav-section" href="#cache-env" data-target="cache-env">Environment</a></li></ul></li>
+<li class="nav-page-item"><a class="nav-page" href="auth.html"><i data-lucide="key-round"></i><span class="nav-page-label">Authentication</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="email.html"><i data-lucide="mail"></i><span class="nav-page-label">Email &amp; SMS</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="custom-routes.html"><i data-lucide="wrench"></i><span class="nav-page-label">Custom routes</span></a></li></ul>
         </div>
-<div class="nav-group" data-group="more">
-          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="circle-help"></i><span>More</span><i data-lucide="chevron-down" class="chev"></i></button>
-          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="faq.html"><i data-lucide="messages-square"></i><span class="nav-page-label">FAQ</span></a></li>
+<div class="nav-group" data-group="reference">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="library"></i><span>Reference</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="http-api.html"><i data-lucide="globe"></i><span class="nav-page-label">HTTP API</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="api.html"><i data-lucide="braces"></i><span class="nav-page-label">JavaScript API</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="env.html"><i data-lucide="file-cog"></i><span class="nav-page-label">Environment variables</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="help">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="circle-help"></i><span>Help</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="troubleshooting.html"><i data-lucide="stethoscope"></i><span class="nav-page-label">Troubleshooting</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="upgrading.html"><i data-lucide="arrow-up-circle"></i><span class="nav-page-label">Upgrading</span></a></li>
 <li class="nav-page-item"><a class="nav-page" href="llm.html"><i data-lucide="bot"></i><span class="nav-page-label">Use with an LLM</span></a></li></ul>
         </div></nav>
     </aside>
@@ -73,13 +81,13 @@
     <main class="doc" id="main" tabindex="-1">
       <article class="doc-inner">
         <header class="page-header">
-          <p class="breadcrumb">Guides <i data-lucide="chevron-right"></i> Redis cache</p>
-          <h1>Redis cache</h1>
-          <p class="page-summary">Answer repeated reads from Redis in milliseconds — cleared automatically on every write.</p>
+          <p class="breadcrumb">Guides <i data-lucide="chevron-right"></i> Caching</p>
+          <h1>Caching</h1>
+          <p class="page-summary">Answer repeated reads from Redis, cleared automatically on every write.</p>
         </header>
         <section class="section" id="cache-setup">
 <h2>Turn it on<a class="anchor" href="#cache-setup" aria-label="Link to this section">#</a></h2>
-<p>Cache list and read responses in Redis, so repeated requests skip the database. Three steps:</p>
+<p>Cache list and read responses in Redis, so repeated requests skip the database. Worth it for read-heavy data that changes through these routes — catalogues, settings, reference data. Three steps:</p>
 <ol class="steps"><li><h4>Install a Redis client</h4><div class="code-block" data-lang="bash">
 <pre><code class="language-bash">npm install ioredis        # or: npm install redis</code></pre>
 </div></li><li><h4>Set the URL in .env</h4><div class="code-block" data-lang="bash">
@@ -137,6 +145,20 @@ curl -i localhost:3000/api/products | grep -i x-cache    # X-Cache: HIT</code></
 <tr><td><code>timeoutMs</code></td><td>150</td><td>How long a request waits for Redis before falling back to the database.</td></tr>
 <tr><td><code>namespace</code></td><td>the mount path</td><td>Rarely needed: override the router part of the cache key.</td></tr>
 </tbody></table></div>
+<p>Summary table: <a href="router.html#opts-cache">createRouter → Cache</a>.</p>
+</section>
+
+<section class="section" id="cache-shared-store">
+<h2>One connection for many routers<a class="anchor" href="#cache-shared-store" aria-label="Link to this section">#</a></h2>
+<p>Routers given the same <code>url</code> already share one connection. To configure it once, or reuse a client your app already has, create a store and pass it to each router:</p>
+<div class="code-block" data-lang="javascript">
+<pre><code class="language-javascript">import { createRouter, createRedisCacheStore } from 'express-controller-sets';
+
+const store = createRedisCacheStore({ url: process.env.REDIS_URL });   // or { client: myRedis }
+
+app.use('/api/products', createRouter({ model: Product, cache: { store, ttl: 300 }, allowedFields: ['name'] }));
+app.use('/api/categories', createRouter({ model: Category, cache: { store }, allowedFields: ['name'] }));</code></pre>
+</div>
 </section>
 
 <section class="section" id="cache-vary">
@@ -149,7 +171,7 @@ createRouter({ model: Product, middlewares: [auth.requireAuth], cache: { vary: (
 // Responses differ by something else — say, the tenant header:
 createRouter({ model: Invoice, cache: { vary: (req) =&gt; req.headers['x-tenant-id'] }, allowedFields: [] });</code></pre>
 </div>
-<p>Keys are built from the request <em>after</em> your middleware runs, so a middleware that pins a filter (like <a href="router.html#only-my-records">only my records</a>) is part of the key too.</p>
+<p>Keys are built from the request <em>after</em> your middleware runs, so a middleware that pins a filter (like <a href="protect.html#only-my-records">only my records</a>) is part of the key too.</p>
 </section>
 
 <section class="section" id="cache-invalidate">
@@ -200,11 +222,11 @@ CACHE_ENABLED=true                    # false switches caching off everywhere</c
 </section>
 
         <nav class="pager" aria-label="Previous and next page">
-      <a class="prev" href="router.html"><span class="pager-dir"><i data-lucide="arrow-left"></i> Previous</span><span class="pager-title">createRouter</span></a>
-      <a class="next" href="uploads.html"><span class="pager-dir">Next <i data-lucide="arrow-right"></i></span><span class="pager-title">S3 Upload</span></a>
+      <a class="prev" href="uploads.html"><span class="pager-dir"><i data-lucide="arrow-left"></i> Previous</span><span class="pager-title">File uploads</span></a>
+      <a class="next" href="auth.html"><span class="pager-dir">Next <i data-lucide="arrow-right"></i></span><span class="pager-title">Authentication</span></a>
     </nav>
         <footer class="doc-footer">
-          <span>express-controller-sets v3.2.0 · MIT licensed · © 2024–present Sabbir Mahmud</span>
+          <span>Written for express-controller-sets v3.3.0 · MIT licensed · © 2024–present Sabbir Mahmud</span>
           <a href="https://github.com/ornate-source/controllerSets/edit/main/docs/src/content/cache.html" target="_blank" rel="noopener"><i data-lucide="pencil"></i> Edit this page</a>
         </footer>
       </article>

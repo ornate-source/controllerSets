@@ -1,26 +1,38 @@
+<section class="section" id="upload-setup">
+<h2>Setup</h2>
+<ol class="steps"><li><h4>Install</h4><div class="code-block" data-lang="bash">
+<pre><code>npm install multer @aws-sdk/client-s3
+npm install sharp            # optional, for image compression</code></pre>
+</div></li><li><h4>Point it at a bucket</h4><p>Any S3-compatible storage works. Load these before handling requests — the library reads <code>process.env</code> but never loads <code>.env</code> itself.</p><div class="code-block" data-lang="bash">
+<pre><code>S3_ENDPOINT=https://s3.us-east-1.amazonaws.com
+S3_SPACES_KEY=your-access-key
+S3_SPACES_SECRET=your-secret-key
+S3_BUCKET_NAME=your-bucket
+S3_REGION=us-east-1          # optional, default us-east-1</code></pre>
+</div><p>Per-provider values (AWS, R2, DigitalOcean, MinIO): <a href="env.html#env-s3">Environment variables → S3</a>.</p></li><li><h4>Pick where files arrive</h4><p>On a CRUD router, add <code>upload</code> (<a href="router.html#s3-router">createRouter → S3 uploads</a>). On any other route, use <a href="#upload-middleware"><code>fileUploadMiddleware</code></a>.</p></li></ol>
+</section>
+
 <section class="section" id="upload-router">
-<h2>Upload router</h2>
-<p>For CRUD with files, pass <code>upload</code> to <a href="router.html"><code>createRouter</code></a>. The full option list and how to send files are on <a href="router.html#s3-router">createRouter → S3 uploads</a>.</p>
+<h2>Files on a CRUD router</h2>
+<p>For CRUD with files, pass <code>upload</code> to <a href="router.html"><code>createRouter</code></a>. The full option list, a complete example and how clients send files are on <a href="router.html#s3-router">createRouter → S3 uploads</a>.</p>
 <div class="code-block" data-lang="javascript">
 <pre><code>app.use('/api/products', createRouter({
   model: Product,
   upload: { fields: [{ name: 'cover', maxCount: 1 }] },
-  allowedFields: ['name', 'cover'],
+  allowedFields: ['name', 'cover'],          // file fields must be writable
 }));</code></pre>
 </div>
 </section>
 
-
-
 <section class="section" id="upload-middleware">
-<h2>Upload middleware on your own routes</h2>
-<p>Need uploads outside a CRUD router — an avatar endpoint, a file inbox? Import <code>fileUploadMiddleware</code> and put it in front of any handler.</p>
+<h2>Files on your own routes</h2>
+<p>For an avatar endpoint, a file inbox, or anything that isn't CRUD, put <code>fileUploadMiddleware</code> in front of your handler:</p>
 <div class="code-block" data-lang="javascript">
 <pre><code>import { fileUploadMiddleware } from 'express-controller-sets';
 
 const avatarUpload = (req, res, next) =&gt;
   fileUploadMiddleware(req, res, next, {
-    uploadPath: 'avatars/',
+    uploadPath: 'avatars/',                  // note: uploadPath here, path on a router
     fields: [{ name: 'avatar', maxCount: 1 }],
     imgOptimizations: 'medium',
     acl: 'public-read',
@@ -29,370 +41,62 @@ const avatarUpload = (req, res, next) =&gt;
   });
 
 app.post('/api/me/avatar', auth.requireAuth, avatarUpload, async (req, res) =&gt; {
-  // The middleware has uploaded the file and put its URL on req.body
   await User.updateOne({ _id: req.auth.userId }, { avatar: req.body.avatar });
   res.json({ success: true, data: { avatar: req.body.avatar } });
 });</code></pre>
 </div>
 <div class="table-container"><table><thead><tr><th>After it runs</th><th>Contains</th></tr></thead><tbody>
-<tr><td><code>req.body[field]</code></td><td>The file URL (or an array, or <code>{ url }</code> — same rules as the router).</td></tr>
+<tr><td><code>req.body[field]</code></td><td>The file URL — or an array, or <code>{ url }</code>, by the same rules as the router.</td></tr>
 <tr><td><code>req.file</code> / <code>req.files</code></td><td>Multer's file objects, plus <code>key</code> (the S3 key) and <code>location</code> (the URL).</td></tr>
-<tr><td>other form fields</td><td>Also on <code>req.body</code>, as strings.</td></tr>
+<tr><td>other form fields</td><td>On <code>req.body</code>, as strings.</td></tr>
 </tbody></table></div>
-<div class="table-container"><table><thead><tr><th>Middleware option</th><th>Default</th></tr></thead><tbody>
-<tr><td><code>uploadPath</code></td><td><code>'files/'</code></td></tr>
-<tr><td><code>fields</code></td><td><code>[{ name: 'file', maxCount: 1 }]</code></td></tr>
-<tr><td><code>acl</code></td><td><code>'private'</code></td></tr>
-<tr><td><code>allowedMimeTypes</code></td><td>JPEG, PNG, GIF, WebP, AVIF, PDF</td></tr>
-<tr><td><code>maxFileSize</code></td><td>10 MB</td></tr>
-<tr><td><code>maxFiles</code></td><td><code>10</code></td></tr>
-<tr><td><code>imgOptimizations</code></td><td>off</td></tr>
-<tr><td><code>allowClientImageOptions</code></td><td><code>false</code></td></tr>
+<p>It takes the same options as a router's <code>upload</code>, except the folder is <code>uploadPath</code> instead of <code>path</code>.</p>
+</section>
+
+<section class="section" id="uploads">
+<h2>What happens to a file</h2>
+<ol class="steps">
+<li><h4>Buffered in memory</h4><p>No temp files. <code>maxFileSize</code> and <code>maxFiles</code> apply here.</p></li>
+<li><h4>Identified from its bytes</h4><p>The file's signature is read; the <code>Content-Type</code> the client sent is ignored. Unrecognised files are a 400.</p></li>
+<li><h4>Checked against <code>allowedMimeTypes</code></h4><p>Renaming <code>payload.html</code> to <code>photo.png</code> changes nothing.</p></li>
+<li><h4>Optionally compressed</h4><p>JPEG, PNG and WebP, if <code>imgOptimizations</code> is set.</p></li>
+<li><h4>Uploaded with a safe key</h4><p><code>&lt;path&gt;/&lt;timestamp&gt;-&lt;random&gt;.&lt;ext&gt;</code>, with the extension and <code>Content-Type</code> derived from the final bytes, your ACL, and <code>Content-Disposition: attachment</code> for anything not safe to render inline.</p></li>
+<li><h4>URL placed in <code>req.body</code></h4><p>The handler then saves it like any other field.</p></li>
+</ol>
+<div class="table-container"><table><thead><tr><th>Type</th><th class="center">Allowed by default</th><th class="center">Served inline</th><th>Notes</th></tr></thead><tbody>
+<tr><td>JPEG, PNG, WebP</td><td class="center yes">✔</td><td class="center yes">✔</td><td>The only formats that can be compressed.</td></tr>
+<tr><td>GIF, AVIF</td><td class="center yes">✔</td><td class="center yes">✔</td><td>Stored untouched.</td></tr>
+<tr><td>PDF</td><td class="center yes">✔</td><td class="center no">✘</td><td>Downloaded rather than rendered.</td></tr>
+<tr><td>HTML, SVG, XML, JavaScript</td><td class="center no">✘</td><td class="center no">✘</td><td>Active content: always <code>attachment</code>, even if you allow it.</td></tr>
+<tr><td>MP4, HEIC, ZIP, MP3</td><td class="center no">✘</td><td class="center no">✘</td><td>Recognised; allow them explicitly.</td></tr>
+<tr><td>Anything unrecognised</td><td class="center no">✘</td><td class="center no">✘</td><td>400.</td></tr>
 </tbody></table></div>
+<div class="callout callout-danger"><i data-lucide="shield-x"></i><div><p><strong>Why the client's <code>Content-Type</code> is never trusted.</strong> An HTML file labelled <code>image/png</code>, stored with that label and a public ACL, renders as a page on your bucket's origin — stored cross-site scripting through your own upload form. Byte sniffing, forced <code>attachment</code> for active content and a private default ACL each close part of that.</p></div></div>
+</section>
+
+<section class="section" id="images">
+<h2>Image compression</h2>
+<p>Set a level and the image is re-encoded toward a target size, binary-searching quality (25–95, at most seven attempts). You get predictable output sizes instead of one fixed quality.</p>
+<div class="table-container"><table><thead><tr><th>Level</th><th>Target</th><th>Good for</th></tr></thead><tbody>
+<tr><td><code>'low'</code></td><td>~75–80% of the original</td><td>Photography, product shots.</td></tr>
+<tr><td><code>'medium'</code> / <code>'med'</code></td><td>~60–65%</td><td>Avatars and content images — the usual choice.</td></tr>
+<tr><td><code>'high'</code></td><td>Under 1 MB: ~40–45%. Over 1 MB: from ~400–450 KB at 1 MB up to ~600–700 KB at 5 MB.</td><td>Phone camera uploads.</td></tr>
+</tbody></table></div>
+<ul>
+<li>JPEG, PNG and WebP are re-encoded in the same format. GIF, AVIF and PDF are uploaded as received.</li>
+<li>If <code>sharp</code> is missing or fails, a warning is logged and the original is uploaded.</li>
+<li>To compress a buffer yourself: <code>await compressImage(buffer, 'image/jpeg', 'medium')</code>.</li>
+</ul>
+<div class="callout callout-danger"><i data-lucide="cpu"></i><div><p><strong>Keep <code>allowClientImageOptions</code> off on public routes.</strong> A level drives up to seven re-encodes of a multi-megabyte buffer; letting clients choose <code>high</code> turns an upload endpoint into CPU amplification. If enabled, the level is read from <code>?imgOptimizations=</code>, the body, or the <code>x-img-optimizations</code> header, and is still allowlisted.</p></div></div>
+</section>
+
+<section class="section" id="upload-errors">
+<h2>When it fails</h2>
 <div class="table-container"><table><thead><tr><th>Failure</th><th>Response</th></tr></thead><tbody>
-<tr><td>S3 variables missing</td><td><strong>503</strong> — the log names the missing ones</td></tr>
-<tr><td>Too large, too many files, wrong field name</td><td><strong>400</strong> "File upload error: …"</td></tr>
+<tr><td>S3 variables missing</td><td><strong>503</strong>. The server log names the missing ones.</td></tr>
+<tr><td>Too large, too many files, unexpected field name</td><td><strong>400</strong> "File upload error: …"</td></tr>
 <tr><td>File type not allowed or unrecognised</td><td><strong>400</strong></td></tr>
+<tr><td>Uploaded file URL returns 403 in a browser</td><td>The object is <code>private</code> (the default). Serve it through presigned URLs or a CDN with origin access using <code>file.key</code>, or set <code>acl: 'public-read'</code>.</td></tr>
 </tbody></table></div>
-<p>Just want compression? <code>compressImage(buffer, 'image/jpeg', 'medium')</code> returns a smaller buffer (needs sharp).</p>
-</section>
-
-<section class="section" id="s3-setup">
-<h2>Connect your bucket</h2>
-<p>Five environment variables. Any S3-compatible storage works.</p>
-<div class="code-block" data-lang="bash">
-<pre><code>S3_ENDPOINT=https://s3.us-east-1.amazonaws.com
-S3_SPACES_KEY=your-access-key
-S3_SPACES_SECRET=your-secret-key
-S3_BUCKET_NAME=your-bucket
-S3_REGION=us-east-1          # optional</code></pre>
-</div>
-<div class="table-container"><table><thead><tr><th>Provider</th><th><code>S3_ENDPOINT</code></th><th><code>S3_REGION</code></th></tr></thead><tbody>
-<tr><td>AWS S3</td><td><code>https://s3.&lt;region&gt;.amazonaws.com</code></td><td>your region</td></tr>
-<tr><td>Cloudflare R2</td><td><code>https://&lt;account-id&gt;.r2.cloudflarestorage.com</code></td><td><code>auto</code></td></tr>
-<tr><td>DigitalOcean Spaces</td><td><code>https://&lt;region&gt;.digitaloceanspaces.com</code></td><td><code>us-east-1</code></td></tr>
-<tr><td>MinIO (local)</td><td><code>http://localhost:9000</code></td><td><code>us-east-1</code></td></tr>
-</tbody></table></div>
-<p>Ready-made files per provider: <a href="env.html#env-s3">.env.example</a>.</p>
-</section>
-
-<section class="section" id="upload-more">
-<h2>More detail</h2>
-<p class="section-intro">How files are checked and stored.</p>
-<details class="advanced" id="uploads">
-<summary>How uploads work</summary>
-<div class="details-body"><p class="section-intro">Add <code>upload</code> and <code>POST</code>/<code>PATCH</code> start
-                    accepting files.</p>
-
-                <div class="code-block" data-lang="javascript">
-                    <pre><code>import { createRouter } from 'express-controller-sets';
-
-const userRouter = createRouter({
-  model: User,
-  allowedFields: ['name', 'email', 'avatar'],   // 'avatar' must be writable!
-
-  upload: {
-    path: 'avatars/',                           // key prefix inside the bucket
-    fields: [{ name: 'avatar', maxCount: 1 }],  // the multipart field name
-    imgOptimizations: 'medium',                 // optional compression
-  },
-});
-
-app.use('/api/users', userRouter);</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
-                </div>
-
-                <p>From the browser, send <code>multipart/form-data</code> — regular fields and the file together:</p>
-
-                <div class="code-block" data-lang="javascript">
-                    <pre><code>const form = new FormData();
-form.append('name', 'Ayesha');
-form.append('avatar', fileInput.files[0]);
-
-await fetch('/api/users', { method: 'POST', body: form });
-// Don't set Content-Type yourself — the browser adds the multipart boundary.</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
-                </div>
-
-                <h3>What happens to the file</h3>
-                <ol class="steps">
-                    <li>
-                        <h4>Received into memory</h4>
-                        <p>Multer buffers it — no temp files on disk. Size and count limits apply here.</p>
-                    </li>
-                    <li>
-                        <h4>The bytes are identified</h4>
-                        <p>The library reads the file's own signature. The <code>Content-Type</code> the client sent is
-                            ignored: it is a claim, and the bytes are the fact. An unrecognised file is rejected with
-                            400.</p>
-                    </li>
-                    <li>
-                        <h4>Checked against the allowlist</h4>
-                        <p>Only the detected type is compared to <code>allowedMimeTypes</code>. Renaming
-                            <code>payload.html</code> to <code>photo.png</code> changes nothing.</p>
-                    </li>
-                    <li>
-                        <h4>Optionally compressed</h4>
-                        <p>JPEG, PNG and WebP are re-encoded if <code>imgOptimizations</code> is set. See <a
-                                href="#images">Image optimization</a>.</p>
-                    </li>
-                    <li>
-                        <h4>Uploaded with a safe key and headers</h4>
-                        <p>Stored as <code>&lt;path&gt;/&lt;timestamp&gt;-&lt;random&gt;.&lt;ext&gt;</code>, with the
-                            extension and <code>Content-Type</code> derived from the final bytes, an ACL of
-                            <code>private</code>, and <code>Content-Disposition: attachment</code> for anything not on
-                            the inline-safe list.</p>
-                    </li>
-                    <li>
-                        <h4>The URL replaces the file in <code>req.body</code></h4>
-                        <p>The CRUD controller then saves it like any other field — which is why the field must appear
-                            in <code>allowedFields</code>.</p>
-                    </li>
-                </ol>
-
-                <div class="code-block" data-lang="javascript">
-                    <pre><code>// After the middleware, before the controller:
-req.body.avatar === 'https://your-endpoint/bucket/avatars/1721736000000-482913746.jpg'
-
-// Prefer an object? Set formatToUrlObject on the field:
-fields: [{ name: 'avatar', maxCount: 1, formatToUrlObject: true }]
-req.body.avatar === { url: 'https://…' }
-
-// maxCount &gt; 1 gives you an array:
-fields: [{ name: 'gallery', maxCount: 5 }]
-req.body.gallery === ['https://…', 'https://…']</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
-                </div>
-
-                <div class="callout callout-danger">
-                    <i data-lucide="shield-x"></i>
-                    <div>
-                        <p><strong>Why the client's <code>Content-Type</code> is never trusted.</strong> If an attacker
-                            uploads an HTML file labelled <code>image/png</code> and you store it with that label and a
-                            public ACL, the browser renders it — as a page on <em>your</em> bucket's origin, with
-                            whatever scripts it contains. That is stored cross-site scripting, delivered by your own
-                            upload form. Sniffing the bytes, forcing <code>attachment</code> on anything executable and
-                            defaulting to a private ACL each close a different half of that door.</p>
-                    </div>
-                </div>
-
-                <h3>Which types are accepted, inline, or refused</h3>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Type</th>
-                                <th class="center">Allowed by default</th>
-                                <th class="center">Served inline</th>
-                                <th>Notes</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>JPEG, PNG, WebP</td>
-                                <td class="center yes">✔</td>
-                                <td class="center yes">✔</td>
-                                <td>Also the only formats that can be compressed.</td>
-                            </tr>
-                            <tr>
-                                <td>GIF, AVIF</td>
-                                <td class="center yes">✔</td>
-                                <td class="center yes">✔</td>
-                                <td>Stored untouched — never transcoded.</td>
-                            </tr>
-                            <tr>
-                                <td>PDF</td>
-                                <td class="center yes">✔</td>
-                                <td class="center no">✘</td>
-                                <td>Downloaded rather than rendered.</td>
-                            </tr>
-                            <tr>
-                                <td>HTML, SVG, XML, JavaScript</td>
-                                <td class="center no">✘</td>
-                                <td class="center no">✘</td>
-                                <td>Active content. Even if you allowlist it, it is always
-                                    <code>attachment</code>.</td>
-                            </tr>
-                            <tr>
-                                <td>MP4, HEIC, ZIP, MP3</td>
-                                <td class="center no">✘</td>
-                                <td class="center no">✘</td>
-                                <td>Recognised, but you must allowlist them explicitly.</td>
-                            </tr>
-                            <tr>
-                                <td>Anything unrecognised</td>
-                                <td class="center no">✘</td>
-                                <td class="center no">✘</td>
-                                <td>400. "Unknown" is not treated as "probably fine".</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-</div>
-</details>
-<details class="advanced" id="images">
-<summary>Image optimization levels</summary>
-<div class="details-body"><p class="section-intro">Shrink images on the way to S3, without picking quality numbers yourself.</p>
-
-                <p>Set a level and the library re-encodes the image toward a target size, binary-searching encoder
-                    quality (bounded between 25 and 95, at most seven attempts) until it lands in range. You get
-                    predictable output sizes instead of a fixed quality that ruins some photos and barely touches
-                    others.</p>
-
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Level</th>
-                                <th>Target result</th>
-                                <th>Good for</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><code>'low'</code></td>
-                                <td>About 75–80% of the original size</td>
-                                <td>Photography, product shots — barely visible change.</td>
-                            </tr>
-                            <tr>
-                                <td><code>'medium'</code> / <code>'med'</code></td>
-                                <td>About 60–65%</td>
-                                <td>The usual choice for user avatars and content images.</td>
-                            </tr>
-                            <tr>
-                                <td><code>'high'</code></td>
-                                <td>Under 1 MB: about 40–45%. Over 1 MB: a size target that scales from ~400–450 KB at
-                                    1 MB to ~600–700 KB at 5 MB.</td>
-                                <td>Phone camera uploads, where originals are many megabytes.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="code-block" data-lang="javascript">
-                    <pre><code>// On a router
-createRouter({ model: Post, upload: { imgOptimizations: 'high' } });
-
-// Or directly, on a buffer you already have
-import { compressImage } from 'express-controller-sets';
-const smaller = await compressImage(buffer, 'image/jpeg', 'medium');</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
-                </div>
-
-                <h3>What is and isn't touched</h3>
-                <div class="lane">
-                    <span class="lane-label">JPEG · PNG · WebP</span>
-                    <span class="lane-pipe"></span>
-                    <span class="lane-end is-target"><i data-lucide="check-circle-2"></i> re-encoded in the same
-                        format</span>
-                </div>
-                <div class="lane">
-                    <span class="lane-label">GIF · AVIF · PDF</span>
-                    <span class="lane-pipe"></span>
-                    <span class="lane-end"><i data-lucide="minus-circle"></i> uploaded exactly as received</span>
-                </div>
-                <div class="lane">
-                    <span class="lane-label">sharp missing or failing</span>
-                    <span class="lane-pipe"></span>
-                    <span class="lane-end"><i data-lucide="minus-circle"></i> warning logged, original uploaded</span>
-                </div>
-
-                <div class="callout callout-warn">
-                    <i data-lucide="file-warning"></i>
-                    <div>
-                        <p><strong>Why GIFs are left alone.</strong> An earlier version pushed every image through the
-                            JPEG encoder. A GIF came out as JPEG bytes stored under a <code>.gif</code> key with
-                            <code>Content-Type: image/gif</code> — animation gone, file corrupt, and nothing in the
-                            logs. Formats that cannot be re-encoded in place are now passed straight through, and the
-                            stored extension is re-derived from whatever bytes actually get uploaded.</p>
-                    </div>
-                </div>
-
-                <div class="callout callout-danger">
-                    <i data-lucide="cpu"></i>
-                    <div>
-                        <p><strong><code>allowClientImageOptions</code> is off for a reason.</strong> The level drives
-                            up to seven sequential re-encodes of a multi-megabyte buffer. Let clients choose it and any
-                            upload endpoint becomes CPU amplification: a handful of requests asking for
-                            <code>high</code> can saturate your server. If you turn it on, the accepted values are
-                            still allowlisted — read from <code>?imgOptimizations=</code>, the body, or the
-                            <code>x-img-optimizations</code> header.</p>
-                    </div>
-                </div>
-</div>
-</details>
-<details class="advanced" id="image-uploads">
-<summary>Recipe: admin-only product images</summary>
-<div class="details-body"><p>Install <code>multer</code>, <code>@aws-sdk/client-s3</code> and (for compression) <code>sharp</code>,
-        and set the <a href="uploads.html">S3 variables</a>. Clients send <code>multipart/form-data</code> with the
-        file fields named as below; the stored document gets the URLs.</p>
-    <div class="code-block" data-lang="javascript">
-        <pre><code>import { createRouter } from 'express-controller-sets';
-
-app.use('/api/admin/products', createRouter({
-  model: Product,
-  middlewares: [auth.requireAuth, auth.requireRole('admin')],
-  upload: {
-    path: 'products/',
-    fields: [
-      { name: 'cover', maxCount: 1 },
-      { name: 'gallery', maxCount: 6 },
-    ],
-    imgOptimizations: 'medium',
-    acl: 'public-read',                                 // product photos are meant to be seen
-    allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
-    maxFileSize: 5 * 1024 * 1024,
-  },
-  allowedFields: ['name', 'price', 'cover', 'gallery'],
-}));</code></pre>
-    </div>
-    <div class="code-block" data-lang="bash">
-        <pre><code>curl -X POST localhost:3000/api/admin/products \
-  -H "Authorization: Bearer $TOKEN" \
-  -F name=Chair -F price=120 \
-  -F cover=@cover.jpg -F gallery=@side.jpg -F gallery=@back.jpg</code></pre>
-    </div>
-</div>
-</details>
-<details class="advanced" id="s3-env">
-<summary>S3 environment details</summary>
-<div class="details-body"><p class="section-intro">Five variables. Only needed if you use an upload router.</p>
-
-                <div class="code-block" data-lang="bash">
-                    <pre><code>S3_ENDPOINT=https://nyc3.digitaloceanspaces.com   # required
-S3_SPACES_KEY=your-access-key                     # required
-S3_SPACES_SECRET=your-secret-key                  # required
-S3_BUCKET_NAME=your-bucket                        # required
-S3_REGION=us-east-1                               # optional, defaults to us-east-1</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
-                </div>
-
-                <p>The variable names carry "SPACES" because the client is configured with path-style addressing, which
-                    works with DigitalOcean Spaces, MinIO, Cloudflare R2 and Amazon S3 alike. Any S3-compatible
-                    endpoint will do.</p>
-
-                <div class="callout callout-warn">
-                    <i data-lucide="file-cog"></i>
-                    <div>
-                        <p><strong>This library does not call <code>dotenv.config()</code>.</strong> Loading
-                            environment is your application's decision, not a side effect a dependency imposes. Load it
-                            yourself before you start handling requests:</p>
-                        <div class="code-block" data-lang="javascript" style="margin-top:.6rem">
-                            <pre><code>import 'dotenv/config';   // first import in your entry file</code></pre>
-                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="callout callout-tip">
-                    <i data-lucide="refresh-cw"></i>
-                    <div>
-                        <p><strong>Configuration is read per request, not at import.</strong> An app that loads its
-                            environment after importing the package still works — no permanent 503 caused by a snapshot
-                            taken a moment too early. Missing variables produce a 503 and a server log naming exactly
-                            which ones are absent.</p>
-                    </div>
-                </div>
-</div>
-</details>
+<p>S3 configuration is read per request, not at import, so an app that loads its environment after importing the package still works.</p>
 </section>

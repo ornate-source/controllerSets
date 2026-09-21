@@ -1,28 +1,36 @@
 # express-controller-sets
 
-> Generate list, read, create, update and delete endpoints for any Mongoose model in one call — with filtering, search, pagination, S3 uploads, authentication and a security model that denies by default.
+> Generate list, read, create, update and delete endpoints for any Mongoose model in one call — with filtering, search, pagination, caching, S3 uploads, authentication and a security model that denies by default.
 
-Install: `npm install express-controller-sets express mongoose`. ES modules, Node 20+, Express 5, Mongoose 9.
+Install: `npm install express-controller-sets express mongoose`. ES modules, Node 20.19+, Express 5, Mongoose 9.
 For a complete, self-contained guide written for language models, read https://ornate-source.github.io/controllerSets/llms-full.txt.
 
-## Getting started
+## Get started
 
-- [Overview](https://ornate-source.github.io/controllerSets/): Why controller-sets, and how to install it.
-- [How to use](https://ornate-source.github.io/controllerSets/how-to-use.html): Build a working products API with createRouter in five steps.
+- [Overview](https://ornate-source.github.io/controllerSets/): What controller-sets does, which page you need, and how to install it.
+- [Quickstart](https://ornate-source.github.io/controllerSets/quickstart.html): A working, protected products API in ten minutes.
+- [Core concepts](https://ornate-source.github.io/controllerSets/concepts.html): The four ideas every other page assumes: routers, allowlists, the request lifecycle and the response envelope.
 
 ## Guides
 
 - [createRouter](https://ornate-source.github.io/controllerSets/router.html): Every option of createRouter — including file uploads — why you would use it, and every API endpoint it creates.
-- [Redis cache](https://ornate-source.github.io/controllerSets/cache.html): Answer repeated reads from Redis in milliseconds — cleared automatically on every write.
-- [S3 Upload](https://ornate-source.github.io/controllerSets/uploads.html): Upload files on your own routes with the upload middleware, and connect your bucket.
-- [Auth setup](https://ornate-source.github.io/controllerSets/auth.html): Sign-up, login, roles, refresh tokens and social sign-in on your own user model.
-- [Email sender](https://ornate-source.github.io/controllerSets/email.html): Send password-reset codes by email or SMS, with your own transporter and templates.
-- [.env.example](https://ornate-source.github.io/controllerSets/env.html): Every environment variable, with ready-made setups for common providers.
-- [Advanced](https://ornate-source.github.io/controllerSets/advanced.html): Use each ControllerSets method — getAll, query, get, create, update, delete — on your own routes.
+- [Protecting routes](https://ornate-source.github.io/controllerSets/protect.html): Guards, public/admin splits, server-owned fields and per-user data.
+- [File uploads](https://ornate-source.github.io/controllerSets/uploads.html): Accept files on a router or your own route, store them in S3, and compress images.
+- [Caching](https://ornate-source.github.io/controllerSets/cache.html): Answer repeated reads from Redis, cleared automatically on every write.
+- [Authentication](https://ornate-source.github.io/controllerSets/auth.html): Sign-up, login, roles, refresh tokens and social sign-in on your own user model.
+- [Email & SMS](https://ornate-source.github.io/controllerSets/email.html): Deliver password-reset codes with your own transporter, sender and templates.
+- [Custom routes](https://ornate-source.github.io/controllerSets/custom-routes.html): Use the ControllerSets handlers on routes you wire yourself.
 
-## More
+## Reference
 
-- [FAQ](https://ornate-source.github.io/controllerSets/faq.html): Answers to the questions people hit first.
+- [HTTP API](https://ornate-source.github.io/controllerSets/http-api.html): For client developers: every endpoint, query parameter, QUERY body, response shape and status code.
+- [JavaScript API](https://ornate-source.github.io/controllerSets/api.html): Every export of the package, with signatures and TypeScript types.
+- [Environment variables](https://ornate-source.github.io/controllerSets/env.html): Every variable the library reads, with ready-made setups for common providers.
+
+## Help
+
+- [Troubleshooting](https://ornate-source.github.io/controllerSets/troubleshooting.html): Symptoms, causes and fixes for the problems people hit first.
+- [Upgrading](https://ornate-source.github.io/controllerSets/upgrading.html): Deprecations in 3.3, and moving from 2.x to 3.x.
 - [Use with an LLM](https://ornate-source.github.io/controllerSets/llm.html): One prompt so ChatGPT, Claude or Copilot write correct code for this package.
 
 ## Optional

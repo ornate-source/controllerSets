@@ -1,6 +1,6 @@
 <section class="section" id="cache-setup">
 <h2>Turn it on</h2>
-<p>Cache list and read responses in Redis, so repeated requests skip the database. Three steps:</p>
+<p>Cache list and read responses in Redis, so repeated requests skip the database. Worth it for read-heavy data that changes through these routes — catalogues, settings, reference data. Three steps:</p>
 <ol class="steps"><li><h4>Install a Redis client</h4><div class="code-block" data-lang="bash">
 <pre><code>npm install ioredis        # or: npm install redis</code></pre>
 </div></li><li><h4>Set the URL in .env</h4><div class="code-block" data-lang="bash">
@@ -58,6 +58,20 @@ curl -i localhost:3000/api/products | grep -i x-cache    # X-Cache: HIT</code></
 <tr><td><code>timeoutMs</code></td><td>150</td><td>How long a request waits for Redis before falling back to the database.</td></tr>
 <tr><td><code>namespace</code></td><td>the mount path</td><td>Rarely needed: override the router part of the cache key.</td></tr>
 </tbody></table></div>
+<p>Summary table: <a href="router.html#opts-cache">createRouter → Cache</a>.</p>
+</section>
+
+<section class="section" id="cache-shared-store">
+<h2>One connection for many routers</h2>
+<p>Routers given the same <code>url</code> already share one connection. To configure it once, or reuse a client your app already has, create a store and pass it to each router:</p>
+<div class="code-block" data-lang="javascript">
+<pre><code>import { createRouter, createRedisCacheStore } from 'express-controller-sets';
+
+const store = createRedisCacheStore({ url: process.env.REDIS_URL });   // or { client: myRedis }
+
+app.use('/api/products', createRouter({ model: Product, cache: { store, ttl: 300 }, allowedFields: ['name'] }));
+app.use('/api/categories', createRouter({ model: Category, cache: { store }, allowedFields: ['name'] }));</code></pre>
+</div>
 </section>
 
 <section class="section" id="cache-vary">

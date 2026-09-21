@@ -1,5 +1,5 @@
-<section class="section" id="why">
-    <h2>Why a prompt?</h2>
+<section class="section" id="llm-why">
+    <h2>Why a prompt</h2>
     <p>Language models know an older, smaller version of this library — or guess at one. Paste the prompt
         below at the start of a conversation (or add it to your editor's rules file) and the model writes code
         against the real API: correct option names, the security defaults, the auth bodies, and the mistakes to
@@ -62,12 +62,8 @@ mkdir -p .github &amp;&amp; curl -fsSL https://ornate-source.github.io/controlle
     </div>
 </section>
 
-<section class="section" id="advanced">
-    <h2>Advanced</h2>
-    <p class="section-intro">Deeper detail — open what you need.</p>
-<details class="advanced" id="ask">
-  <summary>Prompts that work well</summary>
-  <div class="details-body"><p>After the guide, ask in plain language. Say what the data is, who may read it and who may change it —
+<section class="section" id="ask">
+<h2>Prompts that work well</h2><p>After the guide, ask in plain language. Say what the data is, who may read it and who may change it —
         the model turns that into allowlists and guards.</p>
 
     <div class="code-block" data-lang="text">
@@ -89,25 +85,19 @@ JPEG/PNG/WebP only, 5 MB each, compressed at "medium". Keep writes admin-only.</
         <pre><code>Review this file against the express-controller-sets guide. List every place where a client
 could write a field it shouldn't, read another user's data, or reach an unguarded route.</code></pre>
     </div>
-  </div>
-</details>
+  </section>
 
-<details class="advanced" id="verify">
-  <summary>Check what it wrote</summary>
-  <div class="details-body"><p>Models are fluent, not infallible. Before running generated code, check these five things — they are
+<section class="section" id="verify">
+<h2>Check what it wrote</h2><p>Models are fluent, not infallible. Before running generated code, check these five things — they are
         where mistakes cost the most:</p>
     <ol class="steps">
         <li><strong>Every router has <code>allowedFields</code></strong> (or <code>blockedFields</code>) — and
             it does not include server-owned fields like <code>role</code> or <code>ownerId</code>.</li>
-        <li><strong>Every write route has a guard</strong> in <code>middlewares</code>, or is on a router with
-            <code>allowedFields: []</code>.</li>
+        <li><strong>Every write route has a guard</strong> in <code>middlewares</code>. <code>allowedFields: []</code> alone does not stop <code>DELETE</code>.</li>
         <li><strong><code>errorHandler</code> is mounted last</strong> and <code>express.json()</code> first.</li>
         <li><strong>Secrets come from the environment</strong> — <code>token.secret</code> is at least 32
             characters and never in the code.</li>
-        <li><strong>Only real options are used.</strong> Anything not in <a href="router.html">All options</a>
+        <li><strong>Only real options are used.</strong> Anything not in <a href="router.html">createRouter</a>
             is invented — at best ignored, at worst a false sense of safety.</li>
     </ol>
-  </div>
-</details>
-</section>
-
+  </section>

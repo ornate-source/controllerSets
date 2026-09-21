@@ -1,0 +1,316 @@
+<section class="section" id="endpoints">
+<h2>Endpoints</h2>
+<p>Every <code>createRouter</code> router serves the same six routes. Examples use <code>/api/products</code>; substitute your mount path.</p>
+<div class="table-container"><table><thead><tr><th>Method</th><th>Path</th><th>Body</th><th>Success</th></tr></thead><tbody>
+<tr><td><span class="m m-get">GET</span></td><td><code>/api/products</code></td><td>—</td><td>200, list</td></tr>
+<tr><td><span class="m m-query">QUERY</span></td><td><code>/api/products</code></td><td>JSON read parameters</td><td>200, list</td></tr>
+<tr><td><span class="m m-post">POST</span></td><td><code>/api/products</code></td><td>JSON record, or <code>multipart/form-data</code> on upload routers</td><td>201, record</td></tr>
+<tr><td><span class="m m-get">GET</span></td><td><code>/api/products/:id</code></td><td>—</td><td>200, record</td></tr>
+<tr><td><span class="m m-patch">PATCH</span></td><td><code>/api/products/:id</code></td><td>JSON fields to change (others are kept)</td><td>200, record</td></tr>
+<tr><td><span class="m m-delete">DELETE</span></td><td><code>/api/products/:id</code></td><td>—</td><td>200, message</td></tr>
+</tbody></table></div>
+<ul>
+<li><strong>Auth:</strong> protected routes need <code>Authorization: Bearer &lt;token&gt;</code>.</li>
+<li><strong>Allowlists:</strong> every parameter below only works on fields the server allows. Ask the backend team which fields are filterable, searchable, sortable and writable — or read them off the router's <a href="router.html#opts-read">options</a>.</li>
+<li><strong>No PUT:</strong> updates are <code>PATCH</code> and change only the fields you send.</li>
+</ul>
+</section>
+
+<section class="section" id="api-filtering">
+<h2>Filtering</h2>
+<div class="table-container"><table><thead><tr><th>Filter</th><th>Example</th><th>Matches</th><th>Field must be in</th></tr></thead><tbody>
+<tr><td>Equals</td><td><code>?category=chairs</code></td><td>category is "chairs"</td><td><code>query</code></td></tr>
+<tr><td>Any of</td><td><code>?category=chairs&amp;category=tables</code></td><td>chairs <em>or</em> tables</td><td><code>query</code></td></tr>
+<tr><td>Several fields</td><td><code>?category=chairs&amp;inStock=true</code></td><td>both (AND)</td><td><code>query</code></td></tr>
+<tr><td>Range</td><td><code>?rangeField=price&amp;range=50-200</code></td><td>50 ≤ price ≤ 200</td><td><code>filterableFields</code></td></tr>
+<tr><td>Open range</td><td><code>?rangeField=price&amp;range=50-</code> · <code>range=-200</code></td><td>price ≥ 50 · price ≤ 200</td><td><code>filterableFields</code></td></tr>
+<tr><td>Compare</td><td><code>?compareField=price&amp;compareOperator=gt&amp;compareValue=100</code></td><td>price &gt; 100</td><td><code>filterableFields</code></td></tr>
+</tbody></table></div>
+<p><code>compareOperator</code> is one of <code>eq</code> (default), <code>ne</code>, <code>gt</code>, <code>gte</code>, <code>lt</code>, <code>lte</code>.</p>
+<ul>
+<li>An equality parameter for a field not in <code>query</code> is <strong>ignored</strong>. A range or compare on a field not in <code>filterableFields</code> is a <strong>400</strong> naming it.</li>
+<li>Range bounds and numeric-looking compare values are treated as numbers. Ranges split on <code>-</code>, so negative bounds need <code>compareField</code> or <a href="#api-query">QUERY</a>.</li>
+<li>One range and one compare per request. Need more? Use <a href="#api-query">QUERY</a>.</li>
+<li>Object-shaped values such as <code>?price[$ne]=0</code> are a <strong>400</strong> — that's how operator injection gets in.</li>
+</ul>
+</section>
+
+<section class="section" id="api-search">
+<h2>Search</h2>
+<div class="code-block" data-lang="bash">
+<pre><code>GET /api/products?s=oak
+GET /api/products?search=oak          # same thing</code></pre>
+</div>
+<ul>
+<li>Case-insensitive, matches anywhere in the text: <code>oak</code> finds "Oak chair" and "Cloak".</li>
+<li>Searches every field in the server's <code>search</code> list — a match in any one counts. Combined with filters by AND.</li>
+<li>Matched literally: <code>.*</code> and <code>(</code> are just characters.</li>
+<li>Up to 128 characters (the server's <code>maxSearchLength</code>); longer is a 400.</li>
+</ul>
+</section>
+
+<section class="section" id="api-sorting">
+<h2>Sorting</h2>
+<div class="code-block" data-lang="bash">
+<pre><code>GET /api/products?sort=price          # ascending
+GET /api/products?sort=-price         # descending</code></pre>
+</div>
+<ul>
+<li>One field, from the server's <code>sortableFields</code>; any other is a 400.</li>
+<li>Without <code>sort</code>, the server's default order applies.</li>
+<li>Several sort keys: use <a href="#api-query">QUERY</a> — <code>"sort": ["-price", "name"]</code>.</li>
+</ul>
+</section>
+
+<section class="section" id="api-pagination">
+<h2>Pagination</h2>
+<p>The server uses one of two modes. Offset is the default.</p>
+<h3>Offset: page numbers</h3>
+<div class="code-block" data-lang="bash">
+<pre><code>GET /api/products?page=2&amp;pageSize=20</code></pre>
+</div>
+<div class="code-block" data-lang="json">
+<pre><code>{
+  "success": true,
+  "data": [ … 20 records … ],
+  "pagination": { "currentPage": 2, "pageSize": 20, "totalPages": 7, "totalRecords": 132 }
+}</code></pre>
+</div>
+<div class="table-container"><table><thead><tr><th>You send</th><th>You get</th></tr></thead><tbody>
+<tr><td>no <code>page</code></td><td>An unpaginated list, no <code>pagination</code> block, capped at the server's <code>maxLimit</code> (100 by default).</td></tr>
+<tr><td><code>page=1</code></td><td>50 records (the default page size).</td></tr>
+<tr><td><code>page=1&amp;pageSize=5000</code></td><td>Clamped to <code>maxLimit</code>.</td></tr>
+<tr><td><code>page=abc</code> or <code>page=-3</code></td><td>Treated as page 1.</td></tr>
+</tbody></table></div>
+<p>If the server skips counting, <code>pagination</code> carries <code>hasMore</code> instead of <code>totalPages</code> and <code>totalRecords</code>.</p>
+
+<h3>Cursor: follow <code>nextCursor</code></h3>
+<p>When the server uses <code>pagination: 'cursor'</code>, there are no page numbers. Request the first page with no cursor, then pass back <code>nextCursor</code> until <code>hasMore</code> is false:</p>
+<div class="code-block" data-lang="bash">
+<pre><code>GET /api/events?pageSize=50
+→ { "data": [ … ], "pagination": { "pageSize": 50, "hasMore": true, "nextCursor": "eyJpIjoi…" } }
+
+GET /api/events?pageSize=50&amp;cursor=eyJpIjoi…
+→ … until "hasMore": false and "nextCursor": null</code></pre>
+</div>
+<ul>
+<li>Keep the same <code>sort</code> and filters for the whole scan; changing <code>sort</code> mid-scan is a 400.</li>
+<li>If the record a cursor points at was deleted, you get a 400 — restart from the first page.</li>
+<li>Sending <code>page</code> to a cursor server, or <code>cursor</code> to an offset server, is a 400.</li>
+</ul>
+</section>
+
+<section class="section" id="api-combined">
+<h2>Putting it together</h2>
+<div class="code-block" data-lang="bash">
+<pre><code># Chairs in stock, 50–200, matching "oak", most expensive first, page 2 of 20
+GET /api/products?category=chairs&amp;inStock=true&amp;rangeField=price&amp;range=50-200&amp;s=oak&amp;sort=-price&amp;page=2&amp;pageSize=20</code></pre>
+</div>
+<div class="code-block" data-lang="javascript">
+<pre><code>const params = new URLSearchParams({
+  category: 'chairs', inStock: 'true',
+  rangeField: 'price', range: '50-200',
+  s: 'oak', sort: '-price', page: '2', pageSize: '20',
+});
+const res = await fetch(`/api/products?${params}`);
+const { success, data, pagination, error } = await res.json();
+if (!success) throw new Error(error);</code></pre>
+</div>
+</section>
+
+<section class="section" id="api-query">
+<h2>QUERY: reads with a JSON body</h2>
+<p><code>QUERY</code> (<a href="https://www.rfc-editor.org/rfc/rfc10008.html" target="_blank" rel="noopener">RFC 10008</a>) is the same read as <code>GET /</code>, with the parameters in a JSON body. Like <code>GET</code> it never writes. Use it when a URL won't do: a long list of ids, several conditions per field, a multi-key sort, or filters you'd rather keep out of access logs. The response is identical to the equivalent <code>GET</code>.</p>
+<div class="code-block" data-lang="javascript">
+<pre><code>const res = await fetch('/api/products', {
+  method: 'QUERY',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    filter: {
+      category: ['chairs', 'tables'],          // list    → any of
+      price: { gte: 50, lte: 200 },            // object  → operators
+      inStock: true,                           // scalar  → equals
+    },
+    search: 'oak',
+    sort: ['-price', 'name'],
+    page: 1,
+    pageSize: 20,
+  }),
+});</code></pre>
+</div>
+
+<h3>Body keys</h3>
+<div class="table-container"><table><thead><tr><th>Key</th><th>Type</th><th>Meaning</th></tr></thead><tbody>
+<tr><td><code>filter</code></td><td>object</td><td>Field → condition. Every field must be in <code>filterableFields</code> — being in <code>query</code> alone isn't enough if <code>filterableFields</code> is set.</td></tr>
+<tr><td><code>search</code></td><td>string</td><td>Same as <code>?s=</code>.</td></tr>
+<tr><td><code>sort</code></td><td>string · string[]</td><td><code>"-price"</code>, or up to five keys, each in <code>sortableFields</code>.</td></tr>
+<tr><td><code>page</code></td><td>integer ≥ 1</td><td>Paginated response. Not with <code>limit</code>.</td></tr>
+<tr><td><code>pageSize</code></td><td>integer ≥ 1</td><td>Per page, clamped to <code>maxLimit</code>. Alone, implies <code>page: 1</code>.</td></tr>
+<tr><td><code>limit</code></td><td>integer ≥ 1</td><td>Cap an unpaginated read, clamped to <code>maxLimit</code>.</td></tr>
+<tr><td><code>cursor</code></td><td>string</td><td>Next page, on cursor-mode servers.</td></tr>
+</tbody></table></div>
+<p>Every key is optional; an empty body is a plain list. <strong>Unknown keys are a 400</strong>, so a <code>"filters"</code> typo never silently returns the whole collection. <code>page</code>, <code>pageSize</code> and <code>limit</code> must be JSON numbers, not strings.</p>
+
+<h3>Operators</h3>
+<div class="table-container"><table><thead><tr><th>Operator</th><th>Takes</th><th>Matches</th></tr></thead><tbody>
+<tr><td><code>eq</code> · <code>ne</code></td><td>a value</td><td>Equal · not equal</td></tr>
+<tr><td><code>gt</code> · <code>gte</code></td><td>a value</td><td>Greater than · or equal</td></tr>
+<tr><td><code>lt</code> · <code>lte</code></td><td>a value</td><td>Less than · or equal</td></tr>
+<tr><td><code>in</code> · <code>nin</code></td><td>1–100 values</td><td>Any of · none of</td></tr>
+</tbody></table></div>
+<p>Operators are spelled without <code>$</code>. Values are strings, numbers, booleans or <code>null</code>, cast by the schema — <code>"gte": "50"</code> on a Number field works. Nested objects, empty conditions and unknown operators are a 400.</p>
+
+<h3>The same read, both ways</h3>
+<div class="table-container"><table><thead><tr><th>Query string</th><th>QUERY body</th></tr></thead><tbody>
+<tr><td><code>?category=65af…</code></td><td><code>{ "filter": { "category": "65af…" } }</code></td></tr>
+<tr><td><code>?tag=sale&amp;tag=new</code></td><td><code>{ "filter": { "tag": ["sale", "new"] } }</code></td></tr>
+<tr><td><code>?rangeField=price&amp;range=10-100</code></td><td><code>{ "filter": { "price": { "gte": 10, "lte": 100 } } }</code></td></tr>
+<tr><td><code>?compareField=price&amp;compareOperator=gt&amp;compareValue=50</code></td><td><code>{ "filter": { "price": { "gt": 50 } } }</code></td></tr>
+<tr><td><code>?s=chair</code></td><td><code>{ "search": "chair" }</code></td></tr>
+<tr><td><code>?sort=-price</code></td><td><code>{ "sort": "-price" }</code></td></tr>
+<tr><td>— <em>not expressible</em></td><td><code>{ "sort": ["-price", "name"] }</code></td></tr>
+<tr><td><code>?page=2&amp;pageSize=20</code></td><td><code>{ "page": 2, "pageSize": 20 }</code></td></tr>
+</tbody></table></div>
+
+<h3>Sending it</h3>
+<div class="tabs"><div class="tab-list" role="tablist" aria-label="QUERY clients"><button class="tab-btn" type="button" role="tab" data-tab="q-fetch">fetch</button><button class="tab-btn" type="button" role="tab" data-tab="q-curl">curl</button><button class="tab-btn" type="button" role="tab" data-tab="q-axios">axios</button></div>
+<div class="tab-panel" id="q-fetch" role="tabpanel"><p>Browsers and Node's <code>fetch</code> send <code>QUERY</code> as written — see the example above.</p></div>
+<div class="tab-panel" id="q-curl" role="tabpanel"><div class="code-block" data-lang="bash">
+<pre><code>curl -X QUERY http://localhost:3000/api/products \
+  -H 'Content-Type: application/json' \
+  -d '{"filter":{"price":{"gte":50}},"sort":"-price","pageSize":20}'</code></pre>
+</div></div>
+<div class="tab-panel" id="q-axios" role="tabpanel"><div class="code-block" data-lang="javascript">
+<pre><code>const { data } = await axios.request({
+  url: '/api/products',
+  method: 'QUERY',
+  headers: { 'Content-Type': 'application/json' },   // set it: some versions omit it for unknown methods
+  data: { filter: { tag: ['sale', 'new'] }, sort: ['-price', 'name'] },
+});</code></pre>
+</div></div></div>
+
+<h3>Is it available?</h3>
+<p><code>OPTIONS</code> on the collection answers:</p>
+<div class="code-block" data-lang="http">
+<pre><code>OPTIONS /api/products HTTP/1.1
+
+HTTP/1.1 200 OK
+Allow: GET, HEAD, POST, QUERY
+Accept-Query: application/json</code></pre>
+</div>
+<p>No <code>QUERY</code> in <code>Allow</code> means the server turned it off, runs Node older than 22.2, or a proxy stripped it. Many proxies, CDNs and API gateways drop methods they don't recognise, so test through your real edge and keep <code>GET</code> as the fallback. Don't put a URL-keyed shared cache in front of <code>QUERY</code> — every request to a collection has the same URL.</p>
+
+<h3>What's refused</h3>
+<div class="table-container"><table><thead><tr><th>Request</th><th class="center">Status</th><th>Why</th></tr></thead><tbody>
+<tr><td><code>{ "filter": { "secretToken": "x" } }</code></td><td class="center">400</td><td>Not in <code>filterableFields</code>.</td></tr>
+<tr><td><code>{ "filter": { "$where": "…" } }</code></td><td class="center">400</td><td><code>$</code>-prefixed or dotted keys are never field names.</td></tr>
+<tr><td><code>{ "filter": { "price": { "$gte": 1 } } }</code></td><td class="center">400</td><td>Spell it <code>gte</code>.</td></tr>
+<tr><td><code>{ "sort": "createdBy" }</code></td><td class="center">400</td><td>Not in <code>sortableFields</code>.</td></tr>
+<tr><td><code>{ "filters": { … } }</code></td><td class="center">400</td><td>Unknown key.</td></tr>
+<tr><td><code>{ "page": "2" }</code></td><td class="center">400</td><td>Must be a number.</td></tr>
+<tr><td>Body sent as <code>text/plain</code>, or no JSON parser on the server</td><td class="center">415</td><td>The body must be parsed JSON.</td></tr>
+<tr><td><code>QUERY /api/products/65af…</code></td><td class="center">404</td><td>Collection only. Use <code>GET /:id</code>.</td></tr>
+</tbody></table></div>
+</section>
+
+<section class="section" id="api-single">
+<h2>Read, create, update, delete</h2>
+<div class="code-block" data-lang="javascript">
+<pre><code>// Read one
+await fetch('/api/products/65af…');
+
+// Create — only fields the server allows are saved; others are silently dropped
+await fetch('/api/products', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ name: 'Oak chair', price: 120 }),
+});
+
+// Update — send only what changes
+await fetch('/api/products/65af…', {
+  method: 'PATCH',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ price: 99 }),
+});
+
+// Delete
+await fetch('/api/products/65af…', { method: 'DELETE' });</code></pre>
+</div>
+
+<h3>Sending files</h3>
+<p>On routers with uploads, send <code>multipart/form-data</code>: ordinary fields as text, files under the field names the server configured. Don't set <code>Content-Type</code> yourself — the browser adds the boundary.</p>
+<div class="tabs"><div class="tab-list" role="tablist"><button class="tab-btn" type="button" data-tab="send-fetch" role="tab">Browser (fetch)</button><button class="tab-btn" type="button" data-tab="send-curl" role="tab">curl</button></div><div class="tab-panel" id="send-fetch" role="tabpanel"><div class="code-block" data-lang="javascript">
+<pre><code>const form = new FormData();
+form.append('name', 'Chair');
+form.append('price', '120');
+form.append('cover', coverInput.files[0]);
+for (const file of galleryInput.files) form.append('gallery', file);
+
+const res = await fetch('/api/products', { method: 'POST', body: form });
+const { data } = await res.json();
+data.cover;     // "https://…/products/1726…-51234.jpg"
+data.gallery;   // ["https://…", "https://…"]</code></pre>
+</div></div><div class="tab-panel" id="send-curl" role="tabpanel"><div class="code-block" data-lang="bash">
+<pre><code>curl -X POST localhost:3000/api/products \
+  -F name=Chair -F price=120 \
+  -F cover=@cover.jpg \
+  -F gallery=@side.jpg -F gallery=@back.jpg</code></pre>
+</div></div></div>
+</section>
+
+<section class="section" id="responses">
+<h2>Responses</h2>
+<p><code>success</code> is always present; branch on it.</p>
+<div class="tabs"><div class="tab-list" role="tablist" aria-label="Response shapes"><button class="tab-btn" type="button" role="tab" data-tab="r-list">List</button><button class="tab-btn" type="button" role="tab" data-tab="r-paged">Paginated</button><button class="tab-btn" type="button" role="tab" data-tab="r-one">One record</button><button class="tab-btn" type="button" role="tab" data-tab="r-del">Delete</button><button class="tab-btn" type="button" role="tab" data-tab="r-err">Error</button></div>
+<div class="tab-panel" id="r-list" role="tabpanel"><div class="code-block" data-lang="json">
+<pre><code>// GET /api/products
+{ "success": true, "data": [ { "_id": "65af…", "name": "Laptop", "price": 1299 } ] }</code></pre>
+</div></div>
+<div class="tab-panel" id="r-paged" role="tabpanel"><div class="code-block" data-lang="json">
+<pre><code>// Offset, counted
+"pagination": { "currentPage": 2, "pageSize": 20, "totalPages": 7, "totalRecords": 132 }
+
+// Offset, countStrategy: 'none'
+"pagination": { "currentPage": 2, "pageSize": 20, "hasMore": true }
+
+// Cursor
+"pagination": { "pageSize": 20, "hasMore": true, "nextCursor": "eyJpIjoi…" }</code></pre>
+</div></div>
+<div class="tab-panel" id="r-one" role="tabpanel"><div class="code-block" data-lang="json">
+<pre><code>// GET /:id · POST / (201) · PATCH /:id
+{ "success": true, "data": { "_id": "65af…", "name": "Laptop", "price": 1299 } }</code></pre>
+</div></div>
+<div class="tab-panel" id="r-del" role="tabpanel"><div class="code-block" data-lang="json">
+<pre><code>// DELETE /:id
+{ "success": true, "message": "Item successfully deleted." }</code></pre>
+</div></div>
+<div class="tab-panel" id="r-err" role="tabpanel"><div class="code-block" data-lang="json">
+<pre><code>{ "success": false, "error": "Entry not found." }
+
+// A rejected write with per-field detail
+{ "success": false, "error": "Check the submitted values.", "fields": { "price": "must not be negative" } }
+
+// Through errorHandler (e.g. a 500)
+{ "success": false, "error": "Internal Server Error", "requestId": "0f2a5b8c-…" }</code></pre>
+</div></div></div>
+<ul>
+<li><code>fields</code> appears only on per-field failures: a validation error, a schema validation failure or a duplicate key. Never on a 5xx.</li>
+<li><code>requestId</code> appears on errors that pass through the server's <code>errorHandler</code>. Quote it when reporting a problem — it points to the log line.</li>
+<li><code>stack</code> appears only when the server runs with <code>NODE_ENV=development</code>.</li>
+</ul>
+</section>
+
+<section class="section" id="errors">
+<h2>Status codes</h2>
+<div class="table-container"><table><thead><tr><th>Code</th><th>When</th><th>Who fixes it</th></tr></thead><tbody>
+<tr><td><code>200</code> · <code>201</code></td><td>Success · record created.</td><td>—</td></tr>
+<tr><td><code>400</code></td><td>Malformed id; a field that isn't filterable or sortable; a bad filter value; a search term over the limit; a body with no writable fields; a failed validation; a rejected file type or upload limit; an invalid <code>QUERY</code> body or cursor.</td><td>The client</td></tr>
+<tr><td><code>401</code> · <code>403</code></td><td>Not signed in · not allowed. From the server's guards.</td><td>The client</td></tr>
+<tr><td><code>404</code></td><td>No record with that id.</td><td>The client</td></tr>
+<tr><td><code>405</code></td><td>Method refused by a read-only guard (if the server uses one).</td><td>The client</td></tr>
+<tr><td><code>409</code></td><td>A unique field already has that value — <code>"Duplicate value for: email."</code></td><td>The client</td></tr>
+<tr><td><code>415</code></td><td>A <code>QUERY</code> body that isn't JSON.</td><td>The client, or the server if no JSON parser is mounted</td></tr>
+<tr><td><code>500</code></td><td>Anything unexpected. Details are logged, never sent.</td><td>The server</td></tr>
+<tr><td><code>503</code></td><td>An upload route with S3 not configured, or an email/SMS sender that failed.</td><td>The server</td></tr>
+</tbody></table></div>
+</section>

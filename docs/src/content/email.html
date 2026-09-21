@@ -1,6 +1,9 @@
 <section class="section" id="email-basics">
     <h2>Setup</h2>
-<p>Give the auth router a transporter. Password-reset codes are then emailed automatically.</p>
+<p>The <a href="auth.html">auth router</a> sends one-time codes for password reset. Give it a way to send email — a nodemailer transporter is the quickest — and <code>/password/forgot</code> starts working.</p>
+<div class="code-block" data-lang="bash">
+<pre><code>npm install nodemailer</code></pre>
+</div>
 <div class="code-block" data-lang="javascript">
 <pre><code>import nodemailer from 'nodemailer';
 
@@ -20,6 +23,41 @@ createAuthRouter({
 POST /api/auth/password/reset    { "identifier": "ada@example.com", "code": "402913", "newPassword": "…" }</code></pre>
 </div>
 </section>
+
+<section class="section" id="password-reset">
+<h2>How a reset works</h2><p>Three calls. The library generates the code, stores it safely and sends it through the channel you
+        configured; your app only decides <em>how</em> mail and SMS leave the building.</p>
+
+    <div class="code-block" data-lang="bash">
+        <pre><code># 1. Ask for a code. The answer is the same whether or not the account exists.
+POST /auth/password/forgot  { "identifier": "ada@example.com", "channel": "email" }
+→ { "success": true, "message": "If that account exists, a code has been sent." }
+
+# 2. The code arrives by email (or SMS), rendered from your template.
+
+# 3. Spend it.
+POST /auth/password/reset   { "identifier": "ada@example.com",
+                              "code": "402913", "newPassword": "…" }</code></pre>
+    </div>
+
+    <p>The code is stored as an HMAC under your token secret, never in the clear; it is bound to its purpose,
+        expires (10 minutes by default), and is counted — five wrong guesses and it is dead. A successful reset
+        also signs out every refresh-token session.</p>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr><th>What you configure</th><th>What happens</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>mail.transporter</code> or <code>SMTP_*</code></td><td>Codes go by email through nodemailer (or anything with <code>sendMail</code>).</td></tr>
+                <tr><td><code>mail.sender</code></td><td>Your function sends the email — Resend, SES, Postmark, a queue.</td></tr>
+                <tr><td><code>sms.sender</code></td><td>Codes can go by SMS. There is no default SMS provider.</td></tr>
+                <tr><td>Nothing</td><td>Codes are never generated, and a warning is logged.</td></tr>
+            </tbody>
+        </table>
+    </div>
+  </section>
 
 <section class="section" id="email-options">
     <h2>Common options</h2>
@@ -149,49 +187,8 @@ sms: {
         as <code>DEFAULT_TEMPLATES</code> if you want to start from them.</p>
 </section>
 
-<section class="section" id="advanced">
-    <h2>Advanced</h2>
-    <p class="section-intro">Deeper detail — open what you need.</p>
-<details class="advanced" id="password-reset">
-  <summary>How password reset works</summary>
-  <div class="details-body"><p>Three calls. The library generates the code, stores it safely and sends it through the channel you
-        configured; your app only decides <em>how</em> mail and SMS leave the building.</p>
-
-    <div class="code-block" data-lang="bash">
-        <pre><code># 1. Ask for a code. The answer is the same whether or not the account exists.
-POST /auth/password/forgot  { "identifier": "ada@example.com", "channel": "email" }
-→ { "success": true, "message": "If that account exists, a code has been sent." }
-
-# 2. The code arrives by email (or SMS), rendered from your template.
-
-# 3. Spend it.
-POST /auth/password/reset   { "identifier": "ada@example.com",
-                              "code": "402913", "newPassword": "…" }</code></pre>
-    </div>
-
-    <p>The code is stored as an HMAC under your token secret, never in the clear; it is bound to its purpose,
-        expires (10 minutes by default), and is counted — five wrong guesses and it is dead. A successful reset
-        also signs out every refresh-token session.</p>
-
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr><th>What you configure</th><th>What happens</th></tr>
-            </thead>
-            <tbody>
-                <tr><td><code>mail.transporter</code> or <code>SMTP_*</code></td><td>Codes go by email through nodemailer (or anything with <code>sendMail</code>).</td></tr>
-                <tr><td><code>mail.sender</code></td><td>Your function sends the email — Resend, SES, Postmark, a queue.</td></tr>
-                <tr><td><code>sms.sender</code></td><td>Codes can go by SMS. There is no default SMS provider.</td></tr>
-                <tr><td>Nothing</td><td>Codes are never generated, and a warning is logged.</td></tr>
-            </tbody>
-        </table>
-    </div>
-  </div>
-</details>
-
-<details class="advanced" id="mail">
-  <summary>Transporter details</summary>
-  <div class="details-body"><p>The default mail sender uses a <strong>transporter</strong> — a nodemailer transporter, or any object
+<section class="section" id="mail">
+<h2>SMTP transporter</h2><p>The default mail sender uses a <strong>transporter</strong> — a nodemailer transporter, or any object
         with <code>sendMail({ from, to, subject, text, html })</code>. Pass one in, or let the library build it
         from the environment.</p>
 
@@ -245,12 +242,10 @@ APP_NAME=Acme</code></pre>
                 the first real password reset.</p>
         </div>
     </div>
-  </div>
-</details>
+  </section>
 
-<details class="advanced" id="channels">
-  <summary>Email or SMS: choosing a channel</summary>
-  <div class="details-body"><p>The client may send <code>"channel": "email"</code> or <code>"sms"</code>; without it, email is used when
+<section class="section" id="channels">
+<h2>Choosing email or SMS</h2><p>The client may send <code>"channel": "email"</code> or <code>"sms"</code>; without it, email is used when
         configured, otherwise SMS.</p>
     <ul>
         <li><strong>A channel you haven't configured is a 400</strong> — decided before the account is looked up,
@@ -269,7 +264,4 @@ APP_NAME=Acme</code></pre>
                 startup checks for free.</p>
         </div>
     </div>
-  </div>
-</details>
-</section>
-
+  </section>

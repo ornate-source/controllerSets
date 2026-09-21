@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JavaScript API · express-controller-sets</title>
+  <meta name="description" content="Every export of the package, with signatures and TypeScript types.">
+  <link rel="canonical" href="https://ornate-source.github.io/controllerSets/api.html">
+  <meta property="og:title" content="JavaScript API · express-controller-sets">
+  <meta property="og:description" content="Every export of the package, with signatures and TypeScript types.">
+  <meta property="og:type" content="website">
+  <link rel="alternate" type="text/plain" title="LLM guide" href="llms-full.txt">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/components.css?v=10a91d487a">
+  <link rel="stylesheet" href="assets/css/shell.css?v=a1646e50a8">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%236366f1'/%3E%3Ctext x='50' y='68' font-family='monospace' font-size='54' font-weight='700' fill='white' text-anchor='middle'%3E%7B%7D%3C/text%3E%3C/svg%3E">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/http.min.js" defer></script>
+  <script src="assets/search-index.js" defer></script>
+  <script src="assets/js/docs.js?v=901f93388a" defer></script>
+</head>
+<body class="dark" data-page="api">
+  <script>try{var t=localStorage.getItem('controllersets-theme');document.body.className=t||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark')}catch(e){}</script>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <header class="topbar">
+    <button class="icon-btn menu-btn" type="button" id="menu-open" aria-label="Open navigation"><i data-lucide="menu"></i></button>
+    <a class="brand" href="./" aria-label="controller-sets home">
+      <span class="brand-mark" aria-hidden="true">{}</span>
+      <span class="brand-name">controller-sets</span>
+      <span class="brand-version">v3.3.0</span>
+    </a>
+    <button class="search-trigger" type="button" id="search-open" aria-label="Search the docs">
+      <i data-lucide="search"></i><span>Search docs…</span><kbd>⌘K</kbd>
+    </button>
+    <nav class="topbar-links" aria-label="External">
+      <a class="topbar-link is-accent hide-sm" href="llm.html"><i data-lucide="sparkles"></i><span class="label">LLM prompt</span></a>
+      <a class="topbar-link hide-sm" href="https://github.com/ornate-source/controllerSets" target="_blank" rel="noopener"><svg class="gh-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span class="label">GitHub</span></a>
+      <a class="topbar-link hide-sm" href="https://www.npmjs.com/package/express-controller-sets" target="_blank" rel="noopener"><i data-lucide="package"></i><span class="label">npm</span></a>
+      <button class="icon-btn" type="button" id="theme-toggle" aria-label="Toggle colour theme"><i data-lucide="sun" class="sun-icon"></i><i data-lucide="moon" class="moon-icon"></i></button>
+    </nav>
+  </header>
+
+  <div class="nav-overlay" id="nav-overlay"></div>
+
+  <div class="layout">
+    <aside class="sidenav" id="sidenav" aria-label="Documentation">
+      <nav><div class="nav-group" data-group="get-started">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="rocket"></i><span>Get started</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="./"><i data-lucide="home"></i><span class="nav-page-label">Overview</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="quickstart.html"><i data-lucide="play"></i><span class="nav-page-label">Quickstart</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="concepts.html"><i data-lucide="lightbulb"></i><span class="nav-page-label">Core concepts</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="guides">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="book-open"></i><span>Guides</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="router.html"><i data-lucide="route"></i><span class="nav-page-label">createRouter</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="protect.html"><i data-lucide="shield-check"></i><span class="nav-page-label">Protecting routes</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="uploads.html"><i data-lucide="upload-cloud"></i><span class="nav-page-label">File uploads</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="cache.html"><i data-lucide="zap"></i><span class="nav-page-label">Caching</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="auth.html"><i data-lucide="key-round"></i><span class="nav-page-label">Authentication</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="email.html"><i data-lucide="mail"></i><span class="nav-page-label">Email &amp; SMS</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="custom-routes.html"><i data-lucide="wrench"></i><span class="nav-page-label">Custom routes</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="reference">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="library"></i><span>Reference</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="http-api.html"><i data-lucide="globe"></i><span class="nav-page-label">HTTP API</span></a></li>
+<li class="nav-page-item is-open"><a class="nav-page" href="api.html" aria-current="page"><i data-lucide="braces"></i><span class="nav-page-label">JavaScript API</span></a><ul class="nav-sections"><li><a class="nav-section" href="#exports" data-target="exports">Every export</a></li><li><a class="nav-section" href="#x-createrouter" data-target="x-createrouter">createRouter</a></li><li><a class="nav-section" href="#x-controllersets" data-target="x-controllersets">ControllerSets</a></li><li><a class="nav-section" href="#x-isquery" data-target="x-isquery">isQueryMethodSupported</a></li><li><a class="nav-section" href="#x-errorhandler" data-target="x-errorhandler">errorHandler</a></li><li><a class="nav-section" href="#x-httperror" data-target="x-httperror">HttpError and ValidationError</a></li><li><a class="nav-section" href="#x-upload" data-target="x-upload">fileUploadMiddleware and compressImage</a></li><li><a class="nav-section" href="#x-cache" data-target="x-cache">Cache stores</a></li><li><a class="nav-section" href="#x-auth" data-target="x-auth">createAuthRouter and identifier</a></li><li><a class="nav-section" href="#x-auth-low" data-target="x-auth-low">Auth building blocks</a></li><li><a class="nav-section" href="#typescript" data-target="typescript">TypeScript</a></li></ul></li>
+<li class="nav-page-item"><a class="nav-page" href="env.html"><i data-lucide="file-cog"></i><span class="nav-page-label">Environment variables</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="help">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="circle-help"></i><span>Help</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="troubleshooting.html"><i data-lucide="stethoscope"></i><span class="nav-page-label">Troubleshooting</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="upgrading.html"><i data-lucide="arrow-up-circle"></i><span class="nav-page-label">Upgrading</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="llm.html"><i data-lucide="bot"></i><span class="nav-page-label">Use with an LLM</span></a></li></ul>
+        </div></nav>
+    </aside>
+
+    <main class="doc" id="main" tabindex="-1">
+      <article class="doc-inner">
+        <header class="page-header">
+          <p class="breadcrumb">Reference <i data-lucide="chevron-right"></i> JavaScript API</p>
+          <h1>JavaScript API</h1>
+          <p class="page-summary">Every export of the package, with signatures and TypeScript types.</p>
+        </header>
+        <section class="section" id="exports">
+<h2>Every export<a class="anchor" href="#exports" aria-label="Link to this section">#</a></h2>
+<p>Everything is a named export from the package root. The package is ESM-only.</p>
+<div class="code-block" data-lang="javascript">
+<pre><code class="language-javascript">import { createRouter, errorHandler, ValidationError } from 'express-controller-sets';</code></pre>
+</div>
+<div class="table-container"><table><thead><tr><th>Export</th><th>Kind</th><th>Purpose</th></tr></thead><tbody>
+<tr><td colspan="3"><strong>CRUD</strong></td></tr>
+<tr><td><a href="#x-createrouter"><code>createRouter</code></a></td><td>function</td><td>A router with the six CRUD routes.</td></tr>
+<tr><td><a href="#x-controllersets"><code>ControllerSets</code></a></td><td>class</td><td>The six handlers, for routes you wire yourself.</td></tr>
+<tr><td><a href="#x-isquery"><code>isQueryMethodSupported</code></a></td><td>function</td><td>Whether this runtime can serve HTTP <code>QUERY</code>.</td></tr>
+<tr><td><code>createRouterS3upload</code></td><td>function</td><td><em>Deprecated</em> — use <code>createRouter({ upload })</code>. <a href="upgrading.html#from-3-2">Upgrading</a></td></tr>
+<tr><td colspan="3"><strong>Errors</strong></td></tr>
+<tr><td><a href="#x-errorhandler"><code>errorHandler</code></a></td><td>middleware</td><td>Turns thrown errors into the JSON envelope. Mount last.</td></tr>
+<tr><td><a href="#x-httperror"><code>HttpError</code></a></td><td>class</td><td>An error with a status and a client-safe message.</td></tr>
+<tr><td><a href="#x-httperror"><code>ValidationError</code></a></td><td>class</td><td>A 400 with per-field messages.</td></tr>
+<tr><td colspan="3"><strong>Uploads</strong></td></tr>
+<tr><td><a href="#x-upload"><code>fileUploadMiddleware</code></a></td><td>function</td><td>S3 upload middleware for any route.</td></tr>
+<tr><td><a href="#x-upload"><code>compressImage</code></a></td><td>function</td><td>Compress an image buffer. Needs <code>sharp</code>.</td></tr>
+<tr><td colspan="3"><strong>Cache</strong></td></tr>
+<tr><td><a href="#x-cache"><code>createRedisCacheStore</code></a></td><td>function</td><td>A Redis store to share across routers.</td></tr>
+<tr><td><a href="#x-cache"><code>createMemoryCacheStore</code></a></td><td>function</td><td>An in-process store for development and tests.</td></tr>
+<tr><td colspan="3"><strong>Authentication</strong></td></tr>
+<tr><td><a href="#x-auth"><code>createAuthRouter</code></a></td><td>function</td><td>Sign-up, login and user management. <a href="auth.html">Guide</a></td></tr>
+<tr><td><a href="#x-auth"><code>identifier</code></a></td><td>function</td><td>A login identifier with a custom normalizer.</td></tr>
+<tr><td><a href="#x-auth-low"><code>requireAuth</code> · <code>requireRole</code></a></td><td>function</td><td>Standalone guards. Prefer <code>auth.requireAuth</code>.</td></tr>
+<tr><td><a href="#x-auth-low"><code>buildAuthConfig</code></a></td><td>function</td><td>Resolve auth options without mounting a router.</td></tr>
+<tr><td><a href="#x-auth-low"><code>hashPassword</code> · <code>verifyPassword</code></a></td><td>function</td><td>The scrypt password hashing the router uses.</td></tr>
+<tr><td><a href="#x-auth-low"><code>signToken</code> · <code>verifyToken</code></a></td><td>function</td><td>The HS256 JWT functions the router uses.</td></tr>
+<tr><td><code>AUTH_ROUTES</code></td><td>constant</td><td>Every auth endpoint with its default path and access level.</td></tr>
+<tr><td><code>BUILT_IN_PROVIDERS</code></td><td>constant</td><td>The social providers available by name.</td></tr>
+<tr><td><code>DEFAULT_TEMPLATES</code></td><td>constant</td><td>The built-in email and SMS templates. <a href="email.html#templates">Templates</a></td></tr>
+<tr><td colspan="3"><strong>Utilities</strong></td></tr>
+<tr><td><code>escapeRegex(value)</code></td><td>function</td><td>Escape regex metacharacters so input matches literally.</td></tr>
+<tr><td><code>QUERY_FILTER_OPERATORS</code></td><td>constant</td><td>The <code>QUERY</code> operator table: <code>{ eq: '$eq', gt: '$gt', … }</code>.</td></tr>
+</tbody></table></div>
+</section>
+
+<section class="section" id="x-createrouter">
+<h2>createRouter<a class="anchor" href="#x-createrouter" aria-label="Link to this section">#</a></h2>
+<div class="code-block" data-lang="typescript">
+<pre><code class="language-typescript">createRouter&lt;T&gt;(options: RouterOptions&lt;T&gt;): Router &amp; { invalidateCache(): Promise&lt;void&gt; }</code></pre>
+</div>
+<p>Mounts <code>GET /</code>, <code>QUERY /</code> (when supported and <code>enableQuery</code> isn't false), <code>POST /</code>, <code>GET /:id</code>, <code>PATCH /:id</code> and <code>DELETE /:id</code>. Throws at startup if <code>model</code> is missing or <code>upload</code> isn't <code>true</code> or an object. Options: <a href="router.html">createRouter</a>.</p>
+</section>
+
+<section class="section" id="x-controllersets">
+<h2>ControllerSets<a class="anchor" href="#x-controllersets" aria-label="Link to this section">#</a></h2>
+<div class="code-block" data-lang="typescript">
+<pre><code class="language-typescript">new ControllerSets&lt;T&gt;(options: ControllerOptions&lt;T&gt;)
+
+controller.getAll(req, res)      // GET /
+controller.query(req, res)       // QUERY /
+controller.get(req, res)         // GET /:id
+controller.create(req, res)      // POST /
+controller.update(req, res)      // PATCH /:id
+controller.delete(req, res)      // DELETE /:id
+controller.invalidateCache(): Promise&lt;void&gt;
+controller.config                // resolved, frozen options</code></pre>
+</div>
+<p>Takes every router option except <code>middlewares</code>, <code>enableQuery</code> and <code>upload</code>. Handlers are pre-bound. <code>getById</code> and <code>queryAll</code> are deprecated aliases of <code>get</code> and <code>query</code>. The positional constructor <code>new ControllerSets(model, orderBy, query, search)</code> is deprecated. <a href="custom-routes.html">Guide</a></p>
+</section>
+
+<section class="section" id="x-isquery">
+<h2>isQueryMethodSupported<a class="anchor" href="#x-isquery" aria-label="Link to this section">#</a></h2>
+<div class="code-block" data-lang="typescript">
+<pre><code class="language-typescript">isQueryMethodSupported(): boolean</code></pre>
+</div>
+<p><code>true</code> when Node's HTTP parser knows <code>QUERY</code> (22.2+) and Express's router exposes <code>router.query()</code>. Check it before calling <code>router.query()</code> yourself.</p>
+</section>
+
+<section class="section" id="x-errorhandler">
+<h2>errorHandler<a class="anchor" href="#x-errorhandler" aria-label="Link to this section">#</a></h2>
+<div class="code-block" data-lang="javascript">
+<pre><code class="language-javascript">app.use('/api/products', productRouter);
+app.use(errorHandler);   // after every route</code></pre>
+</div>
+<ul>
+<li><code>HttpError</code> / <code>ValidationError</code> → their status and message (and <code>fields</code>).</li>
+<li>Mongoose validation and cast errors → 400. Duplicate key → 409 naming the fields. Multer limits → 400.</li>
+<li>Anything else → 500 <code>"Internal Server Error"</code>. The detail is logged with a <code>requestId</code>, which is also sent to the client.</li>
+<li><code>stack</code> is added only when <code>NODE_ENV=development</code>.</li>
+</ul>
+</section>
+
+<section class="section" id="x-httperror">
+<h2>HttpError and ValidationError<a class="anchor" href="#x-httperror" aria-label="Link to this section">#</a></h2>
+<div class="code-block" data-lang="typescript">
+<pre><code class="language-typescript">new HttpError(status: number, message: string, options?: { headers?: Record&lt;string, string&gt; })
+new ValidationError(message: string, fields?: Record&lt;string, string&gt;, status = 400)</code></pre>
+</div>
+<p>Throw them from <code>validate</code> hooks, <code>onLogin</code>, or your own middleware. The message is sent to the client as-is, so write it for the client. <code>ValidationError</code> extends <code>HttpError</code>; its <code>fields</code> become the response's <code>fields</code>.</p>
+<div class="code-block" data-lang="javascript">
+<pre><code class="language-javascript">throw new HttpError(403, 'Only the author can publish.');
+throw new ValidationError('Check the submitted values.', { email: 'is already registered' });</code></pre>
+</div>
+</section>
+
+<section class="section" id="x-upload">
+<h2>fileUploadMiddleware and compressImage<a class="anchor" href="#x-upload" aria-label="Link to this section">#</a></h2>
+<div class="code-block" data-lang="typescript">
+<pre><code class="language-typescript">fileUploadMiddleware(req, res, next, options?: UploadOptions): void
+compressImage(buffer: Buffer, mimetypeOrFormat: string, level: 'low' | 'medium' | 'med' | 'high'): Promise&lt;Buffer&gt;</code></pre>
+</div>
+<p><code>UploadOptions</code> is the router's <code>upload</code> option with <code>uploadPath</code> in place of <code>path</code>. <code>compressImage</code> returns non-compressible formats unchanged. <a href="uploads.html#upload-middleware">Guide</a></p>
+</section>
+
+<section class="section" id="x-cache">
+<h2>Cache stores<a class="anchor" href="#x-cache" aria-label="Link to this section">#</a></h2>
+<div class="code-block" data-lang="typescript">
+<pre><code class="language-typescript">createRedisCacheStore({ url?: string, client?: RedisClient, logger?: Logger }): CacheStore
+createMemoryCacheStore({ maxEntries = 1000 }?): CacheStore &amp; { readonly size: number }
+
+interface CacheStore {
+  get(key: string): Promise&lt;string | null | undefined&gt;;
+  set(key: string, value: string, ttlSeconds: number): Promise&lt;unknown&gt;;
+}</code></pre>
+</div>
+<p>Pass a store as <code>cache: { store }</code>. <code>createRedisCacheStore</code> needs a <code>url</code> or a <code>client</code> (ioredis or node-redis). Any object implementing <code>CacheStore</code> works. <a href="cache.html">Guide</a></p>
+</section>
+
+<section class="section" id="x-auth">
+<h2>createAuthRouter and identifier<a class="anchor" href="#x-auth" aria-label="Link to this section">#</a></h2>
+<div class="code-block" data-lang="typescript">
+<pre><code class="language-typescript">createAuthRouter&lt;T&gt;(options: AuthOptions&lt;T&gt;): AuthRouter
+
+interface AuthRouter extends Router {
+  requireAuth: RequestHandler;                          // sets req.auth = { userId, role, claims }
+  requireRole(...roles: (string | string[])[]): RequestHandler;
+  config: ResolvedAuthConfig;
+  urls: readonly { name, method, path, access }[];      // what was mounted
+}
+
+identifier(field: string, normalize?: (value: string) =&gt; string): { field, normalize }</code></pre>
+</div>
+<p>Options: <a href="auth.html#auth-options-all">Authentication → All options</a>.</p>
+</section>
+
+<section class="section" id="x-auth-low">
+<h2>Auth building blocks<a class="anchor" href="#x-auth-low" aria-label="Link to this section">#</a></h2>
+<p>For wiring authentication by hand. Most apps only need <code>createAuthRouter</code> and the guards on the router it returns.</p>
+<div class="code-block" data-lang="typescript">
+<pre><code class="language-typescript">buildAuthConfig(options: AuthOptions): ResolvedAuthConfig
+requireAuth(config: ResolvedAuthConfig, { loadUser = false }?): RequestHandler   // loadUser also sets req.user
+requireRole(...roles: (string | string[])[]): RequestHandler
+
+hashPassword(plain: string): Promise&lt;string&gt;
+verifyPassword(plain: string, stored: string): Promise&lt;boolean&gt;
+
+signToken(claims: object, { secret, expiresIn, issuer?, audience? }): string
+verifyToken(token: string, { secret, issuer?, audience?, clockToleranceSeconds = 5 }): object   // throws HttpError(401)</code></pre>
+</div>
+</section>
+
+<section class="section" id="typescript">
+<h2>TypeScript<a class="anchor" href="#typescript" aria-label="Link to this section">#</a></h2>
+<p>Declarations ship with the package. Generic options take your document type:</p>
+<div class="code-block" data-lang="typescript">
+<pre><code class="language-typescript">import { createRouter, type RouterOptions } from 'express-controller-sets';
+import Product, { type IProduct } from './models/Product.js';
+
+const options: RouterOptions&lt;IProduct&gt; = {
+  model: Product,
+  orderBy: '-createdAt',
+  query: ['category'],
+  allowedFields: ['name', 'price'],
+  onGet: async () =&gt; ({ populates: 'category', selects: 'name price' }),
+};
+
+app.use('/api/products', createRouter(options));</code></pre>
+</div>
+<p>Type the <code>QUERY</code> body on the client to catch mistakes before sending:</p>
+<div class="code-block" data-lang="typescript">
+<pre><code class="language-typescript">import type { QueryRequestBody } from 'express-controller-sets';
+
+const body: QueryRequestBody = { filter: { price: { gte: 50 }, tag: ['sale'] }, sort: ['-price', 'name'] };</code></pre>
+</div>
+<div class="table-container"><table><thead><tr><th>Area</th><th>Types</th></tr></thead><tbody>
+<tr><td>Router &amp; controller</td><td><code>RouterOptions</code>, <code>ControllerOptions</code>, <code>ControllerRouter</code>, <code>FieldPolicy</code>, <code>OnGetFn</code>, <code>OnGetResult</code>, <code>Logger</code></td></tr>
+<tr><td>Writing</td><td><code>ValidateFn</code>, <code>ValidateContext</code>, <code>ValidatePolicy</code>, <code>WriteOperation</code></td></tr>
+<tr><td>Reading</td><td><code>Pagination</code>, <code>PaginationMode</code>, <code>CountStrategy</code>, <code>QueryRequestBody</code>, <code>FilterCondition</code>, <code>FilterOperators</code>, <code>FilterScalar</code></td></tr>
+<tr><td>Uploads</td><td><code>UploadOptions</code>, <code>RouterUploadOptions</code>, <code>UploadField</code>, <code>ImageOptimizationLevel</code></td></tr>
+<tr><td>Cache</td><td><code>CacheOptions</code>, <code>CacheStore</code></td></tr>
+<tr><td>Auth</td><td><code>AuthOptions</code>, <code>AuthRouter</code>, <code>AuthContext</code>, <code>TokenOptions</code>, <code>RefreshOptions</code>, <code>RoleOptions</code>, <code>OtpOptions</code>, <code>MailOptions</code>, <code>SmsOptions</code>, <code>MailTemplate</code>, <code>SmsTemplate</code>, <code>TemplateContext</code>, <code>SocialProvider</code>, <code>SocialProfile</code>, <code>AuthRouteName</code>, <code>AuthUrl</code>, <code>AuthFieldMap</code>, <code>IdentifierSpec</code></td></tr>
+</tbody></table></div>
+<p>Importing the package also types <code>req.auth</code> on Express's <code>Request</code>.</p>
+<div class="callout callout-warn"><i data-lucide="alert-triangle"></i><div><p><strong>Field names aren't type-checked.</strong> <code>allowedFields</code> is <code>string[]</code>, so <code>'pirce'</code> compiles and silently drops the real field. If a field won't save, check the spelling first.</p></div></div>
+</section>
+
+        <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" href="http-api.html"><span class="pager-dir"><i data-lucide="arrow-left"></i> Previous</span><span class="pager-title">HTTP API</span></a>
+      <a class="next" href="env.html"><span class="pager-dir">Next <i data-lucide="arrow-right"></i></span><span class="pager-title">Environment variables</span></a>
+    </nav>
+        <footer class="doc-footer">
+          <span>Written for express-controller-sets v3.3.0 · MIT licensed · © 2024–present Sabbir Mahmud</span>
+          <a href="https://github.com/ornate-source/controllerSets/edit/main/docs/src/content/api.html" target="_blank" rel="noopener"><i data-lucide="pencil"></i> Edit this page</a>
+        </footer>
+      </article>
+    </main>
+
+  </div>
+
+  <dialog class="search-dialog" id="search-dialog" aria-label="Search">
+    <div class="search-field"><i data-lucide="search"></i><input id="search-input" type="search" placeholder="Search the docs…" autocomplete="off" spellcheck="false" aria-controls="search-results"><kbd>Esc</kbd></div>
+    <ul class="search-results" id="search-results" role="listbox"></ul>
+    <div class="search-foot"><span><kbd>↑</kbd> <kbd>↓</kbd> to move</span><span><kbd>↵</kbd> to open</span></div>
+  </dialog>
+
+  <button id="back-to-top" class="back-to-top" type="button" aria-label="Back to top"><i data-lucide="arrow-up"></i></button>
+</body>
+</html>

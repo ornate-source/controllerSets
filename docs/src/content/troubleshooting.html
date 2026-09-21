@@ -1,294 +1,116 @@
-<section class="section" id="faq">
-    <h2><i data-lucide="messages-square"></i> Common questions</h2>
-    <p class="section-intro">The things people hit in the first hour.</p>
-
-    <details>
-        <summary>My console shows a warning about <code>allowedFields</code>. What is it?</summary>
-        <div class="details-body">
-            <p>It means that model's routes will write <em>any</em> field a client sends, including ones
-                like <code>role</code> or <code>isAdmin</code>. Add <code>allowedFields</code> (or
-                <code>blockedFields</code>) and it goes away. It prints once per model per process, not per
-                request.</p>
-        </div>
-    </details>
-
-    <details>
-        <summary>My POST returns 400 "Request body contains no writable fields."</summary>
-        <div class="details-body">
-            <p>Everything you sent was filtered out. Usual causes: the field names aren't in
-                <code>allowedFields</code>, you sent only immutable fields like <code>_id</code>, or you
-                forgot <code>app.use(express.json())</code> so the body was never parsed at all. On an
-                upload router, also check the multipart field name matches your <code>fields</code>
-                entry.</p>
-        </div>
-    </details>
-
-    <details>
-        <summary>My <code>QUERY</code> request returns 404.</summary>
-        <div class="details-body">
-            <p>Three likely causes, in order. <strong>One:</strong> you're on Node older than 22 — the
-                runtime can't parse the method, so the route was never mounted; check with
-                <code>isQueryMethodSupported()</code> and look for the warning it logs once at startup.
-                <strong>Two:</strong> you sent it to <code>/:id</code>; QUERY is a collection method
-                only. <strong>Three:</strong> something between you and the app — a proxy, CDN or
-                gateway — refused the unrecognised method before it arrived. See
-                <a href="#http-query">HTTP QUERY</a>.</p>
-        </div>
-    </details>
-
-    <details>
-        <summary>My <code>QUERY</code> filter returns everything, or a 400 I didn't expect.</summary>
-        <div class="details-body">
-            <p>If you get <em>everything</em>, the body didn't carry what you think: the only way to
-                filter is the <code>filter</code> key, and a misspelled top-level key is rejected with
-                400 rather than ignored — so a 200 with the whole collection means no filter arrived at
-                all. If you get a <strong>400</strong>, read the message: it names the field or operator
-                that failed. The usual answers are a field missing from <code>filterableFields</code> /
-                <code>sortableFields</code>, or an operator written <code>$gte</code> instead of
-                <code>gte</code>.</p>
-        </div>
-    </details>
-
-    <details>
-        <summary>When should I use <code>QUERY</code> instead of <code>GET</code>?</summary>
-        <div class="details-body">
-            <p>When the parameters don't belong in a URL: a long list of ids, several conditions on
-                several fields, a multi-key sort, or a filter you'd rather not leave in access logs and
-                browser history. For an ordinary list or a link someone can share, <code>GET</code> is
-                still the right call — it's cacheable, bookmarkable, and understood by everything on the
-                path. Both routes run identical code.</p>
-        </div>
-    </details>
-
-    <details>
-        <summary>Why does <code>?sort=name</code> return 400?</summary>
-        <div class="details-body">
-            <p><code>name</code> isn't in <code>sortableFields</code>. If you never set that option, it
-                defaults to your <code>query</code> array plus whatever <code>orderBy</code> names — which
-                usually doesn't include <code>name</code>. Add it explicitly.</p>
-        </div>
-    </details>
-
-    <details>
-        <summary>Why do I only get 100 records back?</summary>
-        <div class="details-body">
-            <p><code>maxLimit</code>. Unpaginated reads are capped so one request can't pull an entire
-                collection into memory. Use <code>?page=</code>, or raise the cap with
-                <code>maxLimit: 500</code> if you know the collection stays small.</p>
-        </div>
-    </details>
-
-    <details>
-        <summary>Does this handle authentication?</summary>
-        <div class="details-body">
-            <p>No, and deliberately so. Every generated endpoint is public until you pass your own guards
-                in <code>middlewares</code>. See <a href="#middlewares">Auth &amp; middlewares</a>,
-                including the pattern for scoping records to the logged-in user.</p>
-        </div>
-    </details>
-
-    <details>
-        <summary>The uploaded file URL returns 403 in the browser.</summary>
-        <div class="details-body">
-            <p>Uploads default to a <code>private</code> ACL, so the URL isn't publicly fetchable. Either
-                serve the object through a presigned URL or a CDN with origin access (use
-                <code>file.key</code>), or opt in with <code>upload: { acl: 'public-read' }</code> knowing
-                it's readable by anyone with the link.</p>
-        </div>
-    </details>
-
-    <details>
-        <summary>My SVG upload is rejected.</summary>
-        <div class="details-body">
-            <p>SVG is active content — it can carry scripts — so it isn't on the default MIME allowlist.
-                You can add it to <code>allowedMimeTypes</code>, but it will still be stored
-                <code>Content-Disposition: attachment</code> so a browser downloads rather than renders it.
-                For icons, converting to PNG or WebP before upload is usually the better answer.</p>
-        </div>
-    </details>
-
-    <details>
-        <summary>Do I need <code>sharp</code> and the AWS SDK if I only use CRUD?</summary>
-        <div class="details-body">
-            <p>No. They're optional and imported lazily — nothing loads until an upload router actually
-                handles a file. A CRUD-only app never pays for the native binary or the SDK.</p>
-        </div>
-    </details>
-
-    <details>
-        <summary>Can I use this from CommonJS (<code>require</code>)?</summary>
-        <div class="details-body">
-            <p>Not directly — the package is ESM only. In a CommonJS project use a dynamic import:
-                <code>const cs = await import('express-controller-sets')</code>.</p>
-        </div>
-    </details>
-
-    <details>
-        <summary>Is <code>PUT</code> supported?</summary>
-        <div class="details-body">
-            <p>No. Updates are <code>PATCH</code> only and use <code>$set</code>, so omitted fields are
-                left alone rather than wiped. If a client must send <code>PUT</code>, add your own route
-                pointing at <code>controller.update</code>.</p>
-        </div>
-    </details>
-
-    <details>
-        <summary>Can one router serve two models, or two routers one model?</summary>
-        <div class="details-body">
-            <p>One router, one model. Two routers on one model is not only allowed but recommended — a
-                public read-only one and a guarded admin one, each with its own allowlists. See <a
-                    href="#middlewares">Auth &amp; middlewares</a>.</p>
-        </div>
-    </details>
-
-    <details>
-        <summary>How do I filter on a field the client shouldn't choose?</summary>
-        <div class="details-body">
-            <p>Set it in a middleware before the controller runs, and include the field in
-                <code>query</code>. On Express 5 you cannot write to <code>req.query</code> — it is re-parsed
-                on every read, so the change is silently lost and the client's value wins. Replace it with
-                <code>Object.defineProperty(req, 'query', { value: { ...req.query, owner: id }, writable: true,
-                configurable: true })</code>, and set <code>enableQuery: false</code> so the body-borne
-                <code>QUERY /</code> cannot route around it. See <a href="#middlewares">Protecting routes</a>.</p>
-        </div>
-    </details>
-
-    <details>
-        <summary>Why did my search return nothing when the term clearly exists?</summary>
-        <div class="details-body">
-            <p>Two likely causes. If you searched a relational field like <code>category.name</code>, the
-                first segment must be a real <code>ref</code> in your schema — otherwise that clause is
-                dropped, and if every clause drops the result is deliberately empty. Second, terms are
-                matched literally, so regex syntax in the term matches nothing rather than acting as a
-                pattern.</p>
-        </div>
-    </details>
-
-    <details>
-        <summary>Is <code>legacyMode</code> safe to leave on?</summary>
-        <div class="details-body">
-            <p>No. It disables field gating, restores raw regex and removes the read cap — every
-                vulnerability 3.0 fixed. It exists so you can deploy an upgrade today and tighten options
-                one at a time, and it's scheduled for removal in 4.0.</p>
-        </div>
-    </details>
+<section class="section" id="ts-first">
+<h2>Check these first</h2>
+<p>Most problems are one of these five. Each takes seconds to rule out.</p>
+<ol>
+<li><strong><code>app.use(express.json())</code> is mounted before your routers.</strong> Without it, every body is empty.</li>
+<li><strong><code>app.use(errorHandler)</code> is mounted after them.</strong> Without it, unexpected errors get Express's default HTML page.</li>
+<li><strong>The field is in the right allowlist</strong> — <code>allowedFields</code> to write, <code>query</code> to filter, <code>filterableFields</code> to range or compare, <code>sortableFields</code> to sort, <code>search</code> to search. Check the spelling against the schema.</li>
+<li><strong>Read the error message.</strong> 400s name the field or parameter that failed. 500s carry a <code>requestId</code> that matches a line in your server log.</li>
+<li><strong>Check the startup log.</strong> The library warns once about unprotected models, a skipped <code>QUERY</code> route, and misplaced options.</li>
+</ol>
 </section>
 
-<section class="section" id="advanced">
-    <h2>Advanced</h2>
-    <p class="section-intro">Deeper detail — open what you need.</p>
-<details class="advanced" id="upgrade">
-  <summary>Upgrading from 2.x</summary>
-  <div class="details-body"><p class="section-intro">3.0 is a security release. Every breaking change is a default that used to be
-                    unsafe.</p>
+<section class="section" id="ts-writes">
+<h2>Writes</h2>
 
-                <div class="callout callout-danger">
-                    <i data-lucide="alert-octagon"></i>
-                    <div>
-                        <p><strong>If you run 2.x on a public endpoint, treat this as urgent.</strong> In 2.x a client
-                            could write any schema field, filter and sort on fields your API never returned, hang the
-                            database with a crafted search term, read entire collections in one request, and upload
-                            world-readable HTML to your bucket.</p>
-                    </div>
-                </div>
+<h3>POST returns 400 "Request body contains no writable fields."</h3>
+<p>Everything sent was filtered out. Causes, most likely first: the fields aren't in <code>allowedFields</code>; <code>express.json()</code> isn't mounted so the body was never parsed; the client sent only immutable fields like <code>_id</code>; on an upload router, the multipart field names don't match <code>upload.fields</code>.</p>
 
-                <h3>The fastest path</h3>
-                <div class="code-block" data-lang="javascript">
-                    <pre><code>createRouter({ model: Product, legacyMode: true });</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
-                </div>
-                <p>That restores 2.x behaviour so you can deploy today — then remove it one option at a time.
-                    <code>legacyMode</code> re-enables every vulnerability below and is scheduled for removal in 4.0.
-                    The full guide is in <a href="https://github.com/ornate-source/controllerSets/blob/main/MIGRATION.md"
-                        target="_blank" rel="noopener">MIGRATION.md</a>.</p>
+<h3>A field silently doesn't save</h3>
+<p>It isn't in <code>allowedFields</code> (or it is in <code>blockedFields</code>, which wins), or it's misspelled there — TypeScript won't catch it. On a per-verb policy, check the right verb: <code>{ create: [...], update: [...] }</code>. For files, the field must be writable too.</p>
 
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>What changed</th>
-                                <th>What to do</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>Request bodies are filtered</td>
-                                <td>Add <code>allowedFields</code> or <code>blockedFields</code> to every router.</td>
-                            </tr>
-                            <tr>
-                                <td><code>?compareField=</code>, <code>?rangeField=</code>, <code>?sort=</code> are
-                                    allowlisted</td>
-                                <td>List them in <code>filterableFields</code> / <code>sortableFields</code>, or rely
-                                    on the <code>query</code> fallback.</td>
-                            </tr>
-                            <tr>
-                                <td>Search terms are escaped and length-capped</td>
-                                <td>Nothing, unless clients sent real patterns — then <code>allowRawRegex: true</code>,
-                                    behind auth.</td>
-                            </tr>
-                            <tr>
-                                <td>Unpaginated reads capped at 100</td>
-                                <td>Paginate, or raise <code>maxLimit</code> deliberately.</td>
-                            </tr>
-                            <tr>
-                                <td>Relational search resolves the full nested path</td>
-                                <td>Re-check results for depth-2 paths — they were querying the wrong field before.</td>
-                            </tr>
-                            <tr>
-                                <td>String-form <code>search</code> now reads <code>?s=</code></td>
-                                <td>Update clients that used <code>?title=</code> for search.</td>
-                            </tr>
-                            <tr>
-                                <td>Uploads default to private, content-sniffed</td>
-                                <td>Set <code>upload.acl</code> and <code>upload.allowedMimeTypes</code> if you need
-                                    the old behaviour. Audit existing objects separately — they keep their old ACL.</td>
-                            </tr>
-                            <tr>
-                                <td>Clients no longer choose the compression level</td>
-                                <td><code>upload.allowClientImageOptions: true</code> to opt back in.</td>
-                            </tr>
-                            <tr>
-                                <td>GIF and SVG are no longer transcoded</td>
-                                <td>Nothing — previously they were being corrupted.</td>
-                            </tr>
-                            <tr>
-                                <td>5xx responses no longer echo internals; duplicates are 409</td>
-                                <td>Update any client that parsed 500 message text.</td>
-                            </tr>
-                            <tr>
-                                <td>Reads are no longer <code>.lean()</code> by default</td>
-                                <td>Your <code>toJSON</code> transforms now apply. Set <code>lean: true</code> to
-                                    restore 2.x speed — and check what those transforms were hiding.</td>
-                            </tr>
-                            <tr>
-                                <td>No import-time <code>dotenv.config()</code>; <code>multer-s3</code> removed</td>
-                                <td>Load your own environment; uninstall <code>multer-s3</code>.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+<h3>Startup warning: "has no allowedFields/blockedFields configured"</h3>
+<p>That model's routes will write <em>any</em> schema field a client sends, including <code>role</code> or <code>isAdmin</code>. Add <code>allowedFields</code>. It prints once per model per process.</p>
 
-                <div class="callout callout-warn">
-                    <i data-lucide="eye"></i>
-                    <div>
-                        <p><strong>The <code>lean</code> change is the one most likely to alter your responses.</strong>
-                            2.x used <code>.lean()</code> on list endpoints, which bypasses
-                            <code>schema.set('toJSON', { transform })</code>. If you stripped sensitive fields there,
-                            <em>2.x was leaking them on every list request</em> and 3.0 stops. Compare a list response
-                            before and after upgrading.</p>
-                    </div>
-                </div>
+<h3>My validate hook causes a 500</h3>
+<p>Usually a dereference of a field the client didn't send — <code>payload.name.trim()</code> when <code>name</code> is absent. The hook runs before the schema, so required fields may be missing, and on <code>update</code> every field is optional. To reject deliberately, throw <code>ValidationError</code> or <code>HttpError</code>; anything else is a 500.</p>
 
-                <h3>Constructor form</h3>
-                <div class="code-block" data-lang="javascript">
-                    <pre><code>// Still supported, deprecated
-new ControllerSets(Model, '-createdAt', ['category'], ['name']);
+<h3>A duplicate value returns 409</h3>
+<p>Working as intended: a unique index rejected the write. The message and <code>fields</code> name the conflicting field, so the client can show "that email is already registered".</p>
 
-// Preferred — and required for any 3.0 option
-new ControllerSets({ model: Model, orderBy: '-createdAt', query: ['category'] });</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
-                </div>
-  </div>
-</details>
+<h3>Is PUT supported?</h3>
+<p>Not on generated routers — updates are <code>PATCH</code> and change only the fields sent. If a client needs <code>PUT</code>, add <code>router.put('/:id', controller.update)</code> on a <a href="custom-routes.html#adv-router">hand-wired router</a>.</p>
 </section>
 
+<section class="section" id="ts-reads">
+<h2>Reads</h2>
+
+<h3>I only get 100 records</h3>
+<p><code>maxLimit</code> caps every response so one request can't load a whole collection into memory. Paginate with <code>?page=</code>, or raise it deliberately: <code>maxLimit: 500</code>.</p>
+
+<h3>A filter parameter is ignored</h3>
+<p>Equality parameters for fields not in <code>query</code> are ignored rather than rejected. Add the field to <code>query</code>.</p>
+
+<h3><code>?sort=name</code> returns 400</h3>
+<p><code>name</code> isn't in <code>sortableFields</code>. When unset, it defaults to your <code>query</code> fields plus the <code>orderBy</code> field — which rarely includes <code>name</code>. List it explicitly.</p>
+
+<h3>A range or compare returns 400</h3>
+<p>The field isn't in <code>filterableFields</code>. When unset it equals <code>query</code>; once you set it, it replaces that default, so include every field you want filterable.</p>
+
+<h3>Search returns nothing when the term clearly exists</h3>
+<p>For a relational field like <code>category.name</code>, the part before the dot must be a schema field with <code>ref</code>, or the clause is dropped — and if every clause drops, the result is deliberately empty. Also, terms match literally: regex syntax in the term matches nothing.</p>
+
+<h3>A field I hide with onGet sometimes appears</h3>
+<p>If <code>onGet</code> throws, the read falls back to no select. Use <code>select: false</code> in the schema or a <code>toJSON</code> transform for anything that must never be returned — and keep <code>lean</code> off if you rely on <code>toJSON</code>.</p>
+
+<h3>How do I filter on a value the client must not choose?</h3>
+<p>Set it in middleware. On Express 5 you can't assign to <code>req.query</code> — it's re-parsed on every read — so shadow it with <code>Object.defineProperty</code>, and set <code>enableQuery: false</code> so <code>QUERY</code> can't route around it. Full pattern: <a href="protect.html#only-my-records">Users see only their own records</a>.</p>
+</section>
+
+<section class="section" id="ts-query">
+<h2>QUERY requests</h2>
+
+<h3>QUERY returns 404</h3>
+<p>In order of likelihood: the server runs Node older than 22.2, so the route wasn't mounted (check <code>isQueryMethodSupported()</code> and the startup warning); the request went to <code>/:id</code> — <code>QUERY</code> is collection-only; or a proxy, CDN or gateway refused the method before it reached the app.</p>
+
+<h3>QUERY returns everything, or a 400 I didn't expect</h3>
+<p>Everything: no filter arrived — the only filter key is <code>filter</code>, and misspelled top-level keys are 400s, so a 200 means the body was empty or unparsed. A 400: the message names the field or operator; usually a field missing from <code>filterableFields</code> / <code>sortableFields</code>, <code>$gte</code> instead of <code>gte</code>, or <code>"page": "2"</code> as a string.</p>
+
+<h3>QUERY returns 415</h3>
+<p>The body wasn't JSON (<code>Content-Type</code> isn't <code>application/json</code>), or no JSON parser is mounted on the server.</p>
+
+<h3>When should I use QUERY instead of GET?</h3>
+<p>When the parameters don't fit a URL: long id lists, several conditions per field, multi-key sorts, or filters you'd rather keep out of logs. For ordinary lists and shareable links, <code>GET</code> is cacheable and understood by everything. Both run identical code.</p>
+</section>
+
+<section class="section" id="ts-uploads">
+<h2>Uploads</h2>
+
+<h3>Upload routes return 503</h3>
+<p>S3 isn't configured. The server log names the missing variables — usually the environment wasn't loaded. The library never calls <code>dotenv</code>; add <code>import 'dotenv/config'</code> as your first import or run <code>node --env-file=.env</code>.</p>
+
+<h3>The uploaded file URL returns 403 in the browser</h3>
+<p>Uploads are <code>private</code> by default. Serve them through presigned URLs or a CDN with origin access, or set <code>upload: { acl: 'public-read' }</code> for content meant to be public.</p>
+
+<h3>An SVG (or other file type) is rejected</h3>
+<p>Only JPEG, PNG, GIF, WebP, AVIF and PDF are allowed by default. Add the type to <code>allowedMimeTypes</code>. SVG can carry scripts, so it's always stored as <code>attachment</code> — converting icons to PNG or WebP is usually better.</p>
+
+<h3>Do I need sharp and the AWS SDK for CRUD only?</h3>
+<p>No. They load lazily, only when an upload is handled.</p>
+</section>
+
+<section class="section" id="ts-auth">
+<h2>Authentication</h2>
+
+<h3>Startup error about the token secret</h3>
+<p><code>token.secret</code> is missing or shorter than 32 characters. Generate one with <code>node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"</code>.</p>
+
+<h3>Every request returns 401 after a password change</h3>
+<p>Intended: tokens issued before a password change are rejected. Sign in again.</p>
+
+<h3>/password/forgot succeeds but no email arrives</h3>
+<p>The endpoint answers the same whether or not the account exists, so check the server log. No transporter or sender configured means codes are never generated (a warning is logged at startup); a failing sender returns 503.</p>
+</section>
+
+<section class="section" id="ts-setup">
+<h2>Setup</h2>
+
+<h3>Can I use this from CommonJS?</h3>
+<p>The package is ESM-only. From CommonJS: <code>const cs = await import('express-controller-sets')</code>.</p>
+
+<h3>Can one router serve two models?</h3>
+<p>No — one router, one model. Two routers on one model is common and recommended: <a href="protect.html#public-read-admin-write">public reads, staff writes</a>.</p>
+
+<h3>Is legacyMode safe to leave on?</h3>
+<p>No. It turns off field gating, restores raw regex and removes the read cap. It exists to deploy an upgrade today and tighten afterwards, and is removed in 4.0. See <a href="upgrading.html">Upgrading</a>.</p>
+</section>

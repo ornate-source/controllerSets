@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Core concepts · express-controller-sets</title>
+  <meta name="description" content="The four ideas every other page assumes: routers, allowlists, the request lifecycle and the response envelope.">
+  <link rel="canonical" href="https://ornate-source.github.io/controllerSets/concepts.html">
+  <meta property="og:title" content="Core concepts · express-controller-sets">
+  <meta property="og:description" content="The four ideas every other page assumes: routers, allowlists, the request lifecycle and the response envelope.">
+  <meta property="og:type" content="website">
+  <link rel="alternate" type="text/plain" title="LLM guide" href="llms-full.txt">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/components.css?v=10a91d487a">
+  <link rel="stylesheet" href="assets/css/shell.css?v=a1646e50a8">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%236366f1'/%3E%3Ctext x='50' y='68' font-family='monospace' font-size='54' font-weight='700' fill='white' text-anchor='middle'%3E%7B%7D%3C/text%3E%3C/svg%3E">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/http.min.js" defer></script>
+  <script src="assets/search-index.js" defer></script>
+  <script src="assets/js/docs.js?v=901f93388a" defer></script>
+</head>
+<body class="dark" data-page="concepts">
+  <script>try{var t=localStorage.getItem('controllersets-theme');document.body.className=t||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark')}catch(e){}</script>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <header class="topbar">
+    <button class="icon-btn menu-btn" type="button" id="menu-open" aria-label="Open navigation"><i data-lucide="menu"></i></button>
+    <a class="brand" href="./" aria-label="controller-sets home">
+      <span class="brand-mark" aria-hidden="true">{}</span>
+      <span class="brand-name">controller-sets</span>
+      <span class="brand-version">v3.3.0</span>
+    </a>
+    <button class="search-trigger" type="button" id="search-open" aria-label="Search the docs">
+      <i data-lucide="search"></i><span>Search docs…</span><kbd>⌘K</kbd>
+    </button>
+    <nav class="topbar-links" aria-label="External">
+      <a class="topbar-link is-accent hide-sm" href="llm.html"><i data-lucide="sparkles"></i><span class="label">LLM prompt</span></a>
+      <a class="topbar-link hide-sm" href="https://github.com/ornate-source/controllerSets" target="_blank" rel="noopener"><svg class="gh-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span class="label">GitHub</span></a>
+      <a class="topbar-link hide-sm" href="https://www.npmjs.com/package/express-controller-sets" target="_blank" rel="noopener"><i data-lucide="package"></i><span class="label">npm</span></a>
+      <button class="icon-btn" type="button" id="theme-toggle" aria-label="Toggle colour theme"><i data-lucide="sun" class="sun-icon"></i><i data-lucide="moon" class="moon-icon"></i></button>
+    </nav>
+  </header>
+
+  <div class="nav-overlay" id="nav-overlay"></div>
+
+  <div class="layout">
+    <aside class="sidenav" id="sidenav" aria-label="Documentation">
+      <nav><div class="nav-group" data-group="get-started">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="rocket"></i><span>Get started</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="./"><i data-lucide="home"></i><span class="nav-page-label">Overview</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="quickstart.html"><i data-lucide="play"></i><span class="nav-page-label">Quickstart</span></a></li>
+<li class="nav-page-item is-open"><a class="nav-page" href="concepts.html" aria-current="page"><i data-lucide="lightbulb"></i><span class="nav-page-label">Core concepts</span></a><ul class="nav-sections"><li><a class="nav-section" href="#pieces" data-target="pieces">The three pieces</a></li><li><a class="nav-section" href="#implicit-deny" data-target="implicit-deny">Nothing is open until you open it</a></li><li><a class="nav-section" href="#lifecycle" data-target="lifecycle">A request, step by step</a></li><li><a class="nav-section" href="#envelope" data-target="envelope">One response envelope</a></li><li><a class="nav-section" href="#error-model" data-target="error-model">How errors flow</a></li><li><a class="nav-section" href="#glossary" data-target="glossary">Words used in these docs</a></li></ul></li></ul>
+        </div>
+<div class="nav-group" data-group="guides">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="book-open"></i><span>Guides</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="router.html"><i data-lucide="route"></i><span class="nav-page-label">createRouter</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="protect.html"><i data-lucide="shield-check"></i><span class="nav-page-label">Protecting routes</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="uploads.html"><i data-lucide="upload-cloud"></i><span class="nav-page-label">File uploads</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="cache.html"><i data-lucide="zap"></i><span class="nav-page-label">Caching</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="auth.html"><i data-lucide="key-round"></i><span class="nav-page-label">Authentication</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="email.html"><i data-lucide="mail"></i><span class="nav-page-label">Email &amp; SMS</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="custom-routes.html"><i data-lucide="wrench"></i><span class="nav-page-label">Custom routes</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="reference">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="library"></i><span>Reference</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="http-api.html"><i data-lucide="globe"></i><span class="nav-page-label">HTTP API</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="api.html"><i data-lucide="braces"></i><span class="nav-page-label">JavaScript API</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="env.html"><i data-lucide="file-cog"></i><span class="nav-page-label">Environment variables</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="help">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="circle-help"></i><span>Help</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="troubleshooting.html"><i data-lucide="stethoscope"></i><span class="nav-page-label">Troubleshooting</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="upgrading.html"><i data-lucide="arrow-up-circle"></i><span class="nav-page-label">Upgrading</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="llm.html"><i data-lucide="bot"></i><span class="nav-page-label">Use with an LLM</span></a></li></ul>
+        </div></nav>
+    </aside>
+
+    <main class="doc" id="main" tabindex="-1">
+      <article class="doc-inner">
+        <header class="page-header">
+          <p class="breadcrumb">Get started <i data-lucide="chevron-right"></i> Core concepts</p>
+          <h1>Core concepts</h1>
+          <p class="page-summary">The four ideas every other page assumes: routers, allowlists, the request lifecycle and the response envelope.</p>
+        </header>
+        <section class="section" id="pieces">
+<h2>The three pieces<a class="anchor" href="#pieces" aria-label="Link to this section">#</a></h2>
+<p>Everything in the package is one of these. Knowing which one you're holding tells you where its options go.</p>
+<div class="table-container"><table><thead><tr><th>Piece</th><th>What it is</th><th>Use it when</th></tr></thead><tbody>
+<tr><td><code>createRouter(options)</code></td><td>An Express router with six routes already mounted, backed by a controller.</td><td>Almost always. It's the default way to expose a model.</td></tr>
+<tr><td><code>new ControllerSets(options)</code></td><td>The six handlers — <code>getAll</code>, <code>query</code>, <code>get</code>, <code>create</code>, <code>update</code>, <code>delete</code> — without a router.</td><td>You need a different guard per verb, different paths, or only some of the routes. See <a href="custom-routes.html">Custom routes</a>.</td></tr>
+<tr><td><code>createAuthRouter(options)</code></td><td>A separate router for sign-up, login and user management on your user model, plus the <code>requireAuth</code> / <code>requireRole</code> guards.</td><td>You want built-in authentication. See <a href="auth.html">Authentication</a>.</td></tr>
+</tbody></table></div>
+<p><code>createRouter</code> accepts every <code>ControllerSets</code> option plus three router-only ones: <code>middlewares</code>, <code>enableQuery</code> and <code>upload</code>. The <a href="router.html">createRouter</a> page lists them all.</p>
+</section>
+
+<section class="section" id="implicit-deny">
+<h2>Nothing is open until you open it<a class="anchor" href="#implicit-deny" aria-label="Link to this section">#</a></h2>
+<p>One idea explains almost every option. A generated API that exposes everything by default is convenient on day one and a breach on day ninety: someone filters on <code>passwordResetToken</code>, or POSTs <code>{"role":"admin"}</code>. So here, a field is <strong>not filterable, not sortable and not searchable until you name it</strong>. Reads are capped. Uploads are private. Each option is an allowlist that opens one thing.</p>
+<div class="table-container"><table><thead><tr><th>A client wants to…</th><th>Option that allows it</th><th>If you say nothing</th></tr></thead><tbody>
+<tr><td>Filter by exact value</td><td><code>query</code></td><td class="no">Nothing is filterable</td></tr>
+<tr><td>Range, compare, or filter in a <code>QUERY</code> body</td><td><code>filterableFields</code></td><td>Same fields as <code>query</code></td></tr>
+<tr><td>Sort</td><td><code>sortableFields</code></td><td><code>query</code> fields + the <code>orderBy</code> field</td></tr>
+<tr><td>Search text</td><td><code>search</code></td><td class="no">Search does nothing</td></tr>
+<tr><td>Write a field</td><td><code>allowedFields</code> / <code>blockedFields</code></td><td class="maybe">Every schema field — with a startup warning</td></tr>
+<tr><td>Read the whole collection</td><td><code>maxLimit</code></td><td>Capped at 100 documents</td></tr>
+<tr><td>Send a regular expression</td><td><code>allowRawRegex</code></td><td>Escaped, matched literally</td></tr>
+<tr><td>Upload a file type</td><td><code>upload.allowedMimeTypes</code></td><td>JPEG, PNG, GIF, WebP, AVIF, PDF</td></tr>
+<tr><td>Get a public file URL</td><td><code>upload.acl</code></td><td><code>private</code></td></tr>
+<tr><td>Call the route at all</td><td><code>middlewares</code></td><td class="maybe">Anyone — routes are public</td></tr>
+</tbody></table></div>
+<div class="callout callout-danger"><i data-lucide="alert-octagon"></i><div><p><strong>Two defaults are open, and both are yours to close.</strong> <em>Writable fields</em>: requiring <code>allowedFields</code> would break every existing app on upgrade, so the library warns at startup instead. <em>Who may call a route</em>: the library can't know your users. If you set only two things on every router, make them <code>allowedFields</code> and <code>middlewares</code>.</p></div></div>
+
+<h3 id="fields-no-configuration-can-unlock">Fields no configuration can unlock<a class="anchor" href="#fields-no-configuration-can-unlock" aria-label="Link to this section">#</a></h3>
+<p>Whatever you allow, these are stripped from every request body. They are database bookkeeping or MongoDB syntax, never client data:</p>
+<div class="gateway-badges">
+    <span class="chip chip-no"><i data-lucide="x"></i> <code>_id</code></span>
+    <span class="chip chip-no"><i data-lucide="x"></i> <code>__v</code></span>
+    <span class="chip chip-no"><i data-lucide="x"></i> <code>createdAt</code></span>
+    <span class="chip chip-no"><i data-lucide="x"></i> <code>updatedAt</code></span>
+    <span class="chip chip-no"><i data-lucide="x"></i> any <code>$</code>-prefixed key</span>
+    <span class="chip chip-no"><i data-lucide="x"></i> any key containing <code>.</code></span>
+    <span class="chip chip-no"><i data-lucide="x"></i> <code>__proto__</code></span>
+    <span class="chip chip-no"><i data-lucide="x"></i> <code>constructor</code></span>
+    <span class="chip chip-no"><i data-lucide="x"></i> <code>prototype</code></span>
+</div>
+<p>To MongoDB, <code>$</code> starts an operator and <code>.</code> reaches into a subdocument, so <code>{"$where": "…"}</code> or <code>{"owner.role": "admin"}</code> is an instruction, not data. <code>__proto__</code> survives <code>JSON.parse</code> as a real key and can re-point an object's prototype. The check runs on nested values too, up to eight levels deep; anything deeper is refused.</p>
+</section>
+
+<section class="section" id="lifecycle">
+<h2>A request, step by step<a class="anchor" href="#lifecycle" aria-label="Link to this section">#</a></h2>
+<p>What happens between <code>GET /api/products?s=laptop</code> and the JSON that comes back:</p>
+<div class="flow">
+    <div class="flow-track">
+        <div class="flow-node" style="--i:0"><div class="flow-dot"><i data-lucide="shield"></i></div><span class="flow-actor">Your code</span><h5>Middlewares</h5><p>Auth, rate limits, tenancy</p></div>
+        <div class="flow-node" style="--i:1"><div class="flow-dot"><i data-lucide="filter"></i></div><span class="flow-actor">Library</span><h5>Build filters</h5><p>Only allowlisted fields</p></div>
+        <div class="flow-node" style="--i:2"><div class="flow-dot"><i data-lucide="search"></i></div><span class="flow-actor">Library</span><h5>Apply search</h5><p>Escaped, relations resolved</p></div>
+        <div class="flow-node" style="--i:3"><div class="flow-dot"><i data-lucide="git-branch"></i></div><span class="flow-actor">Your hook</span><h5>onGet</h5><p>Choose populate &amp; select</p></div>
+        <div class="flow-node" style="--i:4"><div class="flow-dot"><i data-lucide="database"></i></div><span class="flow-actor">MongoDB</span><h5>Query</h5><p>Capped at maxLimit</p></div>
+        <div class="flow-node" style="--i:5"><div class="flow-dot"><i data-lucide="braces"></i></div><span class="flow-actor">Library</span><h5>JSON out</h5><p>Always the same envelope</p></div>
+    </div>
+</div>
+<p><strong>A write</strong> (<code>POST</code>, <code>PATCH</code>) takes a different middle path:</p>
+<ol>
+<li>Your <code>middlewares</code> run.</li>
+<li>On an upload router, files are checked, stored in S3, and replaced in <code>req.body</code> by their URLs.</li>
+<li>The body is filtered to <code>allowedFields</code>, minus <code>blockedFields</code> and the fields above. If nothing is left: <strong>400</strong>.</li>
+<li>Your <code>validate</code> hook runs on what's left, and may reject or rewrite it.</li>
+<li>Mongoose validates against the schema and saves.</li>
+<li>On create, <code>runAfterCreate</code> runs. With a cache, the model's cached reads are cleared.</li>
+</ol>
+<p><strong>A <code>QUERY</code> read</strong> is identical to <code>GET /</code> except for step two: filters come from a JSON body instead of the query string, checked against the same allowlists.</p>
+</section>
+
+<section class="section" id="envelope">
+<h2>One response envelope<a class="anchor" href="#envelope" aria-label="Link to this section">#</a></h2>
+<p>Every endpoint answers in the same shape, so a client needs one code path:</p>
+<div class="code-block" data-lang="json">
+<pre><code class="language-json">// Success: data is an object (one record) or an array (a list)
+{ "success": true, "data": … , "pagination": { … } }   // pagination only on paginated lists
+
+// Delete
+{ "success": true, "message": "Item successfully deleted." }
+
+// Failure
+{ "success": false, "error": "Human-readable message.", "fields": { … }, "requestId": "…" }</code></pre>
+</div>
+<p>Every shape, and when each optional key appears: <a href="http-api.html#responses">HTTP API → Responses</a>.</p>
+</section>
+
+<section class="section" id="error-model">
+<h2>How errors flow<a class="anchor" href="#error-model" aria-label="Link to this section">#</a></h2>
+<p>There are two kinds of failure, and they take different paths:</p>
+<div class="mode-grid">
+    <div class="mode-card"><span class="mode-eyebrow"><i data-lucide="user"></i> The caller's mistake</span><h4>Answered directly</h4><p>A malformed id, a field that isn't sortable, a failed validation. The handler responds with the right 4xx and a message written to be read — even if you forgot <code>errorHandler</code>.</p></div>
+    <div class="mode-card"><span class="mode-eyebrow"><i data-lucide="server"></i> Your server's problem</span><h4>Thrown to <code>errorHandler</code></h4><p>A database outage, a bug in your hook. Express 5 forwards it to <code>errorHandler</code>, which logs the detail with a <code>requestId</code> and sends the client only <code>"Internal Server Error"</code>.</p></div>
+</div>
+<p>In your own hooks and middleware, throw <code>HttpError(status, message)</code> or <code>ValidationError(message, fields)</code> to produce a deliberate 4xx. Anything else you throw becomes a 500.</p>
+</section>
+
+<section class="section" id="glossary">
+<h2>Words used in these docs<a class="anchor" href="#glossary" aria-label="Link to this section">#</a></h2>
+<div class="table-container"><table><thead><tr><th>Word</th><th>Meaning here</th></tr></thead><tbody>
+<tr><td><strong>Model</strong></td><td>A Mongoose model, like <code>Product</code>. The only required option.</td></tr>
+<tr><td><strong>Router</strong></td><td>An Express router you mount with <code>app.use('/api/products', router)</code>.</td></tr>
+<tr><td><strong>Controller / handler</strong></td><td>The function that answers a request. <code>ControllerSets</code> holds six of them.</td></tr>
+<tr><td><strong>Middleware / guard</strong></td><td>A function that runs before the handler. A guard is middleware that decides whether the request may continue.</td></tr>
+<tr><td><strong>Allowlist</strong></td><td>A list of what's permitted. Anything not on it is refused or ignored.</td></tr>
+<tr><td><strong>Mass assignment</strong></td><td>A client sending <code>{"role":"admin"}</code> and the database saving it. <code>allowedFields</code> prevents it.</td></tr>
+<tr><td><strong>Server-owned field</strong></td><td>A field whose value comes from the server, never the client — <code>ownerId</code>, <code>author</code>, <code>tenantId</code>.</td></tr>
+<tr><td><strong>QUERY</strong></td><td>An HTTP method (RFC 10008) that reads like <code>GET</code> but carries its parameters in a JSON body.</td></tr>
+<tr><td><strong>Offset / cursor pagination</strong></td><td>Page numbers (<code>?page=4</code>) versus "the page after this record" (<code>?cursor=…</code>).</td></tr>
+</tbody></table></div>
+</section>
+
+        <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" href="quickstart.html"><span class="pager-dir"><i data-lucide="arrow-left"></i> Previous</span><span class="pager-title">Quickstart</span></a>
+      <a class="next" href="router.html"><span class="pager-dir">Next <i data-lucide="arrow-right"></i></span><span class="pager-title">createRouter</span></a>
+    </nav>
+        <footer class="doc-footer">
+          <span>Written for express-controller-sets v3.3.0 · MIT licensed · © 2024–present Sabbir Mahmud</span>
+          <a href="https://github.com/ornate-source/controllerSets/edit/main/docs/src/content/concepts.html" target="_blank" rel="noopener"><i data-lucide="pencil"></i> Edit this page</a>
+        </footer>
+      </article>
+    </main>
+
+  </div>
+
+  <dialog class="search-dialog" id="search-dialog" aria-label="Search">
+    <div class="search-field"><i data-lucide="search"></i><input id="search-input" type="search" placeholder="Search the docs…" autocomplete="off" spellcheck="false" aria-controls="search-results"><kbd>Esc</kbd></div>
+    <ul class="search-results" id="search-results" role="listbox"></ul>
+    <div class="search-foot"><span><kbd>↑</kbd> <kbd>↓</kbd> to move</span><span><kbd>↵</kbd> to open</span></div>
+  </dialog>
+
+  <button id="back-to-top" class="back-to-top" type="button" aria-label="Back to top"><i data-lucide="arrow-up"></i></button>
+</body>
+</html>

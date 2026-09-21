@@ -1,93 +1,48 @@
 <section class="section" id="adv-intro">
-<h2>Use every method yourself</h2>
-<p><code>createRouter</code> is a thin layer over <code>ControllerSets</code>. Create the controller yourself and you can put each method on any route, with any middleware, next to your own code.</p>
+<h2>When to wire routes yourself</h2>
+<p><code>createRouter</code> is a thin layer over <code>ControllerSets</code>. Build the controller directly when the generated router doesn't fit:</p>
+<ul>
+<li>Different guards per verb on one path — public reads, admin writes — without a second mount path.</li>
+<li>Only some of the six routes — say, no <code>DELETE</code>.</li>
+<li>Different paths or verbs — <code>PUT</code>, <code>/:id/publish</code>.</li>
+<li>Your own logic before a handler — ownership checks, feature flags.</li>
+</ul>
 <div class="code-block" data-lang="javascript">
 <pre><code>import { ControllerSets } from 'express-controller-sets';
 
 const products = new ControllerSets({
-  model: Product,                          // same options as createRouter
+  model: Product,                          // same options as createRouter, minus middlewares/enableQuery/upload
   query: ['category'],
   search: ['name'],
   allowedFields: ['name', 'price', 'category'],
 });</code></pre>
 </div>
-<div class="table-container"><table><thead><tr><th>Method</th><th>Usual route</th><th>Reads from the request</th><th>Responds</th></tr></thead><tbody>
-<tr><td><code>getAll</code></td><td>GET /</td><td><code>req.query</code></td><td>200 list (+ pagination)</td></tr>
-<tr><td><code>query</code></td><td>QUERY /</td><td><code>req.body</code> (JSON)</td><td>200 list (+ pagination)</td></tr>
-<tr><td><code>get</code></td><td>GET /:id</td><td><code>req.params.id</code></td><td>200 record · 404</td></tr>
-<tr><td><code>create</code></td><td>POST /</td><td><code>req.body</code></td><td>201 record</td></tr>
-<tr><td><code>update</code></td><td>PATCH /:id</td><td><code>req.params.id</code>, <code>req.body</code></td><td>200 updated record · 404</td></tr>
-<tr><td><code>delete</code></td><td>DELETE /:id</td><td><code>req.params.id</code></td><td>200 message · 404</td></tr>
+</section>
+
+<section class="section" id="adv-methods">
+<h2>The six handlers</h2>
+<div class="table-container"><table><thead><tr><th>Handler</th><th>Usual route</th><th>Reads</th><th>Responds</th></tr></thead><tbody>
+<tr><td><code>getAll</code></td><td><code>GET /</code></td><td><code>req.query</code></td><td>200 list (+ pagination)</td></tr>
+<tr><td><code>query</code></td><td><code>QUERY /</code></td><td><code>req.body</code> (JSON)</td><td>200 list (+ pagination)</td></tr>
+<tr><td><code>get</code></td><td><code>GET /:id</code></td><td><code>req.params.id</code></td><td>200 record · 400 bad id · 404</td></tr>
+<tr><td><code>create</code></td><td><code>POST /</code></td><td><code>req.body</code></td><td>201 record · 400 · 409</td></tr>
+<tr><td><code>update</code></td><td><code>PATCH /:id</code></td><td><code>req.params.id</code>, <code>req.body</code></td><td>200 record · 400 · 404 · 409</td></tr>
+<tr><td><code>delete</code></td><td><code>DELETE /:id</code></td><td><code>req.params.id</code></td><td>200 message · 404</td></tr>
 </tbody></table></div>
-<div class="callout callout-tip"><i data-lucide="info"></i><div><p>Methods are pre-bound — pass them directly: <code>router.get('/', products.getAll)</code>. Route parameters must be named <code>:id</code>.</p></div></div>
-</section>
-
-<section class="section" id="adv-getall">
-<h2>getAll — list</h2>
-<div class="code-block" data-lang="javascript">
-<pre><code>router.get('/', products.getAll);</code></pre>
-</div>
-<p>Reads filters, search, sort and pagination from the query string — everything on <a href="router.html#api-overview">API endpoints</a>. Only fields allowed by <code>query</code>, <code>filterableFields</code> and <code>sortableFields</code> are accepted.</p>
-<div class="code-block" data-lang="bash">
-<pre><code>GET /products?category=chairs&amp;s=oak&amp;sort=-price&amp;page=1&amp;pageSize=20</code></pre>
-</div>
-</section>
-
-<section class="section" id="adv-query">
-<h2>query — list from a JSON body</h2>
-<div class="code-block" data-lang="javascript">
-<pre><code>router.query('/', products.query);      // Node 22.2+ and Express 5</code></pre>
-</div>
-<p>Same result as <code>getAll</code>, but reads <code>{ filter, search, sort, page, pageSize, limit, cursor }</code> from the body. Needs <code>express.json()</code>.</p>
-<div class="code-block" data-lang="http">
-<pre><code>QUERY /products
-Content-Type: application/json
-
-{ "filter": { "price": { "gte": 50 } }, "sort": ["-price"], "page": 1 }</code></pre>
-</div>
-</section>
-
-<section class="section" id="adv-get">
-<h2>get — read one</h2>
-<div class="code-block" data-lang="javascript">
-<pre><code>router.get('/:id', products.get);</code></pre>
-</div>
-<p>Validates the id (<strong>400</strong> if malformed), applies <code>onGet</code>, returns the record or <strong>404</strong>.</p>
-</section>
-
-<section class="section" id="adv-create">
-<h2>create — insert</h2>
-<div class="code-block" data-lang="javascript">
-<pre><code>router.post('/', products.create);</code></pre>
-</div>
-<p>Keeps only <code>allowedFields</code> from <code>req.body</code>, runs <code>validate.create</code>, saves, runs <code>runAfterCreate</code>, responds <strong>201</strong>. A duplicate unique key is a <strong>409</strong>.</p>
-</section>
-
-<section class="section" id="adv-update">
-<h2>update — change fields</h2>
-<div class="code-block" data-lang="javascript">
-<pre><code>router.patch('/:id', products.update);
-router.put('/:id', products.update);       // want PUT? same handler</code></pre>
-</div>
-<p>Applies only the fields sent (<code>$set</code>) after <code>allowedFields</code> and <code>validate.update</code>; responds with the updated record or <strong>404</strong>.</p>
-</section>
-
-<section class="section" id="adv-delete">
-<h2>delete — remove</h2>
-<div class="code-block" data-lang="javascript">
-<pre><code>router.delete('/:id', products.delete);</code></pre>
-</div>
-<div class="code-block" data-lang="json">
-<pre><code>{ "success": true, "message": "Item successfully deleted." }</code></pre>
-</div>
+<ul>
+<li>Handlers are pre-bound: pass them directly, <code>router.get('/', products.getAll)</code>.</li>
+<li>The route parameter must be named <code>:id</code>.</li>
+<li>Each handler sends the response itself. To change what a read returns, use <code>onGet</code> or a schema <code>toJSON</code>.</li>
+<li><code>create</code> and <code>update</code> apply <code>allowedFields</code> and <code>validate</code> exactly as on a generated router.</li>
+</ul>
 </section>
 
 <section class="section" id="adv-router">
 <h2>A router by hand</h2>
-<p>All six methods on your own router, with a different guard per route and an extra endpoint:</p>
+<p>All six handlers with a different guard per route, plus an extra endpoint and a <code>PUT</code>:</p>
 <div class="code-block" data-lang="javascript">
 <pre><code>import express from 'express';
-import { ControllerSets, errorHandler } from 'express-controller-sets';
+import { ControllerSets, errorHandler, isQueryMethodSupported } from 'express-controller-sets';
 
 const products = new ControllerSets({
   model: Product,
@@ -100,282 +55,70 @@ const products = new ControllerSets({
 const router = express.Router();
 const admin = [auth.requireAuth, auth.requireRole('admin')];
 
-router.get('/', products.getAll);                         // public
-router.query('/', products.query);                        // public (Node 22.2+)
-router.get('/featured', async (req, res) =&gt; {             // your own route — before '/:id'
+router.get('/', products.getAll);                          // public
+if (isQueryMethodSupported()) router.query('/', products.query);   // public; Node 22.2+ only
+router.get('/featured', async (req, res) =&gt; {              // your own route — before '/:id'
   res.json({ success: true, data: await Product.find({ featured: true }).limit(10) });
 });
-router.get('/:id', products.get);                         // public
-router.post('/', ...admin, products.create);              // admin only
+router.get('/:id', products.get);                          // public
+router.post('/', ...admin, products.create);               // admin only
 router.patch('/:id', ...admin, products.update);
+router.put('/:id', ...admin, products.update);             // PUT, if clients need it — still a partial update
 router.delete('/:id', ...admin, products.delete);
 
 app.use('/api/products', router);
 app.use(errorHandler);</code></pre>
 </div>
+<div class="callout callout-warn"><i data-lucide="alert-triangle"></i><div><p><strong>Guard <code>router.query()</code>.</strong> It only exists on runtimes that know the method; on older Node, calling it throws at startup. <code>createRouter</code> checks for you — wiring it yourself means checking with <code>isQueryMethodSupported()</code>.</p></div></div>
 </section>
 
 <section class="section" id="adv-wrap">
-<h2>Add logic around a method</h2>
-<p>Run your own checks first, then hand over to the method:</p>
+<h2>Add logic before a handler</h2>
+<p>Run your own middleware, then hand over:</p>
 <div class="code-block" data-lang="javascript">
-<pre><code>// Only the owner may change or delete a note
+<pre><code>import mongoose from 'mongoose';
+import { HttpError } from 'express-controller-sets';
+
+// Only the owner may change or delete a note
 const ownsNote = async (req, res, next) =&gt; {
-  const note = await Note.exists({ _id: req.params.id, ownerId: req.auth.userId });
-  if (!note) return res.status(404).json({ success: false, error: 'Entry not found.' });
+  if (!mongoose.isValidObjectId(req.params.id)) return next();   // the handler answers 400
+  const mine = await Note.exists({ _id: req.params.id, ownerId: req.auth.userId });
+  if (!mine) throw new HttpError(404, 'Entry not found.');
   next();
 };
 
 router.patch('/:id', auth.requireAuth, ownsNote, notes.update);
 router.delete('/:id', auth.requireAuth, ownsNote, notes.delete);</code></pre>
 </div>
-<p>Methods send the response themselves. To change what a read returns, use <code>onGet</code> (populate / select) or your schema's <code>toJSON</code>.</p>
+<p>Throwing <code>HttpError</code> from async middleware works on Express 5 — it reaches <code>errorHandler</code>, which sends the status and message. The full per-user pattern is in <a href="protect.html#only-my-records">Protecting routes</a>.</p>
 </section>
 
-<section class="section" id="adv-errors">
-<h2>Errors</h2>
-<p>Methods answer client mistakes themselves (400, 404, 409) with <code>{ success: false, error }</code>. Unexpected failures (a database outage) are thrown — mount <code>errorHandler</code> last so they become a clean 500.</p>
-<div class="table-container"><table><thead><tr><th>Helper</th><th>What it gives you</th></tr></thead><tbody>
-<tr><td><code>products.config</code></td><td>The resolved, frozen options.</td></tr>
-<tr><td><code>products.getPopulates(req, res)</code></td><td>What <code>onGet</code> resolves to for this request.</td></tr>
-<tr><td><code>products.getPaginatedResults(req, res, filters, sort)</code></td><td>One offset-paginated read of your own filter, sent as a standard paginated response.</td></tr>
+<section class="section" id="adv-helpers">
+<h2>Other members</h2>
+<div class="table-container"><table><thead><tr><th>Member</th><th>What it gives you</th></tr></thead><tbody>
+<tr><td><code>controller.config</code></td><td>The resolved, frozen options — every default filled in.</td></tr>
+<tr><td><code>controller.invalidateCache()</code></td><td>Drop this model's cached responses. Resolves quietly when caching is off. <a href="cache.html#cache-invalidate">Caching</a></td></tr>
+<tr><td><code>controller.getPopulates(req, res)</code></td><td>What <code>onGet</code> resolves to for this request: <code>{ populates, selects }</code>.</td></tr>
+<tr><td><code>controller.getPaginatedResults(req, res, filters, sort, populates?, selects?)</code></td><td>One offset-paginated read of <em>your</em> filter, sent as a standard paginated response. Reads <code>page</code> and <code>pageSize</code> from <code>req.query</code>.</td></tr>
 </tbody></table></div>
+<div class="code-block" data-lang="javascript">
+<pre><code>// A custom list endpoint with the standard response and pagination
+router.get('/on-sale', (req, res) =&gt;
+  products.getPaginatedResults(req, res, { discount: { $gt: 0 } }, { discount: -1 }));</code></pre>
+</div>
 </section>
 
-<section class="section" id="adv-more">
-<h2>More detail</h2>
-<p class="section-intro">Reference material.</p>
-<details class="advanced" id="custom">
-<summary>How the handlers are put together</summary>
-<div class="details-body"><p class="section-intro">When the six generated endpoints aren't quite the shape you need.</p>
-
-                <h3>Use the handlers on your own router</h3>
-                <p>Every controller method is a plain Express handler, so you can mount them individually — different
-                    middleware per verb, extra routes alongside, whatever you like.</p>
-
-                <div class="code-block" data-lang="javascript">
-                    <pre><code>import express from 'express';
-import { ControllerSets } from 'express-controller-sets';
-import Product from './models/Product.js';
-
-const controller = new ControllerSets({
-  model: Product,
-  query: ['category'],
-  allowedFields: ['name', 'price'],
-});
-
-const router = express.Router();
-
-router.get('/',      controller.getAll);                    // public
-router.query('/',    controller.query);                     // public, body-borne read
-router.get('/:id',   controller.get);                       // public
-router.post('/',     requireAuth, controller.create);       // staff only
-router.patch('/:id', requireAuth, controller.update);
-router.delete('/:id', requireAuth, requireAdmin, controller.delete);
-
-// …and add whatever the generated set doesn't cover
-router.get('/:id/related', myOwnHandler);
-
-export default router;</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
-                </div>
-
-                <div class="callout callout-plain">
-                    <i data-lucide="file-search"></i>
-                    <div>
-                        <p><code>router.query()</code> only exists on runtimes that know the method. Wiring handlers
-                            yourself means guarding it yourself:</p>
-                        <div class="code-block" data-lang="javascript">
-                            <pre><code>import { isQueryMethodSupported } from 'express-controller-sets';
-
-if (isQueryMethodSupported()) router.query('/', controller.query);</code></pre>
-                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
-                        </div>
-                    </div>
-                </div>
-
-                <h3>How the handlers are put together</h3>
-                <p>Each handler is a short composition of the same four steps, and every step lives in its own module
-                    under <code>src/core/</code>. Reach for them when you are writing an endpoint this library does
-                    not generate — a rule enforced in one of these applies to anything built on it.</p>
-
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Module</th>
-                                <th>Responsibility</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><code>core/config.js</code></td>
-                                <td>Options in, one frozen config out. Every default is resolved once, here.</td>
-                            </tr>
-                            <tr>
-                                <td><code>core/index.js</code></td>
-                                <td>The barrel everything outside <code>core/</code> imports from — one import
-                                    instead of nine. Modules inside <code>core/</code> import each other directly,
-                                    so the graph stays acyclic.</td>
-                            </tr>
-                            <tr>
-                                <td><code>core/getAll.js</code> · <code>query.js</code> ·
-                                    <code>get.js</code> · <code>create.js</code> ·
-                                    <code>update.js</code> · <code>delete.js</code></td>
-                                <td>One module per route. The class itself is just the six methods.</td>
-                            </tr>
-                            <tr>
-                                <td><code>core/list.js</code></td>
-                                <td>The retrieval <code>getAll</code> and <code>query</code> share — offset pages,
-                                    keyset pages and plain lists.</td>
-                            </tr>
-                            <tr>
-                                <td><code>core/cursor.js</code></td>
-                                <td>Keyset tokens: the tiebreaker, the seek filter, and encoding.</td>
-                            </tr>
-                            <tr>
-                                <td><code>core/readParams.js</code></td>
-                                <td>Request → filters, sort, page window. Pure: no database, no response, no
-                                    <code>this</code>. Shared by <code>GET</code> and <code>QUERY</code>.</td>
-                            </tr>
-                            <tr>
-                                <td><code>core/search.js</code></td>
-                                <td>Search terms, escaped, including across referenced models.</td>
-                            </tr>
-                            <tr>
-                                <td><code>core/write.js</code></td>
-                                <td>Body → payload: the field policy, then your <a href="#validation">validator</a>.
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><code>core/dataAccess.js</code></td>
-                                <td>Every Mongoose call, with <code>maxLimit</code>, <code>maxTimeMS</code>,
-                                    <code>lean</code> and <code>onGet</code> already applied.</td>
-                            </tr>
-                            <tr>
-                                <td><code>core/respond.js</code></td>
-                                <td>The response envelope, so no endpoint can invent a fifth shape.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <p>The split is why <code>GET /</code> and <code>QUERY /</code> cannot drift apart: they differ only
-                    in which <code>readParams</code> function turns the request into parameters, and agree on
-                    everything after that.</p>
-
-                <h3>Add routes to a generated router</h3>
-                <p>A generated router is an ordinary Express router. Mount your own routes on the same path — declare
-                    the more specific ones first so they aren't captured by <code>/:id</code>.</p>
-
-                <div class="code-block" data-lang="javascript">
-                    <pre><code>const extras = express.Router();
-extras.get('/featured', listFeatured);      // would otherwise hit /:id
-
-app.use('/api/products', extras);
-app.use('/api/products', createRouter({ model: Product }));</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
-                </div>
-
-                <h3>Uploads without CRUD</h3>
-                <div class="code-block" data-lang="javascript">
-                    <pre><code>import { fileUploadMiddleware } from 'express-controller-sets';
-
-const upload = (req, res, next) =&gt; fileUploadMiddleware(req, res, next, {
-  uploadPath: 'invoices/',
-  fields: [{ name: 'invoice', maxCount: 1 }],
-  allowedMimeTypes: ['application/pdf'],
-  maxFileSize: 2 * 1024 * 1024,
-});
-
-app.post('/api/invoices', requireAuth, upload, (req, res) =&gt; {
-  res.json({ url: req.body.invoice });   // already uploaded and validated
-});</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
-                </div>
-</div>
-</details>
-<details class="advanced" id="typescript">
-<summary>TypeScript</summary>
-<div class="details-body"><p class="section-intro">Type declarations ship with the package. Nothing to install.</p>
-
-                <div class="code-block" data-lang="typescript">
-                    <pre><code>import express from 'express';
-import { createRouter, errorHandler, type RouterOptions } from 'express-controller-sets';
-import Product, { type IProduct } from './models/Product.js';
-
-const options: RouterOptions&lt;IProduct&gt; = {
-  model: Product,
-  orderBy: '-createdAt',
-  query: ['category'],
-  allowedFields: ['name', 'price'],
-  onGet: async (req, res) =&gt; ({ populates: 'category', selects: 'name price' }),
-};
-
-const app = express();
-app.use('/api/products', createRouter(options));
-app.use(errorHandler);</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
-                </div>
-
-                <p>Exported types you'll reach for: <code>ControllerOptions</code>, <code>RouterOptions</code>,
-                    <code>RouterS3Options</code>, <code>UploadOptions</code>, <code>UploadField</code>,
-                    <code>OnGetFn</code>, <code>OnGetResult</code>, <code>FieldPolicy</code>,
-                    <code>ImageOptimizationLevel</code> and <code>Logger</code> — plus
-                    <code>QueryRequestBody</code>, <code>FilterCondition</code>, <code>FilterOperators</code> and
-                    <code>FilterScalar</code> for the <a href="#http-query">QUERY</a> body, and
-                    <code>ValidateFn</code>, <code>ValidateContext</code>, <code>ValidatePolicy</code>,
-                    <code>WriteOperation</code>, <code>CountStrategy</code> and <code>Pagination</code> for
-                    <a href="#validation">validation</a> and paging.</p>
-
-                <p>Typing the body on the client side keeps a filter honest before it is ever sent:</p>
-
-                <div class="code-block" data-lang="typescript">
-                    <pre><code>import type { QueryRequestBody } from 'express-controller-sets';
-
-const body: QueryRequestBody = {
-  filter: { price: { gte: 50, lte: 250 }, tag: ['sale'] },
-  sort: ['-price', 'name'],
-  pageSize: 20,
-};
-
-await fetch('/api/products', {
-  method: 'QUERY',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify(body),
-});</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
-                </div>
-
-                <div class="callout callout-warn">
-                    <i data-lucide="alert-triangle"></i>
-                    <div>
-                        <p><strong>Types don't validate field names.</strong> <code>allowedFields</code> is
-                            <code>string[]</code>, so a typo — <code>'pirce'</code> — compiles happily and silently
-                            drops the real field at runtime. If a field refuses to save, check the spelling in your
-                            allowlist first.</p>
-                    </div>
-                </div>
-</div>
-</details>
-<details class="advanced" id="extra-endpoint">
-<summary>Recipe: extra endpoints next to a generated router</summary>
-<div class="details-body"><p>A generated router is an ordinary Express router. Mount your own routes on the same path — before it,
-        so they win.</p>
-    <div class="code-block" data-lang="javascript">
-        <pre><code>const products = express.Router();
-
-products.get('/stats', async (req, res) =&gt; {
-  const [row] = await Product.aggregate([{ $group: { _id: null, avg: { $avg: '$price' }, n: { $sum: 1 } } }]);
-  res.json({ success: true, data: row ?? { avg: 0, n: 0 } });
-});
-
-products.use(createRouter({ model: Product, allowedFields: [] }));
-
-app.use('/api/products', products);    // GET /api/products/stats, plus the six generated routes</code></pre>
-    </div>
-    <p>To reuse the generated behaviour under a different verb or path, call the handlers directly — see
-        <a href="advanced.html">Custom routes</a>.</p>
-</div>
-</details>
+<section class="section" id="internals">
+<h2>How the handlers are built</h2>
+<p>For contributors, and for anyone writing an endpoint the library doesn't generate. Each handler is a short composition of shared modules under <code>src/core/</code>, so a rule enforced in one applies everywhere.</p>
+<div class="table-container"><table><thead><tr><th>Module</th><th>Responsibility</th></tr></thead><tbody>
+<tr><td><code>config.js</code></td><td>Options in, one frozen config out. Every default is resolved here, once.</td></tr>
+<tr><td><code>getAll.js</code> · <code>query.js</code> · <code>get.js</code> · <code>create.js</code> · <code>update.js</code> · <code>delete.js</code></td><td>One module per route.</td></tr>
+<tr><td><code>readParams.js</code></td><td>Request → filters, sort, page window. Pure. The only difference between <code>GET</code> and <code>QUERY</code>.</td></tr>
+<tr><td><code>list.js</code> · <code>cursor.js</code></td><td>The shared list retrieval: offset pages, keyset pages, plain lists.</td></tr>
+<tr><td><code>search.js</code></td><td>Escaped search terms, including across referenced models.</td></tr>
+<tr><td><code>write.js</code></td><td>Body → payload: the field policy, then your validator.</td></tr>
+<tr><td><code>dataAccess.js</code></td><td>Every Mongoose call, with <code>maxLimit</code>, <code>maxTimeMS</code>, <code>lean</code> and <code>onGet</code> applied.</td></tr>
+<tr><td><code>respond.js</code></td><td>The response envelope, so no endpoint invents its own shape.</td></tr>
+</tbody></table></div>
 </section>

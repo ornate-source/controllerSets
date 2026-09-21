@@ -15,7 +15,7 @@ import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { NAV, PAGES, SITE } from "./src/site.mjs";
+import { MOVED_ANCHORS, NAV, PAGES, REDIRECTS, SITE } from "./src/site.mjs";
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const read = (...p) => readFileSync(join(ROOT, ...p), "utf8");
@@ -168,6 +168,15 @@ const pager = (i) => {
     </nav>`;
 };
 
+// A section that moved to another page keeps its old link working: if the hash
+// names no element here, forward to where it went.
+const movedAnchorScript = (page) => {
+    const moved = MOVED_ANCHORS[page.slug];
+    if (!moved) return "";
+    return `
+  <script>(function(){var m=${JSON.stringify(moved)};var h=location.hash.slice(1);if(h&&m[h]&&!document.getElementById(h))location.replace(m[h]);})();</script>`;
+};
+
 const layout = (page, i) => {
     const isHome = page.slug === "index";
     const title = isHome ? `${SITE.package} — one model in, a whole REST API out` : `${page.title} · ${SITE.package}`;
@@ -204,7 +213,7 @@ const layout = (page, i) => {
   <script src="assets/search-index.js" defer></script>
   <script src="${version("assets/js/docs.js")}" defer></script>
 </head>
-<body class="dark" data-page="${page.slug}">
+<body class="dark" data-page="${page.slug}">${movedAnchorScript(page)}
   <script>try{var t=localStorage.getItem('controllersets-theme');document.body.className=t||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark')}catch(e){}</script>
   <a href="#main" class="skip-link">Skip to content</a>
 
@@ -239,7 +248,7 @@ const layout = (page, i) => {
         ${page.html}
         ${pager(i)}
         <footer class="doc-footer">
-          <span>${SITE.package} v${SITE.version} · MIT licensed · © 2024–present Sabbir Mahmud</span>
+          <span>Written for ${SITE.package} v${SITE.version} · MIT licensed · © 2024–present Sabbir Mahmud</span>
           <a href="${SITE.repo}/edit/main/docs/src/content/${page.slug}.html" target="_blank" rel="noopener">${icon("pencil")} Edit this page</a>
         </footer>
       </article>
@@ -260,6 +269,28 @@ const layout = (page, i) => {
 };
 
 parsed.forEach((page, i) => write(`${page.slug}.html`, layout(page, i)));
+
+// Renamed pages: a stub at the old URL forwards, hash included.
+for (const [from, { to }] of Object.entries(REDIRECTS)) {
+    if (!slugs.has(to)) throw new Error(`Redirect ${from} → ${to}: no such page`);
+    const target = href(to);
+    write(
+        `${from}.html`,
+        `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Moved · ${SITE.package}</title>
+  <link rel="canonical" href="${SITE.url}${to === "index" ? "" : `${to}.html`}">
+  <meta name="robots" content="noindex">
+  <meta http-equiv="refresh" content="0; url=${target}">
+  <script>location.replace(${JSON.stringify(target)} + location.hash);</script>
+</head>
+<body><p>This page moved to <a href="${target}">${escapeHtml(PAGES.find((p) => p.slug === to).title)}</a>.</p></body>
+</html>
+`,
+    );
+}
 
 /* ------------------------------------------------------------------ *
  * 4. Search index, llms.txt, sitemap.
@@ -284,7 +315,7 @@ const llms = [
     "",
     `> ${SITE.description}`,
     "",
-    `Install: \`npm install ${SITE.package} express mongoose\`. ES modules, Node 20+, Express 5, Mongoose 9.`,
+    `Install: \`npm install ${SITE.package} express mongoose\`. ES modules, Node 20.19+, Express 5, Mongoose 9.`,
     `For a complete, self-contained guide written for language models, read ${SITE.url}llms-full.txt.`,
     "",
     ...NAV.flatMap((group) => [

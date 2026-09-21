@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Protecting routes · express-controller-sets</title>
+  <meta name="description" content="Guards, public/admin splits, server-owned fields and per-user data.">
+  <link rel="canonical" href="https://ornate-source.github.io/controllerSets/protect.html">
+  <meta property="og:title" content="Protecting routes · express-controller-sets">
+  <meta property="og:description" content="Guards, public/admin splits, server-owned fields and per-user data.">
+  <meta property="og:type" content="website">
+  <link rel="alternate" type="text/plain" title="LLM guide" href="llms-full.txt">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/components.css?v=10a91d487a">
+  <link rel="stylesheet" href="assets/css/shell.css?v=a1646e50a8">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%236366f1'/%3E%3Ctext x='50' y='68' font-family='monospace' font-size='54' font-weight='700' fill='white' text-anchor='middle'%3E%7B%7D%3C/text%3E%3C/svg%3E">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/http.min.js" defer></script>
+  <script src="assets/search-index.js" defer></script>
+  <script src="assets/js/docs.js?v=901f93388a" defer></script>
+</head>
+<body class="dark" data-page="protect">
+  <script>try{var t=localStorage.getItem('controllersets-theme');document.body.className=t||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark')}catch(e){}</script>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <header class="topbar">
+    <button class="icon-btn menu-btn" type="button" id="menu-open" aria-label="Open navigation"><i data-lucide="menu"></i></button>
+    <a class="brand" href="./" aria-label="controller-sets home">
+      <span class="brand-mark" aria-hidden="true">{}</span>
+      <span class="brand-name">controller-sets</span>
+      <span class="brand-version">v3.3.0</span>
+    </a>
+    <button class="search-trigger" type="button" id="search-open" aria-label="Search the docs">
+      <i data-lucide="search"></i><span>Search docs…</span><kbd>⌘K</kbd>
+    </button>
+    <nav class="topbar-links" aria-label="External">
+      <a class="topbar-link is-accent hide-sm" href="llm.html"><i data-lucide="sparkles"></i><span class="label">LLM prompt</span></a>
+      <a class="topbar-link hide-sm" href="https://github.com/ornate-source/controllerSets" target="_blank" rel="noopener"><svg class="gh-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span class="label">GitHub</span></a>
+      <a class="topbar-link hide-sm" href="https://www.npmjs.com/package/express-controller-sets" target="_blank" rel="noopener"><i data-lucide="package"></i><span class="label">npm</span></a>
+      <button class="icon-btn" type="button" id="theme-toggle" aria-label="Toggle colour theme"><i data-lucide="sun" class="sun-icon"></i><i data-lucide="moon" class="moon-icon"></i></button>
+    </nav>
+  </header>
+
+  <div class="nav-overlay" id="nav-overlay"></div>
+
+  <div class="layout">
+    <aside class="sidenav" id="sidenav" aria-label="Documentation">
+      <nav><div class="nav-group" data-group="get-started">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="rocket"></i><span>Get started</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="./"><i data-lucide="home"></i><span class="nav-page-label">Overview</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="quickstart.html"><i data-lucide="play"></i><span class="nav-page-label">Quickstart</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="concepts.html"><i data-lucide="lightbulb"></i><span class="nav-page-label">Core concepts</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="guides">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="book-open"></i><span>Guides</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="router.html"><i data-lucide="route"></i><span class="nav-page-label">createRouter</span></a></li>
+<li class="nav-page-item is-open"><a class="nav-page" href="protect.html" aria-current="page"><i data-lucide="shield-check"></i><span class="nav-page-label">Protecting routes</span></a><ul class="nav-sections"><li><a class="nav-section" href="#middlewares" data-target="middlewares">Add a guard</a></li><li><a class="nav-section" href="#public-read-admin-write" data-target="public-read-admin-write">Public reads, staff writes</a></li><li><a class="nav-section" href="#owner-from-token" data-target="owner-from-token">Server-owned fields</a></li><li><a class="nav-section" href="#only-my-records" data-target="only-my-records">Users see only their own records</a></li><li><a class="nav-section" href="#rate-limits" data-target="rate-limits">Rate limits</a></li><li><a class="nav-section" href="#checklist" data-target="checklist">Before you go to production</a></li></ul></li>
+<li class="nav-page-item"><a class="nav-page" href="uploads.html"><i data-lucide="upload-cloud"></i><span class="nav-page-label">File uploads</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="cache.html"><i data-lucide="zap"></i><span class="nav-page-label">Caching</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="auth.html"><i data-lucide="key-round"></i><span class="nav-page-label">Authentication</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="email.html"><i data-lucide="mail"></i><span class="nav-page-label">Email &amp; SMS</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="custom-routes.html"><i data-lucide="wrench"></i><span class="nav-page-label">Custom routes</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="reference">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="library"></i><span>Reference</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="http-api.html"><i data-lucide="globe"></i><span class="nav-page-label">HTTP API</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="api.html"><i data-lucide="braces"></i><span class="nav-page-label">JavaScript API</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="env.html"><i data-lucide="file-cog"></i><span class="nav-page-label">Environment variables</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="help">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="circle-help"></i><span>Help</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="troubleshooting.html"><i data-lucide="stethoscope"></i><span class="nav-page-label">Troubleshooting</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="upgrading.html"><i data-lucide="arrow-up-circle"></i><span class="nav-page-label">Upgrading</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="llm.html"><i data-lucide="bot"></i><span class="nav-page-label">Use with an LLM</span></a></li></ul>
+        </div></nav>
+    </aside>
+
+    <main class="doc" id="main" tabindex="-1">
+      <article class="doc-inner">
+        <header class="page-header">
+          <p class="breadcrumb">Guides <i data-lucide="chevron-right"></i> Protecting routes</p>
+          <h1>Protecting routes</h1>
+          <p class="page-summary">Guards, public/admin splits, server-owned fields and per-user data.</p>
+        </header>
+        <section class="section" id="middlewares">
+<h2>Add a guard<a class="anchor" href="#middlewares" aria-label="Link to this section">#</a></h2>
+<p>The library builds routes; deciding who may call them is yours. Pass guards in <code>middlewares</code> and they run before <strong>every</strong> route on that router — all six.</p>
+<div class="code-block" data-lang="javascript">
+<pre><code class="language-javascript">createRouter({
+  model: Order,
+  middlewares: [auth.requireAuth, auth.requireRole('staff')],
+  allowedFields: ['status', 'note'],
+});</code></pre>
+</div>
+<p><code>auth.requireAuth</code> and <code>auth.requireRole</code> come from <a href="auth.html">createAuthRouter</a>, but any Express middleware works — your own JWT check, <code>express-rate-limit</code>, a tenant resolver. After <code>requireAuth</code>, <code>req.auth</code> holds <code>{ userId, role, claims }</code>.</p>
+<p>Because <code>middlewares</code> applies to every route, <strong>different rules for reads and writes need two routers</strong> (below) or <a href="custom-routes.html">hand-wired routes</a>.</p>
+</section>
+
+<section class="section" id="public-read-admin-write">
+<h2>Public reads, staff writes<a class="anchor" href="#public-read-admin-write" aria-label="Link to this section">#</a></h2>
+<p>The most common shape. Mount two routers on one model, each with its own allowlists — share the read configuration, differ on who can write.</p>
+<div class="code-block" data-lang="javascript">
+<pre><code class="language-javascript">const catalogue = {
+  model: Product,
+  orderBy: '-createdAt',
+  query: ['category', 'isFeatured'],
+  search: ['name', 'description'],
+  filterableFields: ['price', 'category'],
+  sortableFields: ['price', 'name', 'createdAt'],
+};
+
+// Refuse every method that isn't a read.
+const readOnly = (req, res, next) =&gt;
+  ['GET', 'HEAD', 'OPTIONS', 'QUERY'].includes(req.method)
+    ? next()
+    : res.status(405).json({ success: false, error: 'Method not allowed.' });
+
+// Anyone: read
+app.use('/api/products', createRouter({ ...catalogue, middlewares: [readOnly], allowedFields: [] }));
+
+// Staff: read and write
+app.use('/api/admin/products', createRouter({
+  ...catalogue,
+  middlewares: [auth.requireAuth, auth.requireRole('staff', 'admin')],
+  allowedFields: ['name', 'price', 'description', 'category', 'isFeatured'],
+}));</code></pre>
+</div>
+<div class="callout callout-danger"><i data-lucide="alert-octagon"></i><div><p><strong><code>allowedFields: []</code> does not make a router read-only.</strong> It stops <code>POST</code> and <code>PATCH</code> from writing any field, but <code>DELETE /:id</code> has no body to filter and still deletes. A public router needs the <code>readOnly</code> guard (or hand-wired <code>GET</code> routes only). Keep <code>allowedFields: []</code> as well — it's a second lock if the guard is ever removed.</p></div></div>
+</section>
+
+<section class="section" id="owner-from-token">
+<h2>Server-owned fields<a class="anchor" href="#owner-from-token" aria-label="Link to this section">#</a></h2>
+<p>Fields like <code>author</code>, <code>ownerId</code> or <code>tenantId</code> come from the signed-in user, never from the body. Keep them <strong>out</strong> of <code>allowedFields</code> — so anything a client sends for them is stripped — and set them in <code>validate.create</code>:</p>
+<div class="code-block" data-lang="javascript">
+<pre><code class="language-javascript">app.use('/api/posts', createRouter({
+  model: Post,
+  middlewares: [auth.requireAuth],
+  allowedFields: ['title', 'body', 'tags'],          // no 'author'
+  validate: {
+    create: (payload, { req }) =&gt; ({ ...payload, author: req.auth.userId }),
+  },
+}));</code></pre>
+</div>
+</section>
+
+<section class="section" id="only-my-records">
+<h2>Users see only their own records<a class="anchor" href="#only-my-records" aria-label="Link to this section">#</a></h2>
+<p>The library has no concept of ownership, so per-user data takes three pieces. Skip any one and it leaks:</p>
+<ol>
+<li><strong>Lists:</strong> force the owner filter onto every <code>GET /</code>, and turn off <code>QUERY /</code> (its filter comes from the body, which your middleware doesn't touch).</li>
+<li><strong>Single records:</strong> check ownership on every <code>/:id</code> — the list filter doesn't cover them.</li>
+<li><strong>Creates:</strong> stamp the owner from the token.</li>
+</ol>
+<div class="code-block" data-lang="javascript">
+<pre><code class="language-javascript">import express from 'express';
+import mongoose from 'mongoose';
+import { createRouter, HttpError } from 'express-controller-sets';
+
+// 1. Lists: pin ownerId to the caller. Express 5 re-parses req.query on every
+//    read, so assigning to it does nothing — shadow it with a real property.
+const onlyMine = (req, res, next) =&gt; {
+  Object.defineProperty(req, 'query', {
+    value: { ...req.query, ownerId: String(req.auth.userId) },
+    writable: true, configurable: true, enumerable: true,
+  });
+  next();
+};
+
+// 2. Single records: 404 unless the caller owns it. 404, not 403 — don't
+//    confirm that someone else's record exists.
+const ownsNote = async (req, res, next) =&gt; {
+  if (!mongoose.isValidObjectId(req.params.id)) return next();   // the handler answers 400
+  const mine = await Note.exists({ _id: req.params.id, ownerId: req.auth.userId });
+  if (!mine) throw new HttpError(404, 'Entry not found.');
+  next();
+};
+
+const notes = express.Router();
+notes.use(auth.requireAuth, onlyMine);
+notes.use('/:id', ownsNote);
+notes.use(createRouter({
+  model: Note,
+  orderBy: '-createdAt',
+  query: ['ownerId'],                                   // the pinned filter must be in query
+  enableQuery: false,                                   // 1b. QUERY would bypass onlyMine
+  allowedFields: ['title', 'body'],                     // no ownerId
+  validate: { create: (p, { req }) =&gt; ({ ...p, ownerId: req.auth.userId }) },   // 3. stamp the owner
+}));
+
+app.use('/api/notes', notes);</code></pre>
+</div>
+<p>Tested end to end: a user cannot list, read, change or delete another user's notes, even by sending <code>?ownerId=</code> themselves. With <a href="cache.html">caching</a> on, the pinned filter is part of the cache key, so users never share entries.</p>
+</section>
+
+<section class="section" id="rate-limits">
+<h2>Rate limits<a class="anchor" href="#rate-limits" aria-label="Link to this section">#</a></h2>
+<p>Nothing is rate-limited by default. Add a limiter to <code>middlewares</code>, and a tighter one on anything that gets guessed at — sign-in, password reset:</p>
+<div class="code-block" data-lang="javascript">
+<pre><code class="language-javascript">import rateLimit from 'express-rate-limit';
+
+const api = rateLimit({ windowMs: 60_000, limit: 120 });
+createRouter({ model: Product, middlewares: [api], allowedFields: [] });</code></pre>
+</div>
+<p>For the auth routes, see <a href="auth.html#rate-limit">Authentication → Rate-limit sign-in</a>.</p>
+</section>
+
+<section class="section" id="checklist">
+<h2>Before you go to production<a class="anchor" href="#checklist" aria-label="Link to this section">#</a></h2>
+<ol class="steps">
+<li><h4>Every router has <code>allowedFields</code></h4><p>Or <code>blockedFields</code>. No startup warning about unprotected models. Server-owned fields (<code>role</code>, <code>ownerId</code>) are not in it.</p></li>
+<li><h4>Every write is guarded</h4><p>Routers that accept <code>POST</code>, <code>PATCH</code> or <code>DELETE</code> have an auth guard in <code>middlewares</code>. Public routers have a <code>readOnly</code> guard.</p></li>
+<li><h4>Per-user data checks <code>/:id</code></h4><p>Owner-scoped routers check ownership on single records and set <code>enableQuery: false</code>.</p></li>
+<li><h4>Middleware order is right</h4><p><code>express.json()</code> before the routers, <code>errorHandler</code> after them.</p></li>
+<li><h4>Secrets come from the environment</h4><p><code>token.secret</code> is 32+ characters and not in the repository.</p></li>
+<li><h4><code>legacyMode</code> and <code>allowRawRegex</code> are off</h4><p>On every public router.</p></li>
+<li><h4>Uploads are private unless meant to be public</h4><p><code>upload.acl: 'public-read'</code> only for content like product photos.</p></li>
+</ol>
+</section>
+
+        <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" href="router.html"><span class="pager-dir"><i data-lucide="arrow-left"></i> Previous</span><span class="pager-title">createRouter</span></a>
+      <a class="next" href="uploads.html"><span class="pager-dir">Next <i data-lucide="arrow-right"></i></span><span class="pager-title">File uploads</span></a>
+    </nav>
+        <footer class="doc-footer">
+          <span>Written for express-controller-sets v3.3.0 · MIT licensed · © 2024–present Sabbir Mahmud</span>
+          <a href="https://github.com/ornate-source/controllerSets/edit/main/docs/src/content/protect.html" target="_blank" rel="noopener"><i data-lucide="pencil"></i> Edit this page</a>
+        </footer>
+      </article>
+    </main>
+
+  </div>
+
+  <dialog class="search-dialog" id="search-dialog" aria-label="Search">
+    <div class="search-field"><i data-lucide="search"></i><input id="search-input" type="search" placeholder="Search the docs…" autocomplete="off" spellcheck="false" aria-controls="search-results"><kbd>Esc</kbd></div>
+    <ul class="search-results" id="search-results" role="listbox"></ul>
+    <div class="search-foot"><span><kbd>↑</kbd> <kbd>↓</kbd> to move</span><span><kbd>↵</kbd> to open</span></div>
+  </dialog>
+
+  <button id="back-to-top" class="back-to-top" type="button" aria-label="Back to top"><i data-lucide="arrow-up"></i></button>
+</body>
+</html>

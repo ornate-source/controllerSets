@@ -1,0 +1,77 @@
+<section class="section" id="versions">
+<h2>Which section applies to you</h2>
+<div class="table-container"><table><thead><tr><th>You're on</th><th>Read</th><th>Effort</th></tr></thead><tbody>
+<tr><td>3.0 – 3.2, using <code>createRouterS3upload</code></td><td><a href="#from-3-2">Uploads move into createRouter</a></td><td>Minutes. Not urgent until 4.0.</td></tr>
+<tr><td>3.x, using <code>legacyMode</code> or other deprecated APIs</td><td><a href="#before-4">Before 4.0</a></td><td>Depends on how much you rely on it.</td></tr>
+<tr><td>2.x</td><td><a href="#from-2">From 2.x to 3.x</a></td><td>An afternoon. <strong>Security release — urgent.</strong></td></tr>
+</tbody></table></div>
+<p>The complete guide, with every change explained, is <a href="https://github.com/ornate-source/controllerSets/blob/main/MIGRATION.md" target="_blank" rel="noopener">MIGRATION.md</a>; release notes are in <a href="https://github.com/ornate-source/controllerSets/blob/main/CHANGELOG.md" target="_blank" rel="noopener">CHANGELOG.md</a>.</p>
+</section>
+
+<section class="section" id="from-3-2">
+<h2>Uploads move into createRouter (3.3)</h2>
+<p><code>createRouterS3upload</code> is deprecated in 3.3 and removed in 4.0. It still works, and emits a <code>DeprecationWarning</code> (code <code>ECS_DEP001</code>) once per process. Move <code>path</code>, <code>fields</code> and <code>imgOptimizations</code> into <code>upload</code>, next to the settings already there:</p>
+<div class="tabs"><div class="tab-list" role="tablist"><button class="tab-btn" type="button" data-tab="up-before" role="tab">Before</button><button class="tab-btn" type="button" data-tab="up-after" role="tab">After</button></div>
+<div class="tab-panel" id="up-before" role="tabpanel"><div class="code-block" data-lang="javascript">
+<pre><code>createRouterS3upload({
+  model: Product,
+  path: 'products/',
+  fields: [{ name: 'cover', maxCount: 1 }],
+  imgOptimizations: 'medium',
+  upload: { acl: 'public-read' },
+});</code></pre>
+</div></div>
+<div class="tab-panel" id="up-after" role="tabpanel"><div class="code-block" data-lang="javascript">
+<pre><code>createRouter({
+  model: Product,
+  upload: {
+    path: 'products/',
+    fields: [{ name: 'cover', maxCount: 1 }],
+    imgOptimizations: 'medium',
+    acl: 'public-read',
+  },
+});</code></pre>
+</div></div></div>
+<p><code>createRouter</code> ignores <code>path</code>, <code>fields</code> and <code>imgOptimizations</code> at the top level and logs a warning if it sees them. In TypeScript, replace <code>RouterS3Options</code> with <code>RouterOptions</code>.</p>
+</section>
+
+<section class="section" id="before-4">
+<h2>Before 4.0</h2>
+<p>Everything here still works in 3.x. The first two are removed in 4.0; the rest are deprecated, so move off them when you touch the code.</p>
+<div class="table-container"><table><thead><tr><th>Deprecated</th><th>Replace with</th></tr></thead><tbody>
+<tr><td><code>createRouterS3upload(opts)</code></td><td><code>createRouter({ upload })</code> — <a href="#from-3-2">above</a></td></tr>
+<tr><td><code>legacyMode: true</code></td><td>The 3.x options it bypasses: <code>allowedFields</code>, <code>filterableFields</code>, <code>sortableFields</code>, <code>maxLimit</code>.</td></tr>
+<tr><td><code>new ControllerSets(Model, '-createdAt', ['category'], ['name'])</code></td><td><code>new ControllerSets({ model: Model, orderBy: '-createdAt', query: ['category'], search: ['name'] })</code></td></tr>
+<tr><td><code>controller.getById</code> · <code>controller.queryAll</code></td><td><code>controller.get</code> · <code>controller.query</code></td></tr>
+<tr><td><code>fileUploadMiddleware(req, res, next, path, fields, level)</code></td><td><code>fileUploadMiddleware(req, res, next, { uploadPath, fields, imgOptimizations })</code></td></tr>
+<tr><td><code>otp.deliver</code></td><td><code>mail.sender</code> / <code>sms.sender</code> — <a href="email.html#senders">Email &amp; SMS</a></td></tr>
+</tbody></table></div>
+</section>
+
+<section class="section" id="from-2">
+<h2>From 2.x to 3.x</h2>
+<div class="callout callout-danger"><i data-lucide="alert-octagon"></i><div><p><strong>If you run 2.x on a public endpoint, treat this as urgent.</strong> In 2.x a client could write any schema field, filter and sort on fields your API never returned, hang the database with a crafted search term, read entire collections in one request, and upload world-readable HTML to your bucket. Every breaking change in 3.0 is a default that used to be unsafe.</p></div></div>
+
+<h3>Deploy today, tighten after</h3>
+<div class="code-block" data-lang="javascript">
+<pre><code>createRouter({ model: Product, legacyMode: true });</code></pre>
+</div>
+<p><code>legacyMode</code> restores 2.x behaviour so you can upgrade immediately, then remove it router by router as you add the options below. It re-enables every vulnerability listed, so don't leave it on.</p>
+
+<h3>What changed, and what to do</h3>
+<div class="table-container"><table><thead><tr><th>What changed</th><th>What to do</th></tr></thead><tbody>
+<tr><td>Request bodies are filtered</td><td>Add <code>allowedFields</code> or <code>blockedFields</code> to every router.</td></tr>
+<tr><td><code>?compareField=</code>, <code>?rangeField=</code>, <code>?sort=</code> are allowlisted</td><td>List fields in <code>filterableFields</code> / <code>sortableFields</code>, or rely on the <code>query</code> default.</td></tr>
+<tr><td>Search terms are escaped and length-capped</td><td>Nothing — unless clients sent real patterns; then <code>allowRawRegex: true</code>, behind auth.</td></tr>
+<tr><td>Unpaginated reads capped at 100</td><td>Paginate, or raise <code>maxLimit</code> deliberately.</td></tr>
+<tr><td>Relational search resolves the full nested path</td><td>Re-check depth-2 paths — they queried the wrong field before.</td></tr>
+<tr><td>String-form <code>search</code> reads <code>?s=</code></td><td>Update clients that searched with <code>?title=</code>.</td></tr>
+<tr><td>Uploads default to private, type sniffed from bytes</td><td>Set <code>upload.acl</code> and <code>upload.allowedMimeTypes</code> if needed. Existing objects keep their old ACL — audit them.</td></tr>
+<tr><td>Clients no longer choose compression level</td><td><code>upload.allowClientImageOptions: true</code> to opt back in.</td></tr>
+<tr><td>GIF and SVG no longer transcoded</td><td>Nothing — they were being corrupted.</td></tr>
+<tr><td>5xx responses no longer echo internals; duplicates are 409</td><td>Update clients that parsed 500 message text.</td></tr>
+<tr><td>Reads are no longer <code>.lean()</code></td><td>Your <code>toJSON</code> transforms now apply. <code>lean: true</code> restores speed — check what those transforms hide first.</td></tr>
+<tr><td>No <code>dotenv.config()</code> at import; <code>multer-s3</code> removed</td><td>Load your environment yourself; uninstall <code>multer-s3</code>.</td></tr>
+</tbody></table></div>
+<div class="callout callout-warn"><i data-lucide="eye"></i><div><p><strong>The <code>lean</code> change is the one most likely to alter responses.</strong> 2.x list endpoints bypassed <code>toJSON</code> transforms. If you strip sensitive fields there, <em>2.x was leaking them on every list request</em>, and 3.x stops. Compare a list response before and after upgrading.</p></div></div>
+</section>

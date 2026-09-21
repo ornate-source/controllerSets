@@ -31,7 +31,7 @@
     <a class="brand" href="./" aria-label="controller-sets home">
       <span class="brand-mark" aria-hidden="true">{}</span>
       <span class="brand-name">controller-sets</span>
-      <span class="brand-version">v3.2.0</span>
+      <span class="brand-version">v3.3.0</span>
     </a>
     <button class="search-trigger" type="button" id="search-open" aria-label="Search the docs">
       <i data-lucide="search"></i><span>Search docs…</span><kbd>⌘K</kbd>
@@ -48,37 +48,45 @@
 
   <div class="layout">
     <aside class="sidenav" id="sidenav" aria-label="Documentation">
-      <nav><div class="nav-group" data-group="getting-started">
-          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="rocket"></i><span>Getting started</span><i data-lucide="chevron-down" class="chev"></i></button>
+      <nav><div class="nav-group" data-group="get-started">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="rocket"></i><span>Get started</span><i data-lucide="chevron-down" class="chev"></i></button>
           <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="./"><i data-lucide="home"></i><span class="nav-page-label">Overview</span></a></li>
-<li class="nav-page-item"><a class="nav-page" href="how-to-use.html"><i data-lucide="play"></i><span class="nav-page-label">How to use</span></a></li></ul>
+<li class="nav-page-item"><a class="nav-page" href="quickstart.html"><i data-lucide="play"></i><span class="nav-page-label">Quickstart</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="concepts.html"><i data-lucide="lightbulb"></i><span class="nav-page-label">Core concepts</span></a></li></ul>
         </div>
 <div class="nav-group" data-group="guides">
           <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="book-open"></i><span>Guides</span><i data-lucide="chevron-down" class="chev"></i></button>
           <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="router.html"><i data-lucide="route"></i><span class="nav-page-label">createRouter</span></a></li>
-<li class="nav-page-item"><a class="nav-page" href="cache.html"><i data-lucide="zap"></i><span class="nav-page-label">Redis cache</span></a></li>
-<li class="nav-page-item"><a class="nav-page" href="uploads.html"><i data-lucide="upload-cloud"></i><span class="nav-page-label">S3 Upload</span></a></li>
-<li class="nav-page-item"><a class="nav-page" href="auth.html"><i data-lucide="key-round"></i><span class="nav-page-label">Auth setup</span></a></li>
-<li class="nav-page-item"><a class="nav-page" href="email.html"><i data-lucide="mail"></i><span class="nav-page-label">Email sender</span></a></li>
-<li class="nav-page-item"><a class="nav-page" href="env.html"><i data-lucide="file-cog"></i><span class="nav-page-label">.env.example</span></a></li>
-<li class="nav-page-item"><a class="nav-page" href="advanced.html"><i data-lucide="wrench"></i><span class="nav-page-label">Advanced</span></a></li></ul>
+<li class="nav-page-item"><a class="nav-page" href="protect.html"><i data-lucide="shield-check"></i><span class="nav-page-label">Protecting routes</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="uploads.html"><i data-lucide="upload-cloud"></i><span class="nav-page-label">File uploads</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="cache.html"><i data-lucide="zap"></i><span class="nav-page-label">Caching</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="auth.html"><i data-lucide="key-round"></i><span class="nav-page-label">Authentication</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="email.html"><i data-lucide="mail"></i><span class="nav-page-label">Email &amp; SMS</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="custom-routes.html"><i data-lucide="wrench"></i><span class="nav-page-label">Custom routes</span></a></li></ul>
         </div>
-<div class="nav-group" data-group="more">
-          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="circle-help"></i><span>More</span><i data-lucide="chevron-down" class="chev"></i></button>
-          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="faq.html"><i data-lucide="messages-square"></i><span class="nav-page-label">FAQ</span></a></li>
-<li class="nav-page-item is-open"><a class="nav-page" href="llm.html" aria-current="page"><i data-lucide="bot"></i><span class="nav-page-label">Use with an LLM</span></a><ul class="nav-sections"><li><a class="nav-section" href="#why" data-target="why">Why a prompt?</a></li><li><a class="nav-section" href="#why" data-target="why">Why a prompt?</a></li><li><a class="nav-section" href="#prompt" data-target="prompt">The prompt</a></li><li><a class="nav-section" href="#prompt" data-target="prompt">The prompt</a></li><li><a class="nav-section" href="#save-it" data-target="save-it">Save it in your project</a></li><li><a class="nav-section" href="#advanced" data-target="advanced">Advanced</a></li></ul></li></ul>
+<div class="nav-group" data-group="reference">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="library"></i><span>Reference</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="http-api.html"><i data-lucide="globe"></i><span class="nav-page-label">HTTP API</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="api.html"><i data-lucide="braces"></i><span class="nav-page-label">JavaScript API</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="env.html"><i data-lucide="file-cog"></i><span class="nav-page-label">Environment variables</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="help">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="circle-help"></i><span>Help</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="troubleshooting.html"><i data-lucide="stethoscope"></i><span class="nav-page-label">Troubleshooting</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="upgrading.html"><i data-lucide="arrow-up-circle"></i><span class="nav-page-label">Upgrading</span></a></li>
+<li class="nav-page-item is-open"><a class="nav-page" href="llm.html" aria-current="page"><i data-lucide="bot"></i><span class="nav-page-label">Use with an LLM</span></a><ul class="nav-sections"><li><a class="nav-section" href="#llm-why" data-target="llm-why">Why a prompt</a></li><li><a class="nav-section" href="#llm-why" data-target="llm-why">Why a prompt</a></li><li><a class="nav-section" href="#prompt" data-target="prompt">The prompt</a></li><li><a class="nav-section" href="#prompt" data-target="prompt">The prompt</a></li><li><a class="nav-section" href="#save-it" data-target="save-it">Save it in your project</a></li><li><a class="nav-section" href="#ask" data-target="ask">Prompts that work well</a></li><li><a class="nav-section" href="#verify" data-target="verify">Check what it wrote</a></li></ul></li></ul>
         </div></nav>
     </aside>
 
     <main class="doc" id="main" tabindex="-1">
       <article class="doc-inner">
         <header class="page-header">
-          <p class="breadcrumb">More <i data-lucide="chevron-right"></i> Use with an LLM</p>
+          <p class="breadcrumb">Help <i data-lucide="chevron-right"></i> Use with an LLM</p>
           <h1>Use with an LLM</h1>
           <p class="page-summary">One prompt so ChatGPT, Claude or Copilot write correct code for this package.</p>
         </header>
-        <section class="section" id="why">
-    <h2>Why a prompt?<a class="anchor" href="#why" aria-label="Link to this section">#</a></h2>
+        <section class="section" id="llm-why">
+    <h2>Why a prompt<a class="anchor" href="#llm-why" aria-label="Link to this section">#</a></h2>
     <p>Language models know an older, smaller version of this library — or guess at one. Paste the prompt
         below at the start of a conversation (or add it to your editor's rules file) and the model writes code
         against the real API: correct option names, the security defaults, the auth bodies, and the mistakes to
@@ -188,7 +196,7 @@ Every router serves: `GET /` (list), `QUERY /` (list with a JSON body), `POST /`
 
 1. **Always set `allowedFields`** (or `blockedFields`). Without it every schema field — `role`, `isAdmin`, `ownerId` — is client-writable, and the library logs a warning.
 2. **Every generated endpoint is public** until `middlewares` guards it. Guards apply to all six routes of that router.
-3. When reads are public and writes are not, use **two routers on the same model**: a public one with `allowedFields: []`, and a guarded admin one.
+3. When reads are public and writes are not, use **two routers on the same model**: a public one with `allowedFields: []` **and** a `readOnly` guard in `middlewares` that answers 405 to any method other than GET/HEAD/OPTIONS/QUERY, and a guarded admin one. `allowedFields: []` alone does NOT make a router read-only: `DELETE /:id` has no body and still deletes.
 4. Filters, range/compare fields and sort fields are allowlists (`query`, `filterableFields`, `sortableFields`). A field not listed is a `400`, never silently used.
 5. Server-owned values (`ownerId`, `tenantId`, `createdBy`) are set in `validate.create`, never accepted from the client — keep them out of `allowedFields`.
 6. Per-user record scoping is not built in. For lists, shadow `req.query` in a middleware (Express 5's `req.query` is a re-parsing getter — assigning to it or its properties does nothing):
@@ -279,8 +287,8 @@ Content-Type: application/json
   &quot;search&quot;: &quot;oak&quot;, &quot;sort&quot;: [&quot;-price&quot;, &quot;name&quot;], &quot;page&quot;: 1, &quot;pageSize&quot;: 20 }
 ```
 
-Operators: `eq ne gt gte lt lte in nin` — written **without `<section class="section" id="why">
-    <h2>Why a prompt?<a class="anchor" href="#why" aria-label="Link to this section">#</a></h2>
+Operators: `eq ne gt gte lt lte in nin` — written **without `<section class="section" id="llm-why">
+    <h2>Why a prompt<a class="anchor" href="#llm-why" aria-label="Link to this section">#</a></h2>
     <p>Language models know an older, smaller version of this library — or guess at one. Paste the prompt
         below at the start of a conversation (or add it to your editor's rules file) and the model writes code
         against the real API: correct option names, the security defaults, the auth bodies, and the mistakes to
@@ -559,12 +567,8 @@ mkdir -p .github &amp;&amp; curl -fsSL https://ornate-source.github.io/controlle
     </div>
 </section>
 
-<section class="section" id="advanced">
-    <h2>Advanced<a class="anchor" href="#advanced" aria-label="Link to this section">#</a></h2>
-    <p class="section-intro">Deeper detail — open what you need.</p>
-<details class="advanced" id="ask">
-  <summary>Prompts that work well</summary>
-  <div class="details-body"><p>After the guide, ask in plain language. Say what the data is, who may read it and who may change it —
+<section class="section" id="ask">
+<h2>Prompts that work well<a class="anchor" href="#ask" aria-label="Link to this section">#</a></h2><p>After the guide, ask in plain language. Say what the data is, who may read it and who may change it —
         the model turns that into allowlists and guards.</p>
 
     <div class="code-block" data-lang="text">
@@ -586,35 +590,29 @@ JPEG/PNG/WebP only, 5 MB each, compressed at "medium". Keep writes admin-only.</
         <pre><code class="language-text">Review this file against the express-controller-sets guide. List every place where a client
 could write a field it shouldn't, read another user's data, or reach an unguarded route.</code></pre>
     </div>
-  </div>
-</details>
+  </section>
 
-<details class="advanced" id="verify">
-  <summary>Check what it wrote</summary>
-  <div class="details-body"><p>Models are fluent, not infallible. Before running generated code, check these five things — they are
+<section class="section" id="verify">
+<h2>Check what it wrote<a class="anchor" href="#verify" aria-label="Link to this section">#</a></h2><p>Models are fluent, not infallible. Before running generated code, check these five things — they are
         where mistakes cost the most:</p>
     <ol class="steps">
         <li><strong>Every router has <code>allowedFields</code></strong> (or <code>blockedFields</code>) — and
             it does not include server-owned fields like <code>role</code> or <code>ownerId</code>.</li>
-        <li><strong>Every write route has a guard</strong> in <code>middlewares</code>, or is on a router with
-            <code>allowedFields: []</code>.</li>
+        <li><strong>Every write route has a guard</strong> in <code>middlewares</code>. <code>allowedFields: []</code> alone does not stop <code>DELETE</code>.</li>
         <li><strong><code>errorHandler</code> is mounted last</strong> and <code>express.json()</code> first.</li>
         <li><strong>Secrets come from the environment</strong> — <code>token.secret</code> is at least 32
             characters and never in the code.</li>
-        <li><strong>Only real options are used.</strong> Anything not in <a href="router.html">All options</a>
+        <li><strong>Only real options are used.</strong> Anything not in <a href="router.html">createRouter</a>
             is invented — at best ignored, at worst a false sense of safety.</li>
     </ol>
-  </div>
-</details>
-</section>
-
+  </section>
 
         <nav class="pager" aria-label="Previous and next page">
-      <a class="prev" href="faq.html"><span class="pager-dir"><i data-lucide="arrow-left"></i> Previous</span><span class="pager-title">FAQ</span></a>
+      <a class="prev" href="upgrading.html"><span class="pager-dir"><i data-lucide="arrow-left"></i> Previous</span><span class="pager-title">Upgrading</span></a>
       
     </nav>
         <footer class="doc-footer">
-          <span>express-controller-sets v3.2.0 · MIT licensed · © 2024–present Sabbir Mahmud</span>
+          <span>Written for express-controller-sets v3.3.0 · MIT licensed · © 2024–present Sabbir Mahmud</span>
           <a href="https://github.com/ornate-source/controllerSets/edit/main/docs/src/content/llm.html" target="_blank" rel="noopener"><i data-lucide="pencil"></i> Edit this page</a>
         </footer>
       </article>

@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Email sender · express-controller-sets</title>
-  <meta name="description" content="Send password-reset codes by email or SMS, with your own transporter and templates.">
+  <title>Email &amp; SMS · express-controller-sets</title>
+  <meta name="description" content="Deliver password-reset codes with your own transporter, sender and templates.">
   <link rel="canonical" href="https://ornate-source.github.io/controllerSets/email.html">
-  <meta property="og:title" content="Email sender · express-controller-sets">
-  <meta property="og:description" content="Send password-reset codes by email or SMS, with your own transporter and templates.">
+  <meta property="og:title" content="Email &amp; SMS · express-controller-sets">
+  <meta property="og:description" content="Deliver password-reset codes with your own transporter, sender and templates.">
   <meta property="og:type" content="website">
   <link rel="alternate" type="text/plain" title="LLM guide" href="llms-full.txt">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,7 +31,7 @@
     <a class="brand" href="./" aria-label="controller-sets home">
       <span class="brand-mark" aria-hidden="true">{}</span>
       <span class="brand-name">controller-sets</span>
-      <span class="brand-version">v3.2.0</span>
+      <span class="brand-version">v3.3.0</span>
     </a>
     <button class="search-trigger" type="button" id="search-open" aria-label="Search the docs">
       <i data-lucide="search"></i><span>Search docs…</span><kbd>⌘K</kbd>
@@ -48,24 +48,32 @@
 
   <div class="layout">
     <aside class="sidenav" id="sidenav" aria-label="Documentation">
-      <nav><div class="nav-group" data-group="getting-started">
-          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="rocket"></i><span>Getting started</span><i data-lucide="chevron-down" class="chev"></i></button>
+      <nav><div class="nav-group" data-group="get-started">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="rocket"></i><span>Get started</span><i data-lucide="chevron-down" class="chev"></i></button>
           <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="./"><i data-lucide="home"></i><span class="nav-page-label">Overview</span></a></li>
-<li class="nav-page-item"><a class="nav-page" href="how-to-use.html"><i data-lucide="play"></i><span class="nav-page-label">How to use</span></a></li></ul>
+<li class="nav-page-item"><a class="nav-page" href="quickstart.html"><i data-lucide="play"></i><span class="nav-page-label">Quickstart</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="concepts.html"><i data-lucide="lightbulb"></i><span class="nav-page-label">Core concepts</span></a></li></ul>
         </div>
 <div class="nav-group" data-group="guides">
           <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="book-open"></i><span>Guides</span><i data-lucide="chevron-down" class="chev"></i></button>
           <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="router.html"><i data-lucide="route"></i><span class="nav-page-label">createRouter</span></a></li>
-<li class="nav-page-item"><a class="nav-page" href="cache.html"><i data-lucide="zap"></i><span class="nav-page-label">Redis cache</span></a></li>
-<li class="nav-page-item"><a class="nav-page" href="uploads.html"><i data-lucide="upload-cloud"></i><span class="nav-page-label">S3 Upload</span></a></li>
-<li class="nav-page-item"><a class="nav-page" href="auth.html"><i data-lucide="key-round"></i><span class="nav-page-label">Auth setup</span></a></li>
-<li class="nav-page-item is-open"><a class="nav-page" href="email.html" aria-current="page"><i data-lucide="mail"></i><span class="nav-page-label">Email sender</span></a><ul class="nav-sections"><li><a class="nav-section" href="#email-basics" data-target="email-basics">Setup</a></li><li><a class="nav-section" href="#email-options" data-target="email-options">Common options</a></li><li><a class="nav-section" href="#senders" data-target="senders">Swap the sender</a></li><li><a class="nav-section" href="#templates" data-target="templates">Custom templates</a></li><li><a class="nav-section" href="#advanced" data-target="advanced">Advanced</a></li></ul></li>
-<li class="nav-page-item"><a class="nav-page" href="env.html"><i data-lucide="file-cog"></i><span class="nav-page-label">.env.example</span></a></li>
-<li class="nav-page-item"><a class="nav-page" href="advanced.html"><i data-lucide="wrench"></i><span class="nav-page-label">Advanced</span></a></li></ul>
+<li class="nav-page-item"><a class="nav-page" href="protect.html"><i data-lucide="shield-check"></i><span class="nav-page-label">Protecting routes</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="uploads.html"><i data-lucide="upload-cloud"></i><span class="nav-page-label">File uploads</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="cache.html"><i data-lucide="zap"></i><span class="nav-page-label">Caching</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="auth.html"><i data-lucide="key-round"></i><span class="nav-page-label">Authentication</span></a></li>
+<li class="nav-page-item is-open"><a class="nav-page" href="email.html" aria-current="page"><i data-lucide="mail"></i><span class="nav-page-label">Email &amp; SMS</span></a><ul class="nav-sections"><li><a class="nav-section" href="#email-basics" data-target="email-basics">Setup</a></li><li><a class="nav-section" href="#password-reset" data-target="password-reset">How a reset works</a></li><li><a class="nav-section" href="#email-options" data-target="email-options">Common options</a></li><li><a class="nav-section" href="#senders" data-target="senders">Swap the sender</a></li><li><a class="nav-section" href="#templates" data-target="templates">Custom templates</a></li><li><a class="nav-section" href="#mail" data-target="mail">SMTP transporter</a></li><li><a class="nav-section" href="#channels" data-target="channels">Choosing email or SMS</a></li></ul></li>
+<li class="nav-page-item"><a class="nav-page" href="custom-routes.html"><i data-lucide="wrench"></i><span class="nav-page-label">Custom routes</span></a></li></ul>
         </div>
-<div class="nav-group" data-group="more">
-          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="circle-help"></i><span>More</span><i data-lucide="chevron-down" class="chev"></i></button>
-          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="faq.html"><i data-lucide="messages-square"></i><span class="nav-page-label">FAQ</span></a></li>
+<div class="nav-group" data-group="reference">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="library"></i><span>Reference</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="http-api.html"><i data-lucide="globe"></i><span class="nav-page-label">HTTP API</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="api.html"><i data-lucide="braces"></i><span class="nav-page-label">JavaScript API</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="env.html"><i data-lucide="file-cog"></i><span class="nav-page-label">Environment variables</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="help">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="circle-help"></i><span>Help</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="troubleshooting.html"><i data-lucide="stethoscope"></i><span class="nav-page-label">Troubleshooting</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="upgrading.html"><i data-lucide="arrow-up-circle"></i><span class="nav-page-label">Upgrading</span></a></li>
 <li class="nav-page-item"><a class="nav-page" href="llm.html"><i data-lucide="bot"></i><span class="nav-page-label">Use with an LLM</span></a></li></ul>
         </div></nav>
     </aside>
@@ -73,13 +81,16 @@
     <main class="doc" id="main" tabindex="-1">
       <article class="doc-inner">
         <header class="page-header">
-          <p class="breadcrumb">Guides <i data-lucide="chevron-right"></i> Email sender</p>
-          <h1>Email sender</h1>
-          <p class="page-summary">Send password-reset codes by email or SMS, with your own transporter and templates.</p>
+          <p class="breadcrumb">Guides <i data-lucide="chevron-right"></i> Email &amp; SMS</p>
+          <h1>Email &amp; SMS</h1>
+          <p class="page-summary">Deliver password-reset codes with your own transporter, sender and templates.</p>
         </header>
         <section class="section" id="email-basics">
     <h2>Setup<a class="anchor" href="#email-basics" aria-label="Link to this section">#</a></h2>
-<p>Give the auth router a transporter. Password-reset codes are then emailed automatically.</p>
+<p>The <a href="auth.html">auth router</a> sends one-time codes for password reset. Give it a way to send email — a nodemailer transporter is the quickest — and <code>/password/forgot</code> starts working.</p>
+<div class="code-block" data-lang="bash">
+<pre><code class="language-bash">npm install nodemailer</code></pre>
+</div>
 <div class="code-block" data-lang="javascript">
 <pre><code class="language-javascript">import nodemailer from 'nodemailer';
 
@@ -99,6 +110,41 @@ createAuthRouter({
 POST /api/auth/password/reset    { "identifier": "ada@example.com", "code": "402913", "newPassword": "…" }</code></pre>
 </div>
 </section>
+
+<section class="section" id="password-reset">
+<h2>How a reset works<a class="anchor" href="#password-reset" aria-label="Link to this section">#</a></h2><p>Three calls. The library generates the code, stores it safely and sends it through the channel you
+        configured; your app only decides <em>how</em> mail and SMS leave the building.</p>
+
+    <div class="code-block" data-lang="bash">
+        <pre><code class="language-bash"># 1. Ask for a code. The answer is the same whether or not the account exists.
+POST /auth/password/forgot  { "identifier": "ada@example.com", "channel": "email" }
+→ { "success": true, "message": "If that account exists, a code has been sent." }
+
+# 2. The code arrives by email (or SMS), rendered from your template.
+
+# 3. Spend it.
+POST /auth/password/reset   { "identifier": "ada@example.com",
+                              "code": "402913", "newPassword": "…" }</code></pre>
+    </div>
+
+    <p>The code is stored as an HMAC under your token secret, never in the clear; it is bound to its purpose,
+        expires (10 minutes by default), and is counted — five wrong guesses and it is dead. A successful reset
+        also signs out every refresh-token session.</p>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr><th>What you configure</th><th>What happens</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>mail.transporter</code> or <code>SMTP_*</code></td><td>Codes go by email through nodemailer (or anything with <code>sendMail</code>).</td></tr>
+                <tr><td><code>mail.sender</code></td><td>Your function sends the email — Resend, SES, Postmark, a queue.</td></tr>
+                <tr><td><code>sms.sender</code></td><td>Codes can go by SMS. There is no default SMS provider.</td></tr>
+                <tr><td>Nothing</td><td>Codes are never generated, and a warning is logged.</td></tr>
+            </tbody>
+        </table>
+    </div>
+  </section>
 
 <section class="section" id="email-options">
     <h2>Common options<a class="anchor" href="#email-options" aria-label="Link to this section">#</a></h2>
@@ -228,49 +274,8 @@ sms: {
         as <code>DEFAULT_TEMPLATES</code> if you want to start from them.</p>
 </section>
 
-<section class="section" id="advanced">
-    <h2>Advanced<a class="anchor" href="#advanced" aria-label="Link to this section">#</a></h2>
-    <p class="section-intro">Deeper detail — open what you need.</p>
-<details class="advanced" id="password-reset">
-  <summary>How password reset works</summary>
-  <div class="details-body"><p>Three calls. The library generates the code, stores it safely and sends it through the channel you
-        configured; your app only decides <em>how</em> mail and SMS leave the building.</p>
-
-    <div class="code-block" data-lang="bash">
-        <pre><code class="language-bash"># 1. Ask for a code. The answer is the same whether or not the account exists.
-POST /auth/password/forgot  { "identifier": "ada@example.com", "channel": "email" }
-→ { "success": true, "message": "If that account exists, a code has been sent." }
-
-# 2. The code arrives by email (or SMS), rendered from your template.
-
-# 3. Spend it.
-POST /auth/password/reset   { "identifier": "ada@example.com",
-                              "code": "402913", "newPassword": "…" }</code></pre>
-    </div>
-
-    <p>The code is stored as an HMAC under your token secret, never in the clear; it is bound to its purpose,
-        expires (10 minutes by default), and is counted — five wrong guesses and it is dead. A successful reset
-        also signs out every refresh-token session.</p>
-
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr><th>What you configure</th><th>What happens</th></tr>
-            </thead>
-            <tbody>
-                <tr><td><code>mail.transporter</code> or <code>SMTP_*</code></td><td>Codes go by email through nodemailer (or anything with <code>sendMail</code>).</td></tr>
-                <tr><td><code>mail.sender</code></td><td>Your function sends the email — Resend, SES, Postmark, a queue.</td></tr>
-                <tr><td><code>sms.sender</code></td><td>Codes can go by SMS. There is no default SMS provider.</td></tr>
-                <tr><td>Nothing</td><td>Codes are never generated, and a warning is logged.</td></tr>
-            </tbody>
-        </table>
-    </div>
-  </div>
-</details>
-
-<details class="advanced" id="mail">
-  <summary>Transporter details</summary>
-  <div class="details-body"><p>The default mail sender uses a <strong>transporter</strong> — a nodemailer transporter, or any object
+<section class="section" id="mail">
+<h2>SMTP transporter<a class="anchor" href="#mail" aria-label="Link to this section">#</a></h2><p>The default mail sender uses a <strong>transporter</strong> — a nodemailer transporter, or any object
         with <code>sendMail({ from, to, subject, text, html })</code>. Pass one in, or let the library build it
         from the environment.</p>
 
@@ -324,12 +329,10 @@ APP_NAME=Acme</code></pre>
                 the first real password reset.</p>
         </div>
     </div>
-  </div>
-</details>
+  </section>
 
-<details class="advanced" id="channels">
-  <summary>Email or SMS: choosing a channel</summary>
-  <div class="details-body"><p>The client may send <code>"channel": "email"</code> or <code>"sms"</code>; without it, email is used when
+<section class="section" id="channels">
+<h2>Choosing email or SMS<a class="anchor" href="#channels" aria-label="Link to this section">#</a></h2><p>The client may send <code>"channel": "email"</code> or <code>"sms"</code>; without it, email is used when
         configured, otherwise SMS.</p>
     <ul>
         <li><strong>A channel you haven't configured is a 400</strong> — decided before the account is looked up,
@@ -348,17 +351,14 @@ APP_NAME=Acme</code></pre>
                 startup checks for free.</p>
         </div>
     </div>
-  </div>
-</details>
-</section>
-
+  </section>
 
         <nav class="pager" aria-label="Previous and next page">
-      <a class="prev" href="auth.html"><span class="pager-dir"><i data-lucide="arrow-left"></i> Previous</span><span class="pager-title">Auth setup</span></a>
-      <a class="next" href="env.html"><span class="pager-dir">Next <i data-lucide="arrow-right"></i></span><span class="pager-title">.env.example</span></a>
+      <a class="prev" href="auth.html"><span class="pager-dir"><i data-lucide="arrow-left"></i> Previous</span><span class="pager-title">Authentication</span></a>
+      <a class="next" href="custom-routes.html"><span class="pager-dir">Next <i data-lucide="arrow-right"></i></span><span class="pager-title">Custom routes</span></a>
     </nav>
         <footer class="doc-footer">
-          <span>express-controller-sets v3.2.0 · MIT licensed · © 2024–present Sabbir Mahmud</span>
+          <span>Written for express-controller-sets v3.3.0 · MIT licensed · © 2024–present Sabbir Mahmud</span>
           <a href="https://github.com/ornate-source/controllerSets/edit/main/docs/src/content/email.html" target="_blank" rel="noopener"><i data-lucide="pencil"></i> Edit this page</a>
         </footer>
       </article>

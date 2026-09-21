@@ -75,7 +75,7 @@ Every router serves: `GET /` (list), `QUERY /` (list with a JSON body), `POST /`
 
 1. **Always set `allowedFields`** (or `blockedFields`). Without it every schema field — `role`, `isAdmin`, `ownerId` — is client-writable, and the library logs a warning.
 2. **Every generated endpoint is public** until `middlewares` guards it. Guards apply to all six routes of that router.
-3. When reads are public and writes are not, use **two routers on the same model**: a public one with `allowedFields: []`, and a guarded admin one.
+3. When reads are public and writes are not, use **two routers on the same model**: a public one with `allowedFields: []` **and** a `readOnly` guard in `middlewares` that answers 405 to any method other than GET/HEAD/OPTIONS/QUERY, and a guarded admin one. `allowedFields: []` alone does NOT make a router read-only: `DELETE /:id` has no body and still deletes.
 4. Filters, range/compare fields and sort fields are allowlists (`query`, `filterableFields`, `sortableFields`). A field not listed is a `400`, never silently used.
 5. Server-owned values (`ownerId`, `tenantId`, `createdBy`) are set in `validate.create`, never accepted from the client — keep them out of `allowedFields`.
 6. Per-user record scoping is not built in. For lists, shadow `req.query` in a middleware (Express 5's `req.query` is a re-parsing getter — assigning to it or its properties does nothing):

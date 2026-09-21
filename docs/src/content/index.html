@@ -1,14 +1,14 @@
 <section class="hero" id="what-is-this">
-                <span class="hero-eyebrow"><span class="hero-eyebrow-dot"></span> v3.2 — auth, refresh tokens, email &amp; SMS</span>
+                <span class="hero-eyebrow"><span class="hero-eyebrow-dot"></span> v3.3 — uploads and Redis caching built into createRouter</span>
                 <h1><span class="line">One model in,</span><span class="line grad">a whole REST API out.</span></h1>
-                <p class="lead">Express Controller Sets is a Node.js library that turns a Mongoose model into six
-                    working endpoints — list, query, read, create, update, delete — with filtering, search, pagination
-                    and optional S3 file uploads already wired up. You write the model and the rules; it writes the
-                    controller.</p>
+                <p class="lead">controller-sets turns a Mongoose model into six working Express endpoints — list,
+                    query, read, create, update, delete — with filtering, search, pagination, caching and file
+                    uploads already wired up. You write the model and say what clients are allowed to do; it writes
+                    the controller.</p>
                 <div class="hero-actions">
-                    <a class="btn btn-primary" href="#installation"><i data-lucide="download"></i> Install <i
+                    <a class="btn btn-primary" href="quickstart.html"><i data-lucide="play"></i> Quickstart <i
                             data-lucide="arrow-right"></i></a>
-                    <a class="btn btn-ghost" href="how-to-use.html"><i data-lucide="play"></i> See a demo <i data-lucide="arrow-right"></i></a>
+                    <a class="btn btn-ghost" href="#installation"><i data-lucide="download"></i> Install</a>
                 </div>
 
                 <div class="hero-demo">
@@ -54,9 +54,27 @@
             </section>
 
 <section class="section" id="why">
-<h2>Why choose controller-sets</h2>
-<p>Every Express + Mongoose API writes the same controllers again: list with filters, read one, create, update, delete — and each copy has its own bugs. controller-sets writes them once, correctly, and lets you configure the rest.</p>
-<div class="card-grid"><div class="card"><div class="card-icon"><i data-lucide="timer"></i></div><h4>Minutes, not days</h4><p>One call gives a model six working endpoints with filtering, search, sorting and pagination. No controller code to write or test.</p></div><div class="card"><div class="card-icon"><i data-lucide="shield-check"></i></div><h4>Secure by default</h4><p>Nothing is writable, filterable or sortable until you allow it. Mass assignment, NoSQL injection and regex attacks are closed off out of the box.</p></div><div class="card"><div class="card-icon"><i data-lucide="gauge"></i></div><h4>Fast at any size</h4><p>Opt-in Redis caching answers repeated reads without touching the database, and cursor pagination serves page 1,000 of 100,000 records in under a millisecond.</p></div><div class="card"><div class="card-icon"><i data-lucide="boxes"></i></div><h4>Batteries included</h4><p>S3 uploads with image compression, JWT auth with refresh tokens and social sign-in, and email / SMS codes — all optional.</p></div><div class="card"><div class="card-icon"><i data-lucide="database"></i></div><h4>Your models, your rules</h4><p>No schema of its own. Point it at the Mongoose models you already have and it adapts to your field names.</p></div><div class="card"><div class="card-icon"><i data-lucide="code"></i></div><h4>TypeScript built in</h4><p>Full types ship with the package. Autocomplete for every option; a wrong route name is a compile error.</p></div></div>
+<h2>What it does for you</h2>
+<p>Every Express + Mongoose API writes the same controllers: list with filters, read one, create, update, delete — and each hand-written copy has its own bugs. controller-sets writes them once and lets you configure the rest.</p>
+<div class="card-grid"><div class="card"><div class="card-icon"><i data-lucide="timer"></i></div><h4>Less code</h4><p>One call gives a model six endpoints with filtering, search, sorting and pagination. No controller code to write or test.</p></div><div class="card"><div class="card-icon"><i data-lucide="shield-check"></i></div><h4>Secure by default</h4><p>Nothing is filterable or sortable until you allow it. Mass assignment, NoSQL injection and regex attacks are closed off.</p></div><div class="card"><div class="card-icon"><i data-lucide="gauge"></i></div><h4>Fast at any size</h4><p>Cursor pagination serves page 1,000 of 200,000 records in under a millisecond; opt-in Redis caching skips the database entirely.</p></div><div class="card"><div class="card-icon"><i data-lucide="boxes"></i></div><h4>Batteries included</h4><p>S3 uploads with image compression, JWT auth with refresh tokens and social sign-in, email and SMS codes — each optional.</p></div><div class="card"><div class="card-icon"><i data-lucide="database"></i></div><h4>Your models</h4><p>No schema of its own. Point it at the Mongoose models you already have.</p></div><div class="card"><div class="card-icon"><i data-lucide="code"></i></div><h4>Typed</h4><p>Full TypeScript declarations ship with the package — autocomplete for every option.</p></div></div>
+</section>
+
+<section class="section" id="where-to-go">
+<h2>Which page do I need?</h2>
+<p>The docs are split by what you are trying to do. <strong>Guides</strong> explain how and why; <strong>Reference</strong> pages are look-up tables.</p>
+<div class="table-container"><table><thead><tr><th>I want to…</th><th>Go to</th></tr></thead><tbody>
+<tr><td>Get something running for the first time</td><td><a href="quickstart.html">Quickstart</a></td></tr>
+<tr><td>Understand the mental model before configuring anything</td><td><a href="concepts.html">Core concepts</a></td></tr>
+<tr><td>Decide what clients can filter, search, sort and write</td><td><a href="router.html">createRouter</a></td></tr>
+<tr><td>Require login, split public and admin access, or show users only their own data</td><td><a href="protect.html">Protecting routes</a></td></tr>
+<tr><td>Accept images or files</td><td><a href="uploads.html">File uploads</a></td></tr>
+<tr><td>Make reads faster with Redis</td><td><a href="cache.html">Caching</a></td></tr>
+<tr><td>Add sign-up, login, roles and password reset</td><td><a href="auth.html">Authentication</a> and <a href="email.html">Email &amp; SMS</a></td></tr>
+<tr><td>Mix generated handlers with my own routes</td><td><a href="custom-routes.html">Custom routes</a></td></tr>
+<tr><td>Look up any option, its default and why to use it</td><td><a href="router.html">createRouter</a></td></tr>
+<tr><td>Call the API from a web or mobile client</td><td><a href="http-api.html">HTTP API</a></td></tr>
+<tr><td>Fix an error or unexpected response</td><td><a href="troubleshooting.html">Troubleshooting</a></td></tr>
+</tbody></table></div>
 </section>
 
 <section class="section" id="compare">
@@ -69,7 +87,7 @@
   sortableFields: ['price', 'createdAt'],
   allowedFields: ['name', 'price', 'category'],
 }));</code></pre>
-</div><p>Six endpoints, validated input, pagination, consistent errors.</p></div><div class="tab-panel" id="cmp-without" role="tabpanel"><div class="code-block" data-lang="javascript">
+</div><p>Six endpoints, filtered input, pagination, consistent errors.</p></div><div class="tab-panel" id="cmp-without" role="tabpanel"><div class="code-block" data-lang="javascript">
 <pre><code>router.get('/', async (req, res, next) =&gt; {
   try {
     const filter = {};
@@ -95,304 +113,19 @@
 <div class="code-block" data-lang="bash">
 <pre><code>npm install express-controller-sets express mongoose</code></pre>
 </div>
-<p>Optional packages — install only for the features you use. They load lazily, so an app that never uploads never loads the AWS SDK.</p>
-<div class="table-container"><table><thead><tr><th>Feature</th><th>Install</th></tr></thead><tbody>
-<tr><td>CRUD, createRouter, Auth</td><td>nothing extra</td></tr>
-<tr><td>S3 Upload</td><td><code>npm install multer @aws-sdk/client-s3</code></td></tr>
-<tr><td>Redis cache</td><td><code>npm install ioredis</code> (or <code>redis</code>)</td></tr>
-<tr><td>Image compression</td><td><code>npm install sharp</code></td></tr>
-<tr><td>Email sender (SMTP)</td><td><code>npm install nodemailer</code></td></tr>
-</tbody></table></div>
 <div class="table-container"><table><thead><tr><th>Requirement</th><th>Version</th></tr></thead><tbody>
-<tr><td>Node.js</td><td>18+ (22.2+ for the HTTP QUERY route)</td></tr>
+<tr><td>Node.js</td><td>20.19+ — 22.2+ for the <a href="http-api.html#api-query"><code>QUERY</code></a> route (skipped with one warning on older Node)</td></tr>
 <tr><td>Express</td><td>5</td></tr>
 <tr><td>Mongoose</td><td>9</td></tr>
-<tr><td>Modules</td><td>ES modules — add <code>"type": "module"</code> to package.json</td></tr>
+<tr><td>Module system</td><td>ES modules — <code>"type": "module"</code> in package.json. From CommonJS, use <code>await import()</code>.</td></tr>
 </tbody></table></div>
-<div class="callout callout-tip"><i data-lucide="arrow-right"></i><div><p>Next: <a href="how-to-use.html">How to use</a> — a working API in five steps.</p></div></div>
-</section>
-
-<section class="section" id="background">
-<h2>Background</h2>
-<p class="section-intro">The ideas behind the library — read when you are curious.</p>
-<details class="advanced" id="basics">
-<summary>New to REST APIs? Start here</summary>
-<div class="details-body"><p class="section-intro">Skip ahead if <code>router.get('/:id', …)</code> is muscle memory for you.</p>
-
-    <div class="callout callout-plain">
-        <i data-lucide="lightbulb"></i>
-        <div>
-            <p><strong>The paperwork analogy.</strong> Every office form is different, but the clerk's job
-                is always the same: check the form is filled in correctly, file it, find it again later,
-                amend it, shred it.</p>
-            <p>Your models are the forms. The clerk's job — read, create, update, delete — is code you would
-                otherwise write again for every single model, and get subtly wrong in a different way each
-                time. This library <em>is</em> the clerk. You hand it a model and a list of house rules, and
-                it handles the paperwork identically everywhere.</p>
-        </div>
-    </div>
-
-    <h3>Words you'll see on every page</h3>
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>Word</th>
-                    <th>What it actually means</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td><strong>Model</strong></td>
-                    <td>A Mongoose model — the shape of one kind of record, like <code>Product</code> or
-                        <code>User</code>. It's the only required option.</td>
-                </tr>
-                <tr>
-                    <td><strong>Router</strong></td>
-                    <td>A bundle of URL routes you attach to your Express app with
-                        <code>app.use('/api/products', router)</code>.</td>
-                </tr>
-                <tr>
-                    <td><strong>Controller</strong></td>
-                    <td>The functions that actually answer a request. This library generates them for you;
-                        the class is called <code>ControllerSets</code>.</td>
-                </tr>
-                <tr>
-                    <td><strong>CRUD</strong></td>
-                    <td>Create, Read, Update, Delete — the four things every API does.</td>
-                </tr>
-                <tr>
-                    <td><strong>Middleware</strong></td>
-                    <td>A function that runs <em>before</em> your handler, typically to check who the caller
-                        is. Yours to supply, via the <code>middlewares</code> option.</td>
-                </tr>
-                <tr>
-                    <td><strong>Allowlist</strong></td>
-                    <td>A list of what is permitted. Anything not on the list is refused. This library is
-                        built on allowlists — see <a href="#implicit-deny">Nothing is open</a>.</td>
-                </tr>
-                <tr>
-                    <td><strong>Mass assignment</strong></td>
-                    <td>The bug where a client sends <code>{"role":"admin"}</code> and your database
-                        cheerfully saves it. <code>allowedFields</code> is what stops it.</td>
-                </tr>
-                <tr>
-                    <td><strong>ACL</strong></td>
-                    <td>Access Control List — on S3, whether an uploaded file is readable by the public.
-                        Defaults to <code>private</code> here.</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <div class="callout callout-warn">
-        <i data-lucide="alert-triangle"></i>
-        <div>
-            <p><strong>Everything this package generates is a public endpoint.</strong> There is no login
-                check, no ownership check and no rate limit unless you add one. It builds the routes; it
-                does not decide who may call them. Read <a href="#middlewares">Auth &amp; middlewares</a>
-                before this reaches the internet.</p>
-        </div>
-    </div>
-</div>
-</details>
-<details class="advanced" id="implicit-deny">
-<summary>Nothing is open until you open it</summary>
-<div class="details-body"><p class="section-intro">One idea explains almost every option in this library. Learn it once and the
-        rest of the page reads itself.</p>
-
-    <div class="mode-grid">
-        <div class="mode-card">
-            <span class="mode-eyebrow"><i data-lucide="x-circle"></i> The trap</span>
-            <h4>"It works out of the box"</h4>
-            <p>A generated API that exposes everything by default is convenient on day one and a breach on
-                day ninety. Someone filters on <code>passwordResetToken</code>, or POSTs
-                <code>{"role":"admin"}</code>, and nothing stops them.</p>
-        </div>
-        <div class="mode-card">
-            <span class="mode-eyebrow"><i data-lucide="check-circle-2"></i> The rule here</span>
-            <h4>Implicit deny</h4>
-            <p>A field is not filterable, not sortable and not writable <em>until you name it</em>. Reads
-                are capped. Uploads are private. Every convenience is opt-in, in one line.</p>
-        </div>
-    </div>
-
-    <h3>What is closed, and the key that opens it</h3>
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>A client wants to…</th>
-                    <th>Option</th>
-                    <th>Default if you say nothing</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Filter by a field</td>
-                    <td><code>query</code></td>
-                    <td class="no">Nothing is filterable</td>
-                </tr>
-                <tr>
-                    <td>Compare or range a field, or name it in a
-                        <a href="#http-query">QUERY</a> <code>filter</code></td>
-                    <td><code>filterableFields</code></td>
-                    <td>Falls back to <code>query</code></td>
-                </tr>
-                <tr>
-                    <td>Sort by a field</td>
-                    <td><code>sortableFields</code></td>
-                    <td>Falls back to <code>query</code> + your <code>orderBy</code> field</td>
-                </tr>
-                <tr>
-                    <td>Search text</td>
-                    <td><code>search</code></td>
-                    <td class="no">Search does nothing</td>
-                </tr>
-                <tr>
-                    <td>Write a field</td>
-                    <td><code>allowedFields</code> / <code>blockedFields</code></td>
-                    <td class="maybe">Everything writable — plus a startup warning</td>
-                </tr>
-                <tr>
-                    <td>Read with a body instead of a URL</td>
-                    <td><code>enableQuery</code></td>
-                    <td class="maybe">Mounted — but its filter and sort still obey the two allowlists
-                        above, even in <code>legacyMode</code></td>
-                </tr>
-                <tr>
-                    <td>Read the whole collection</td>
-                    <td><code>maxLimit</code></td>
-                    <td>Capped at 100 documents</td>
-                </tr>
-                <tr>
-                    <td>Send a regular expression</td>
-                    <td><code>allowRawRegex</code></td>
-                    <td>Escaped and matched literally</td>
-                </tr>
-                <tr>
-                    <td>Upload a file type</td>
-                    <td><code>upload.allowedMimeTypes</code></td>
-                    <td>JPEG, PNG, GIF, WebP, AVIF, PDF only</td>
-                </tr>
-                <tr>
-                    <td>Get a public file URL</td>
-                    <td><code>upload.acl</code></td>
-                    <td><code>private</code></td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <div class="callout callout-danger">
-        <i data-lucide="alert-octagon"></i>
-        <div>
-            <p><strong>The one default that is <em>not</em> closed: writable fields.</strong> Requiring
-                <code>allowedFields</code> would break every existing installation on upgrade, so instead
-                the library warns loudly and leaves the door open. If you configure exactly one option from
-                this page, make it this one.</p>
-        </div>
-    </div>
-
-    <h3>Fields no configuration can unlock</h3>
-    <p>Regardless of what you allow, these are stripped from every request body — they are database
-        bookkeeping or MongoDB syntax, never client data:</p>
-
-    <div class="gateway-badges">
-        <span class="chip chip-no"><i data-lucide="x"></i> <code>_id</code></span>
-        <span class="chip chip-no"><i data-lucide="x"></i> <code>__v</code></span>
-        <span class="chip chip-no"><i data-lucide="x"></i> <code>createdAt</code></span>
-        <span class="chip chip-no"><i data-lucide="x"></i> <code>updatedAt</code></span>
-        <span class="chip chip-no"><i data-lucide="x"></i> any <code>$</code>-prefixed key</span>
-        <span class="chip chip-no"><i data-lucide="x"></i> any key containing <code>.</code></span>
-        <span class="chip chip-no"><i data-lucide="x"></i> <code>__proto__</code></span>
-        <span class="chip chip-no"><i data-lucide="x"></i> <code>constructor</code></span>
-        <span class="chip chip-no"><i data-lucide="x"></i> <code>prototype</code></span>
-    </div>
-
-    <div class="callout callout-plain">
-        <i data-lucide="scan-line"></i>
-        <div>
-            <p><strong>Why <code>$</code> and <code>.</code> matter.</strong> To MongoDB they are not
-                characters, they are syntax: <code>$</code> starts an operator and <code>.</code> reaches
-                into a subdocument. A body of <code>{"$where": "…"}</code> or
-                <code>{"owner.role": "admin"}</code> is an instruction, not data. The check runs on nested
-                values too, up to eight levels deep — beyond that the value is refused rather than vouched
-                for.</p>
-            <p><strong>And why <code>__proto__</code> does.</strong> <code>JSON.parse</code> makes it a
-                real own property, so <code>{"__proto__": {"isAdmin": true}}</code> survives a naive key
-                copy and re-points the payload object's prototype on assignment — after which
-                <code>payload.isAdmin</code> reads <code>true</code> while
-                <code>Object.keys(payload)</code> shows nothing amiss. It, <code>constructor</code> and
-                <code>prototype</code> are refused wherever a key is read.</p>
-        </div>
-    </div>
-</div>
-</details>
-<details class="advanced" id="lifecycle">
-<summary>A request, step by step</summary>
-<div class="details-body"><p class="section-intro">What happens between <code>GET /api/products?s=laptop</code> and the JSON that
-        comes back.</p>
-
-    <div class="flow">
-        <div class="flow-track">
-            <div class="flow-node" style="--i:0">
-                <div class="flow-dot"><i data-lucide="shield"></i></div>
-                <span class="flow-actor">Your code</span>
-                <h5>Middlewares</h5>
-                <p>Auth, rate limits, tenancy</p>
-            </div>
-            <div class="flow-node" style="--i:1">
-                <div class="flow-dot"><i data-lucide="filter"></i></div>
-                <span class="flow-actor">Library</span>
-                <h5>Build filters</h5>
-                <p>Only allowlisted params</p>
-            </div>
-            <div class="flow-node" style="--i:2">
-                <div class="flow-dot"><i data-lucide="search"></i></div>
-                <span class="flow-actor">Library</span>
-                <h5>Apply search</h5>
-                <p>Escaped, relations resolved</p>
-            </div>
-            <div class="flow-node" style="--i:3">
-                <div class="flow-dot"><i data-lucide="git-branch"></i></div>
-                <span class="flow-actor">Your hook</span>
-                <h5>onGet</h5>
-                <p>Choose populate &amp; select</p>
-            </div>
-            <div class="flow-node" style="--i:4">
-                <div class="flow-dot"><i data-lucide="database"></i></div>
-                <span class="flow-actor">MongoDB</span>
-                <h5>Query</h5>
-                <p>Capped at maxLimit</p>
-            </div>
-            <div class="flow-node" style="--i:5">
-                <div class="flow-dot"><i data-lucide="braces"></i></div>
-                <span class="flow-actor">Library</span>
-                <h5>JSON out</h5>
-                <p>Always the same shape</p>
-            </div>
-        </div>
-    </div>
-
-    <p>A write (<code>POST</code> or <code>PATCH</code>) follows the same path with two differences: on an
-        upload router the file middleware runs first and replaces the file with its URL, and the request
-        body is filtered down to the fields you allowed before it reaches Mongoose.</p>
-
-    <p>A <a href="#http-query"><code>QUERY</code></a> read walks the same track from the second step
-        onward. Only the first differs: the filters are built from a JSON body rather than the query
-        string, against the same allowlists. Everything after that — search, <code>onGet</code>, the
-        <code>maxLimit</code> cap, the response shape — is one shared implementation.</p>
-
-    <div class="callout callout-plain">
-        <i data-lucide="corner-down-right"></i>
-        <div>
-            <p><strong>Where do errors go?</strong> Deliberate 4xx answers — a bad ID, a field that isn't
-                filterable — are returned by the controller itself, so they work even if you forgot to mount
-                <code>errorHandler</code>. Anything unexpected is re-thrown; Express 5 forwards it to your
-                error handler instead of hanging the request.</p>
-        </div>
-    </div>
-</div>
-</details>
+<p>Everything else is optional. Install a package only when you use the feature — they load lazily, so an app that never uploads never loads the AWS SDK.</p>
+<div class="table-container"><table><thead><tr><th>Feature</th><th>Extra install</th></tr></thead><tbody>
+<tr><td>CRUD routes, authentication</td><td>nothing</td></tr>
+<tr><td><a href="uploads.html">File uploads</a></td><td><code>npm install multer @aws-sdk/client-s3</code></td></tr>
+<tr><td>Image compression</td><td><code>npm install sharp</code></td></tr>
+<tr><td><a href="cache.html">Redis cache</a></td><td><code>npm install ioredis</code> (or <code>redis</code>)</td></tr>
+<tr><td><a href="email.html">Email via SMTP</a></td><td><code>npm install nodemailer</code></td></tr>
+</tbody></table></div>
+<div class="callout callout-tip"><i data-lucide="arrow-right"></i><div><p>Next: the <a href="quickstart.html">Quickstart</a> builds a working API step by step.</p></div></div>
 </section>

@@ -1,0 +1,188 @@
+<section class="section" id="exports">
+<h2>Every export</h2>
+<p>Everything is a named export from the package root. The package is ESM-only.</p>
+<div class="code-block" data-lang="javascript">
+<pre><code>import { createRouter, errorHandler, ValidationError } from 'express-controller-sets';</code></pre>
+</div>
+<div class="table-container"><table><thead><tr><th>Export</th><th>Kind</th><th>Purpose</th></tr></thead><tbody>
+<tr><td colspan="3"><strong>CRUD</strong></td></tr>
+<tr><td><a href="#x-createrouter"><code>createRouter</code></a></td><td>function</td><td>A router with the six CRUD routes.</td></tr>
+<tr><td><a href="#x-controllersets"><code>ControllerSets</code></a></td><td>class</td><td>The six handlers, for routes you wire yourself.</td></tr>
+<tr><td><a href="#x-isquery"><code>isQueryMethodSupported</code></a></td><td>function</td><td>Whether this runtime can serve HTTP <code>QUERY</code>.</td></tr>
+<tr><td><code>createRouterS3upload</code></td><td>function</td><td><em>Deprecated</em> — use <code>createRouter({ upload })</code>. <a href="upgrading.html#from-3-2">Upgrading</a></td></tr>
+<tr><td colspan="3"><strong>Errors</strong></td></tr>
+<tr><td><a href="#x-errorhandler"><code>errorHandler</code></a></td><td>middleware</td><td>Turns thrown errors into the JSON envelope. Mount last.</td></tr>
+<tr><td><a href="#x-httperror"><code>HttpError</code></a></td><td>class</td><td>An error with a status and a client-safe message.</td></tr>
+<tr><td><a href="#x-httperror"><code>ValidationError</code></a></td><td>class</td><td>A 400 with per-field messages.</td></tr>
+<tr><td colspan="3"><strong>Uploads</strong></td></tr>
+<tr><td><a href="#x-upload"><code>fileUploadMiddleware</code></a></td><td>function</td><td>S3 upload middleware for any route.</td></tr>
+<tr><td><a href="#x-upload"><code>compressImage</code></a></td><td>function</td><td>Compress an image buffer. Needs <code>sharp</code>.</td></tr>
+<tr><td colspan="3"><strong>Cache</strong></td></tr>
+<tr><td><a href="#x-cache"><code>createRedisCacheStore</code></a></td><td>function</td><td>A Redis store to share across routers.</td></tr>
+<tr><td><a href="#x-cache"><code>createMemoryCacheStore</code></a></td><td>function</td><td>An in-process store for development and tests.</td></tr>
+<tr><td colspan="3"><strong>Authentication</strong></td></tr>
+<tr><td><a href="#x-auth"><code>createAuthRouter</code></a></td><td>function</td><td>Sign-up, login and user management. <a href="auth.html">Guide</a></td></tr>
+<tr><td><a href="#x-auth"><code>identifier</code></a></td><td>function</td><td>A login identifier with a custom normalizer.</td></tr>
+<tr><td><a href="#x-auth-low"><code>requireAuth</code> · <code>requireRole</code></a></td><td>function</td><td>Standalone guards. Prefer <code>auth.requireAuth</code>.</td></tr>
+<tr><td><a href="#x-auth-low"><code>buildAuthConfig</code></a></td><td>function</td><td>Resolve auth options without mounting a router.</td></tr>
+<tr><td><a href="#x-auth-low"><code>hashPassword</code> · <code>verifyPassword</code></a></td><td>function</td><td>The scrypt password hashing the router uses.</td></tr>
+<tr><td><a href="#x-auth-low"><code>signToken</code> · <code>verifyToken</code></a></td><td>function</td><td>The HS256 JWT functions the router uses.</td></tr>
+<tr><td><code>AUTH_ROUTES</code></td><td>constant</td><td>Every auth endpoint with its default path and access level.</td></tr>
+<tr><td><code>BUILT_IN_PROVIDERS</code></td><td>constant</td><td>The social providers available by name.</td></tr>
+<tr><td><code>DEFAULT_TEMPLATES</code></td><td>constant</td><td>The built-in email and SMS templates. <a href="email.html#templates">Templates</a></td></tr>
+<tr><td colspan="3"><strong>Utilities</strong></td></tr>
+<tr><td><code>escapeRegex(value)</code></td><td>function</td><td>Escape regex metacharacters so input matches literally.</td></tr>
+<tr><td><code>QUERY_FILTER_OPERATORS</code></td><td>constant</td><td>The <code>QUERY</code> operator table: <code>{ eq: '$eq', gt: '$gt', … }</code>.</td></tr>
+</tbody></table></div>
+</section>
+
+<section class="section" id="x-createrouter">
+<h2>createRouter</h2>
+<div class="code-block" data-lang="typescript">
+<pre><code>createRouter&lt;T&gt;(options: RouterOptions&lt;T&gt;): Router &amp; { invalidateCache(): Promise&lt;void&gt; }</code></pre>
+</div>
+<p>Mounts <code>GET /</code>, <code>QUERY /</code> (when supported and <code>enableQuery</code> isn't false), <code>POST /</code>, <code>GET /:id</code>, <code>PATCH /:id</code> and <code>DELETE /:id</code>. Throws at startup if <code>model</code> is missing or <code>upload</code> isn't <code>true</code> or an object. Options: <a href="router.html">createRouter</a>.</p>
+</section>
+
+<section class="section" id="x-controllersets">
+<h2>ControllerSets</h2>
+<div class="code-block" data-lang="typescript">
+<pre><code>new ControllerSets&lt;T&gt;(options: ControllerOptions&lt;T&gt;)
+
+controller.getAll(req, res)      // GET /
+controller.query(req, res)       // QUERY /
+controller.get(req, res)         // GET /:id
+controller.create(req, res)      // POST /
+controller.update(req, res)      // PATCH /:id
+controller.delete(req, res)      // DELETE /:id
+controller.invalidateCache(): Promise&lt;void&gt;
+controller.config                // resolved, frozen options</code></pre>
+</div>
+<p>Takes every router option except <code>middlewares</code>, <code>enableQuery</code> and <code>upload</code>. Handlers are pre-bound. <code>getById</code> and <code>queryAll</code> are deprecated aliases of <code>get</code> and <code>query</code>. The positional constructor <code>new ControllerSets(model, orderBy, query, search)</code> is deprecated. <a href="custom-routes.html">Guide</a></p>
+</section>
+
+<section class="section" id="x-isquery">
+<h2>isQueryMethodSupported</h2>
+<div class="code-block" data-lang="typescript">
+<pre><code>isQueryMethodSupported(): boolean</code></pre>
+</div>
+<p><code>true</code> when Node's HTTP parser knows <code>QUERY</code> (22.2+) and Express's router exposes <code>router.query()</code>. Check it before calling <code>router.query()</code> yourself.</p>
+</section>
+
+<section class="section" id="x-errorhandler">
+<h2>errorHandler</h2>
+<div class="code-block" data-lang="javascript">
+<pre><code>app.use('/api/products', productRouter);
+app.use(errorHandler);   // after every route</code></pre>
+</div>
+<ul>
+<li><code>HttpError</code> / <code>ValidationError</code> → their status and message (and <code>fields</code>).</li>
+<li>Mongoose validation and cast errors → 400. Duplicate key → 409 naming the fields. Multer limits → 400.</li>
+<li>Anything else → 500 <code>"Internal Server Error"</code>. The detail is logged with a <code>requestId</code>, which is also sent to the client.</li>
+<li><code>stack</code> is added only when <code>NODE_ENV=development</code>.</li>
+</ul>
+</section>
+
+<section class="section" id="x-httperror">
+<h2>HttpError and ValidationError</h2>
+<div class="code-block" data-lang="typescript">
+<pre><code>new HttpError(status: number, message: string, options?: { headers?: Record&lt;string, string&gt; })
+new ValidationError(message: string, fields?: Record&lt;string, string&gt;, status = 400)</code></pre>
+</div>
+<p>Throw them from <code>validate</code> hooks, <code>onLogin</code>, or your own middleware. The message is sent to the client as-is, so write it for the client. <code>ValidationError</code> extends <code>HttpError</code>; its <code>fields</code> become the response's <code>fields</code>.</p>
+<div class="code-block" data-lang="javascript">
+<pre><code>throw new HttpError(403, 'Only the author can publish.');
+throw new ValidationError('Check the submitted values.', { email: 'is already registered' });</code></pre>
+</div>
+</section>
+
+<section class="section" id="x-upload">
+<h2>fileUploadMiddleware and compressImage</h2>
+<div class="code-block" data-lang="typescript">
+<pre><code>fileUploadMiddleware(req, res, next, options?: UploadOptions): void
+compressImage(buffer: Buffer, mimetypeOrFormat: string, level: 'low' | 'medium' | 'med' | 'high'): Promise&lt;Buffer&gt;</code></pre>
+</div>
+<p><code>UploadOptions</code> is the router's <code>upload</code> option with <code>uploadPath</code> in place of <code>path</code>. <code>compressImage</code> returns non-compressible formats unchanged. <a href="uploads.html#upload-middleware">Guide</a></p>
+</section>
+
+<section class="section" id="x-cache">
+<h2>Cache stores</h2>
+<div class="code-block" data-lang="typescript">
+<pre><code>createRedisCacheStore({ url?: string, client?: RedisClient, logger?: Logger }): CacheStore
+createMemoryCacheStore({ maxEntries = 1000 }?): CacheStore &amp; { readonly size: number }
+
+interface CacheStore {
+  get(key: string): Promise&lt;string | null | undefined&gt;;
+  set(key: string, value: string, ttlSeconds: number): Promise&lt;unknown&gt;;
+}</code></pre>
+</div>
+<p>Pass a store as <code>cache: { store }</code>. <code>createRedisCacheStore</code> needs a <code>url</code> or a <code>client</code> (ioredis or node-redis). Any object implementing <code>CacheStore</code> works. <a href="cache.html">Guide</a></p>
+</section>
+
+<section class="section" id="x-auth">
+<h2>createAuthRouter and identifier</h2>
+<div class="code-block" data-lang="typescript">
+<pre><code>createAuthRouter&lt;T&gt;(options: AuthOptions&lt;T&gt;): AuthRouter
+
+interface AuthRouter extends Router {
+  requireAuth: RequestHandler;                          // sets req.auth = { userId, role, claims }
+  requireRole(...roles: (string | string[])[]): RequestHandler;
+  config: ResolvedAuthConfig;
+  urls: readonly { name, method, path, access }[];      // what was mounted
+}
+
+identifier(field: string, normalize?: (value: string) =&gt; string): { field, normalize }</code></pre>
+</div>
+<p>Options: <a href="auth.html#auth-options-all">Authentication → All options</a>.</p>
+</section>
+
+<section class="section" id="x-auth-low">
+<h2>Auth building blocks</h2>
+<p>For wiring authentication by hand. Most apps only need <code>createAuthRouter</code> and the guards on the router it returns.</p>
+<div class="code-block" data-lang="typescript">
+<pre><code>buildAuthConfig(options: AuthOptions): ResolvedAuthConfig
+requireAuth(config: ResolvedAuthConfig, { loadUser = false }?): RequestHandler   // loadUser also sets req.user
+requireRole(...roles: (string | string[])[]): RequestHandler
+
+hashPassword(plain: string): Promise&lt;string&gt;
+verifyPassword(plain: string, stored: string): Promise&lt;boolean&gt;
+
+signToken(claims: object, { secret, expiresIn, issuer?, audience? }): string
+verifyToken(token: string, { secret, issuer?, audience?, clockToleranceSeconds = 5 }): object   // throws HttpError(401)</code></pre>
+</div>
+</section>
+
+<section class="section" id="typescript">
+<h2>TypeScript</h2>
+<p>Declarations ship with the package. Generic options take your document type:</p>
+<div class="code-block" data-lang="typescript">
+<pre><code>import { createRouter, type RouterOptions } from 'express-controller-sets';
+import Product, { type IProduct } from './models/Product.js';
+
+const options: RouterOptions&lt;IProduct&gt; = {
+  model: Product,
+  orderBy: '-createdAt',
+  query: ['category'],
+  allowedFields: ['name', 'price'],
+  onGet: async () =&gt; ({ populates: 'category', selects: 'name price' }),
+};
+
+app.use('/api/products', createRouter(options));</code></pre>
+</div>
+<p>Type the <code>QUERY</code> body on the client to catch mistakes before sending:</p>
+<div class="code-block" data-lang="typescript">
+<pre><code>import type { QueryRequestBody } from 'express-controller-sets';
+
+const body: QueryRequestBody = { filter: { price: { gte: 50 }, tag: ['sale'] }, sort: ['-price', 'name'] };</code></pre>
+</div>
+<div class="table-container"><table><thead><tr><th>Area</th><th>Types</th></tr></thead><tbody>
+<tr><td>Router &amp; controller</td><td><code>RouterOptions</code>, <code>ControllerOptions</code>, <code>ControllerRouter</code>, <code>FieldPolicy</code>, <code>OnGetFn</code>, <code>OnGetResult</code>, <code>Logger</code></td></tr>
+<tr><td>Writing</td><td><code>ValidateFn</code>, <code>ValidateContext</code>, <code>ValidatePolicy</code>, <code>WriteOperation</code></td></tr>
+<tr><td>Reading</td><td><code>Pagination</code>, <code>PaginationMode</code>, <code>CountStrategy</code>, <code>QueryRequestBody</code>, <code>FilterCondition</code>, <code>FilterOperators</code>, <code>FilterScalar</code></td></tr>
+<tr><td>Uploads</td><td><code>UploadOptions</code>, <code>RouterUploadOptions</code>, <code>UploadField</code>, <code>ImageOptimizationLevel</code></td></tr>
+<tr><td>Cache</td><td><code>CacheOptions</code>, <code>CacheStore</code></td></tr>
+<tr><td>Auth</td><td><code>AuthOptions</code>, <code>AuthRouter</code>, <code>AuthContext</code>, <code>TokenOptions</code>, <code>RefreshOptions</code>, <code>RoleOptions</code>, <code>OtpOptions</code>, <code>MailOptions</code>, <code>SmsOptions</code>, <code>MailTemplate</code>, <code>SmsTemplate</code>, <code>TemplateContext</code>, <code>SocialProvider</code>, <code>SocialProfile</code>, <code>AuthRouteName</code>, <code>AuthUrl</code>, <code>AuthFieldMap</code>, <code>IdentifierSpec</code></td></tr>
+</tbody></table></div>
+<p>Importing the package also types <code>req.auth</code> on Express's <code>Request</code>.</p>
+<div class="callout callout-warn"><i data-lucide="alert-triangle"></i><div><p><strong>Field names aren't type-checked.</strong> <code>allowedFields</code> is <code>string[]</code>, so <code>'pirce'</code> compiles and silently drops the real field. If a field won't save, check the spelling first.</p></div></div>
+</section>
