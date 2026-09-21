@@ -67,6 +67,7 @@ export const createRouter = (options = {}) => {
     router.patch("/:id", controller.update);
     router.delete("/:id", controller.delete);
 
+    router.invalidateCache = controller.invalidateCache;
     return router;
 };
 
@@ -99,5 +100,6 @@ export const createRouterS3upload = (options = {}) => {
     router.patch("/:id", uploadMiddleware, controller.update);
     router.delete("/:id", controller.delete);
 
+    router.invalidateCache = controller.invalidateCache;
     return router;
 };

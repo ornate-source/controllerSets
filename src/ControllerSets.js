@@ -13,13 +13,15 @@ import {
     update,
     warnIfUnprotected,
 } from "./core/index.js";
+import { resolveCache } from "./cache/index.js";
 
 // Express CRUD handlers for a Mongoose model. Implicit-deny throughout: a field
 // is not filterable, sortable or writable until the author names it.
 
 class ControllerSets {
     constructor(...args) {
-        const config = buildConfig(normalizeOptions(args));
+        const options = normalizeOptions(args);
+        const config = buildConfig(options);
         this.config = config;
 
         // Mirrored from `config`: consumers have always read these off an instance.
@@ -40,7 +42,31 @@ class ControllerSets {
         this.strictAfterCreate = config.strictAfterCreate;
 
         warnIfUnprotected(config);
+
+        // Opt-in response cache. The handlers below are class fields, so they
+        // exist by now and are wrapped in place: reads go through the cache,
+        // successful writes invalidate it.
+        const cache = resolveCache(options.cache, config);
+        this.cache = cache;
+        if (cache) {
+            this.getAll = cache.read("list", this.getAll);
+            this.query = cache.read("query", this.query);
+            this.get = cache.read("one", this.get);
+            this.getById = this.get;
+            this.queryAll = this.query;
+            this.create = cache.write(this.create);
+            this.update = cache.write(this.update);
+            this.delete = cache.write(this.delete);
+        }
     }
+
+    /**
+     * Drops every cached response for this model — call it after changing
+     * records outside these handlers. Resolves (quietly) when caching is off.
+     */
+    invalidateCache = async () => {
+        if (this.cache) await this.cache.invalidate();
+    };
 
     /** GET / */
     getAll = (req, res) => getAll(req, res, this.config);

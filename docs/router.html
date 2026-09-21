@@ -55,7 +55,8 @@
         </div>
 <div class="nav-group" data-group="guides">
           <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="book-open"></i><span>Guides</span><i data-lucide="chevron-down" class="chev"></i></button>
-          <ul class="nav-pages"><li class="nav-page-item is-open"><a class="nav-page" href="router.html" aria-current="page"><i data-lucide="route"></i><span class="nav-page-label">Dynamic Router</span></a><ul class="nav-sections"><li><a class="nav-section" href="#router-options" data-target="router-options">Options available in createRouter (no file upload)</a></li><li><a class="nav-section" href="#opts-core" data-target="opts-core">Model &amp; response</a></li><li><a class="nav-section" href="#opts-read" data-target="opts-read">Filtering, search &amp; sorting</a></li><li><a class="nav-section" href="#opts-paging" data-target="opts-paging">Pagination &amp; limits</a></li><li><a class="nav-section" href="#opts-write" data-target="opts-write">Writing &amp; validation</a></li><li><a class="nav-section" href="#opts-router" data-target="opts-router">Router options</a></li><li><a class="nav-section" href="#s3-router" data-target="s3-router">S3 upload router</a></li><li><a class="nav-section" href="#api-overview" data-target="api-overview">API endpoints</a></li><li><a class="nav-section" href="#api-filtering" data-target="api-filtering">Filtering</a></li><li><a class="nav-section" href="#api-search" data-target="api-search">Searching</a></li><li><a class="nav-section" href="#api-sorting" data-target="api-sorting">Sorting</a></li><li><a class="nav-section" href="#api-pagination" data-target="api-pagination">Pagination</a></li><li><a class="nav-section" href="#api-combined" data-target="api-combined">Putting it together</a></li><li><a class="nav-section" href="#api-query" data-target="api-query">QUERY: filters in a JSON body</a></li><li><a class="nav-section" href="#api-single" data-target="api-single">Read, create, update, delete</a></li><li><a class="nav-section" href="#api-errors" data-target="api-errors">Errors</a></li><li><a class="nav-section" href="#patterns" data-target="patterns">Patterns &amp; more detail</a></li></ul></li>
+          <ul class="nav-pages"><li class="nav-page-item is-open"><a class="nav-page" href="router.html" aria-current="page"><i data-lucide="route"></i><span class="nav-page-label">Dynamic Router</span></a><ul class="nav-sections"><li><a class="nav-section" href="#router-options" data-target="router-options">Options available in createRouter (no file upload)</a></li><li><a class="nav-section" href="#opts-core" data-target="opts-core">Model &amp; response</a></li><li><a class="nav-section" href="#opts-read" data-target="opts-read">Filtering, search &amp; sorting</a></li><li><a class="nav-section" href="#opts-paging" data-target="opts-paging">Pagination &amp; limits</a></li><li><a class="nav-section" href="#opts-write" data-target="opts-write">Writing &amp; validation</a></li><li><a class="nav-section" href="#opts-cache" data-target="opts-cache">Cache</a></li><li><a class="nav-section" href="#opts-router" data-target="opts-router">Router options</a></li><li><a class="nav-section" href="#s3-router" data-target="s3-router">S3 upload router</a></li><li><a class="nav-section" href="#api-overview" data-target="api-overview">API endpoints</a></li><li><a class="nav-section" href="#api-filtering" data-target="api-filtering">Filtering</a></li><li><a class="nav-section" href="#api-search" data-target="api-search">Searching</a></li><li><a class="nav-section" href="#api-sorting" data-target="api-sorting">Sorting</a></li><li><a class="nav-section" href="#api-pagination" data-target="api-pagination">Pagination</a></li><li><a class="nav-section" href="#api-combined" data-target="api-combined">Putting it together</a></li><li><a class="nav-section" href="#api-query" data-target="api-query">QUERY: filters in a JSON body</a></li><li><a class="nav-section" href="#api-single" data-target="api-single">Read, create, update, delete</a></li><li><a class="nav-section" href="#api-errors" data-target="api-errors">Errors</a></li><li><a class="nav-section" href="#patterns" data-target="patterns">Patterns &amp; more detail</a></li></ul></li>
+<li class="nav-page-item"><a class="nav-page" href="cache.html"><i data-lucide="zap"></i><span class="nav-page-label">Redis cache</span></a></li>
 <li class="nav-page-item"><a class="nav-page" href="uploads.html"><i data-lucide="upload-cloud"></i><span class="nav-page-label">S3 Upload</span></a></li>
 <li class="nav-page-item"><a class="nav-page" href="auth.html"><i data-lucide="key-round"></i><span class="nav-page-label">Auth setup</span></a></li>
 <li class="nav-page-item"><a class="nav-page" href="email.html"><i data-lucide="mail"></i><span class="nav-page-label">Email sender</span></a></li>
@@ -113,6 +114,9 @@
   validate: { create: (p) =&gt; p, update: (p) =&gt; p },
   runAfterCreate: async (doc) =&gt; {},
   strictAfterCreate: false,
+
+  // Cache (Redis)
+  cache: { ttl: 60 },              // or true — uses REDIS_URL
 
   // Router
   middlewares: [],
@@ -218,6 +222,19 @@ createRouter({
   runAfterCreate: async (post) =&gt; notifySubscribers(post),
 });</code></pre>
 </div>
+</section>
+
+<section class="section" id="opts-cache">
+<h2>Cache<a class="anchor" href="#opts-cache" aria-label="Link to this section">#</a></h2>
+<div class="table-container"><table><thead><tr><th>Option</th><th>Default</th><th>Why use it</th></tr></thead><tbody>
+<tr><td><code>cache</code></td><td>off</td><td>Answer repeated reads from Redis instead of the database. <code>true</code> uses <code>REDIS_URL</code>; writes clear it automatically.</td></tr>
+<tr><td><code>cache.ttl</code></td><td>60</td><td>How long a response stays cached, in seconds.</td></tr>
+<tr><td><code>cache.vary</code></td><td>the signed-in user</td><td>What else a response depends on, so different users never share entries.</td></tr>
+</tbody></table></div>
+<div class="code-block" data-lang="javascript">
+<pre><code class="language-javascript">createRouter({ model: Product, cache: { ttl: 300 }, allowedFields: ['name', 'price'] });</code></pre>
+</div>
+<p>Everything about caching: <a href="cache.html">Redis cache</a>.</p>
 </section>
 
 <section class="section" id="opts-router">
@@ -2323,7 +2340,7 @@ app.use(errorHandler);   // AFTER all routes — Express requires this order</co
 
         <nav class="pager" aria-label="Previous and next page">
       <a class="prev" href="how-to-use.html"><span class="pager-dir"><i data-lucide="arrow-left"></i> Previous</span><span class="pager-title">How to use</span></a>
-      <a class="next" href="uploads.html"><span class="pager-dir">Next <i data-lucide="arrow-right"></i></span><span class="pager-title">S3 Upload</span></a>
+      <a class="next" href="cache.html"><span class="pager-dir">Next <i data-lucide="arrow-right"></i></span><span class="pager-title">Redis cache</span></a>
     </nav>
         <footer class="doc-footer">
           <span>express-controller-sets v3.2.0 · MIT licensed · © 2024–present Sabbir Mahmud</span>

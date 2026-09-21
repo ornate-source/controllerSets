@@ -36,6 +36,9 @@
   runAfterCreate: async (doc) =&gt; {},
   strictAfterCreate: false,
 
+  // Cache (Redis)
+  cache: { ttl: 60 },              // or true — uses REDIS_URL
+
   // Router
   middlewares: [],
   enableQuery: true,
@@ -140,6 +143,19 @@ createRouter({
   runAfterCreate: async (post) =&gt; notifySubscribers(post),
 });</code></pre>
 </div>
+</section>
+
+<section class="section" id="opts-cache">
+<h2>Cache</h2>
+<div class="table-container"><table><thead><tr><th>Option</th><th>Default</th><th>Why use it</th></tr></thead><tbody>
+<tr><td><code>cache</code></td><td>off</td><td>Answer repeated reads from Redis instead of the database. <code>true</code> uses <code>REDIS_URL</code>; writes clear it automatically.</td></tr>
+<tr><td><code>cache.ttl</code></td><td>60</td><td>How long a response stays cached, in seconds.</td></tr>
+<tr><td><code>cache.vary</code></td><td>the signed-in user</td><td>What else a response depends on, so different users never share entries.</td></tr>
+</tbody></table></div>
+<div class="code-block" data-lang="javascript">
+<pre><code>createRouter({ model: Product, cache: { ttl: 300 }, allowedFields: ['name', 'price'] });</code></pre>
+</div>
+<p>Everything about caching: <a href="cache.html">Redis cache</a>.</p>
 </section>
 
 <section class="section" id="opts-router">

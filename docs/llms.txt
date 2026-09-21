@@ -13,6 +13,7 @@ For a complete, self-contained guide written for language models, read https://o
 ## Guides
 
 - [Dynamic Router](https://ornate-source.github.io/controllerSets/router.html): Every option of createRouter and createRouterS3upload, why you would use it, and every API endpoint they create.
+- [Redis cache](https://ornate-source.github.io/controllerSets/cache.html): Answer repeated reads from Redis in milliseconds — cleared automatically on every write.
 - [S3 Upload](https://ornate-source.github.io/controllerSets/uploads.html): Upload files on your own routes with the upload middleware, and connect your bucket.
 - [Auth setup](https://ornate-source.github.io/controllerSets/auth.html): Sign-up, login, roles, refresh tokens and social sign-in on your own user model.
 - [Email sender](https://ornate-source.github.io/controllerSets/email.html): Send password-reset codes by email or SMS, with your own transporter and templates.

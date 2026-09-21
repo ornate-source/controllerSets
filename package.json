@@ -37,7 +37,9 @@
     "express": "^5.2.1",
     "mongoose": "^9.3.3",
     "multer": "^2.1.1",
-    "nodemailer": ">=6"
+    "nodemailer": ">=6",
+    "ioredis": ">=5",
+    "redis": ">=4"
   },
   "peerDependenciesMeta": {
     "@aws-sdk/client-s3": {
@@ -47,6 +49,12 @@
       "optional": true
     },
     "nodemailer": {
+      "optional": true
+    },
+    "ioredis": {
+      "optional": true
+    },
+    "redis": {
       "optional": true
     }
   },

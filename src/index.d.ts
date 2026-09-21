@@ -135,6 +135,34 @@ export interface QueryRequestBody {
 /** The runtime mapping from a QUERY filter operator to its MongoDB operator. */
 export const QUERY_FILTER_OPERATORS: Readonly<Record<keyof FilterOperators, string>>;
 
+/** Where cached responses live: Redis, the memory store, or your own. */
+export interface CacheStore {
+    get(key: string): Promise<string | null | undefined>;
+    set(key: string, value: string, ttlSeconds: number): Promise<unknown>;
+}
+
+export interface CacheOptions {
+    /** Seconds a response stays cached. Env `CACHE_TTL`, default 60. */
+    ttl?: number;
+    /** Redis connection URL. Env `REDIS_URL`. Needs `ioredis` or `redis` installed. */
+    url?: string;
+    /** An ioredis or node-redis client you already have, instead of `url`. */
+    client?: unknown;
+    /** Any store with `get` and `set` — e.g. `createMemoryCacheStore()` for development. */
+    store?: CacheStore;
+    /** Key prefix. Env `CACHE_PREFIX`, default `"cs:"`. */
+    prefix?: string;
+    /**
+     * What else a response depends on. Default: the signed-in user
+     * (`req.auth?.userId`), so users never share entries. `() => ""` shares them.
+     */
+    vary?: (req: Request) => unknown;
+    /** Longest wait for the cache before falling back to the database. Default 150. */
+    timeoutMs?: number;
+    /** Overrides the router's mount path in cache keys. */
+    namespace?: string;
+}
+
 export interface ControllerOptions<T extends Document = any> {
     model: Model<T>;
     orderBy?: string;
@@ -200,6 +228,11 @@ export interface ControllerOptions<T extends Document = any> {
     strictAfterCreate?: boolean;
     /** Restore 2.x behaviour: no field gating, raw regex, unbounded reads. */
     legacyMode?: boolean;
+    /**
+     * Cache GET / QUERY responses; successful writes invalidate them. `true`
+     * uses `REDIS_URL`. `CACHE_ENABLED=false` turns caching off everywhere.
+     */
+    cache?: boolean | CacheOptions;
     logger?: Logger;
 }
 
@@ -243,6 +276,8 @@ export class ControllerSets<T extends Document = any> {
     update(req: Request, res: Response): Promise<Response | void>;
     /** DELETE /:id */
     delete(req: Request, res: Response): Promise<Response | void>;
+    /** Drops every cached response for this model. No-op when caching is off. */
+    invalidateCache(): Promise<void>;
     /** @deprecated Renamed to `get`. */
     getById(req: Request, res: Response): Promise<Response | void>;
     /** @deprecated Renamed to `query`. */
@@ -285,17 +320,26 @@ export interface RouterS3Options<T extends Document = any> extends RouterOptions
     upload?: Omit<UploadOptions, "uploadPath" | "fields" | "imgOptimizations">;
 }
 
+/** An Express router that can also drop its model's cached responses. */
+export type ControllerRouter = Router & { invalidateCache(): Promise<void> };
+
+/** In-process cache store for development and tests. */
+export function createMemoryCacheStore(options?: { maxEntries?: number }): CacheStore & { readonly size: number };
+
+/** A Redis-backed store; share one across routers by passing it as `cache.store`. */
+export function createRedisCacheStore(options: { url?: string; client?: unknown; logger?: Logger }): CacheStore;
+
 /**
  * Creates a standard Express router for the given model.
  */
-export function createRouter<T extends Document = any>(options: RouterOptions<T>): Router;
+export function createRouter<T extends Document = any>(options: RouterOptions<T>): ControllerRouter;
 
 /**
  * Creates an Express router with S3 upload support for the given model.
  */
 export function createRouterS3upload<T extends Document = any>(
     options: RouterS3Options<T>,
-): Router;
+): ControllerRouter;
 
 /**
  * Whether this runtime serves the HTTP QUERY method — Node 22.2+ with an Express

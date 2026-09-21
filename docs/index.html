@@ -56,6 +56,7 @@
 <div class="nav-group" data-group="guides">
           <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="book-open"></i><span>Guides</span><i data-lucide="chevron-down" class="chev"></i></button>
           <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="router.html"><i data-lucide="route"></i><span class="nav-page-label">Dynamic Router</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="cache.html"><i data-lucide="zap"></i><span class="nav-page-label">Redis cache</span></a></li>
 <li class="nav-page-item"><a class="nav-page" href="uploads.html"><i data-lucide="upload-cloud"></i><span class="nav-page-label">S3 Upload</span></a></li>
 <li class="nav-page-item"><a class="nav-page" href="auth.html"><i data-lucide="key-round"></i><span class="nav-page-label">Auth setup</span></a></li>
 <li class="nav-page-item"><a class="nav-page" href="email.html"><i data-lucide="mail"></i><span class="nav-page-label">Email sender</span></a></li>
@@ -130,7 +131,7 @@
 <section class="section" id="why">
 <h2>Why choose controller-sets<a class="anchor" href="#why" aria-label="Link to this section">#</a></h2>
 <p>Every Express + Mongoose API writes the same controllers again: list with filters, read one, create, update, delete — and each copy has its own bugs. controller-sets writes them once, correctly, and lets you configure the rest.</p>
-<div class="card-grid"><div class="card"><div class="card-icon"><i data-lucide="timer"></i></div><h4>Minutes, not days</h4><p>One call gives a model six working endpoints with filtering, search, sorting and pagination. No controller code to write or test.</p></div><div class="card"><div class="card-icon"><i data-lucide="shield-check"></i></div><h4>Secure by default</h4><p>Nothing is writable, filterable or sortable until you allow it. Mass assignment, NoSQL injection and regex attacks are closed off out of the box.</p></div><div class="card"><div class="card-icon"><i data-lucide="gauge"></i></div><h4>Fast at any size</h4><p>Same queries you would write by hand, plus cursor pagination: page 1,000 of 100,000 records in under a millisecond.</p></div><div class="card"><div class="card-icon"><i data-lucide="boxes"></i></div><h4>Batteries included</h4><p>S3 uploads with image compression, JWT auth with refresh tokens and social sign-in, and email / SMS codes — all optional.</p></div><div class="card"><div class="card-icon"><i data-lucide="database"></i></div><h4>Your models, your rules</h4><p>No schema of its own. Point it at the Mongoose models you already have and it adapts to your field names.</p></div><div class="card"><div class="card-icon"><i data-lucide="code"></i></div><h4>TypeScript built in</h4><p>Full types ship with the package. Autocomplete for every option; a wrong route name is a compile error.</p></div></div>
+<div class="card-grid"><div class="card"><div class="card-icon"><i data-lucide="timer"></i></div><h4>Minutes, not days</h4><p>One call gives a model six working endpoints with filtering, search, sorting and pagination. No controller code to write or test.</p></div><div class="card"><div class="card-icon"><i data-lucide="shield-check"></i></div><h4>Secure by default</h4><p>Nothing is writable, filterable or sortable until you allow it. Mass assignment, NoSQL injection and regex attacks are closed off out of the box.</p></div><div class="card"><div class="card-icon"><i data-lucide="gauge"></i></div><h4>Fast at any size</h4><p>Opt-in Redis caching answers repeated reads without touching the database, and cursor pagination serves page 1,000 of 100,000 records in under a millisecond.</p></div><div class="card"><div class="card-icon"><i data-lucide="boxes"></i></div><h4>Batteries included</h4><p>S3 uploads with image compression, JWT auth with refresh tokens and social sign-in, and email / SMS codes — all optional.</p></div><div class="card"><div class="card-icon"><i data-lucide="database"></i></div><h4>Your models, your rules</h4><p>No schema of its own. Point it at the Mongoose models you already have and it adapts to your field names.</p></div><div class="card"><div class="card-icon"><i data-lucide="code"></i></div><h4>TypeScript built in</h4><p>Full types ship with the package. Autocomplete for every option; a wrong route name is a compile error.</p></div></div>
 </section>
 
 <section class="section" id="compare">
@@ -173,6 +174,7 @@
 <div class="table-container"><table><thead><tr><th>Feature</th><th>Install</th></tr></thead><tbody>
 <tr><td>CRUD, Dynamic Router, Auth</td><td>nothing extra</td></tr>
 <tr><td>S3 Upload</td><td><code>npm install multer @aws-sdk/client-s3</code></td></tr>
+<tr><td>Redis cache</td><td><code>npm install ioredis</code> (or <code>redis</code>)</td></tr>
 <tr><td>Image compression</td><td><code>npm install sharp</code></td></tr>
 <tr><td>Email sender (SMTP)</td><td><code>npm install nodemailer</code></td></tr>
 </tbody></table></div>

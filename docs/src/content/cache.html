@@ -1,0 +1,121 @@
+<section class="section" id="cache-setup">
+<h2>Turn it on</h2>
+<p>Cache list and read responses in Redis, so repeated requests skip the database. Three steps:</p>
+<ol class="steps"><li><h4>Install a Redis client</h4><div class="code-block" data-lang="bash">
+<pre><code>npm install ioredis        # or: npm install redis</code></pre>
+</div></li><li><h4>Set the URL in .env</h4><div class="code-block" data-lang="bash">
+<pre><code>REDIS_URL=redis://localhost:6379</code></pre>
+</div></li><li><h4>Add cache to a router</h4><div class="code-block" data-lang="javascript">
+<pre><code>app.use('/api/products', createRouter({
+  model: Product,
+  cache: true,                    // or { ttl: 300 }
+  allowedFields: ['name', 'price'],
+}));</code></pre>
+</div></li></ol>
+<p>That is all. The first request reads the database and stores the response; the next identical request is answered from Redis.</p>
+</section>
+
+<section class="section" id="cache-how">
+<h2>What gets cached</h2>
+<div class="table-container"><table><thead><tr><th>Route</th><th>Cached?</th></tr></thead><tbody>
+<tr><td><span class="m m-get">GET</span> <code>/</code></td><td>Yes — every filter, search, sort and page combination separately</td></tr>
+<tr><td><span class="m m-query">QUERY</span> <code>/</code></td><td>Yes — keyed by the JSON body</td></tr>
+<tr><td><span class="m m-get">GET</span> <code>/:id</code></td><td>Yes</td></tr>
+<tr><td><span class="m m-post">POST</span> · <span class="m m-patch">PATCH</span> · <span class="m m-delete">DELETE</span></td><td>Never — a successful write clears the model's cache</td></tr>
+</tbody></table></div>
+<ul><li><strong>Always fresh after a write.</strong> A successful create, update or delete clears every cached response for that model — on every router using it — <em>before</em> the response is sent. A client that reads right after its own write sees the change.</li><li><strong>Only successes are cached.</strong> Errors (400, 404…) are always recomputed.</li><li><strong>Entries expire</strong> after <code>ttl</code> seconds (60 by default), which also bounds staleness from changes made outside these routes.</li></ul>
+<p>Every response carries <code>X-Cache: HIT</code> or <code>X-Cache: MISS</code>:</p>
+<div class="code-block" data-lang="bash">
+<pre><code>curl -i localhost:3000/api/products | grep -i x-cache    # X-Cache: MISS
+curl -i localhost:3000/api/products | grep -i x-cache    # X-Cache: HIT</code></pre>
+</div>
+</section>
+
+<section class="section" id="cache-options">
+<h2>Options</h2>
+<div class="code-block" data-lang="javascript">
+<pre><code>createRouter({
+  model: Product,
+  allowedFields: ['name', 'price'],
+  cache: {
+    ttl: 300,                              // seconds · env CACHE_TTL · default 60
+    url: process.env.REDIS_URL,            // env REDIS_URL
+    prefix: 'shop:',                       // env CACHE_PREFIX · default 'cs:'
+    vary: (req) =&gt; req.auth?.userId,       // default: one cache per signed-in user
+    timeoutMs: 150,                        // give up on Redis after this, use the database
+    // client: myRedisClient,              // an ioredis / node-redis client you already have
+    // store: createMemoryCacheStore(),    // no Redis: in-process cache for development
+  },
+});</code></pre>
+</div>
+<div class="table-container"><table><thead><tr><th>Option</th><th>Default</th><th>Why use it</th></tr></thead><tbody>
+<tr><td><code>ttl</code></td><td>60 · <code>CACHE_TTL</code></td><td>Longer for data that rarely changes (a catalogue), shorter for busy data.</td></tr>
+<tr><td><code>url</code></td><td><code>REDIS_URL</code></td><td>Point at a different Redis than the default one.</td></tr>
+<tr><td><code>client</code></td><td>—</td><td>Reuse the Redis connection your app already has.</td></tr>
+<tr><td><code>store</code></td><td>—</td><td>Any object with <code>get</code> and <code>set</code> — the memory store, or your own backend.</td></tr>
+<tr><td><code>prefix</code></td><td>'cs:' · <code>CACHE_PREFIX</code></td><td>Keep several apps apart in one Redis.</td></tr>
+<tr><td><code>vary</code></td><td>the signed-in user</td><td>What else a response depends on. See below.</td></tr>
+<tr><td><code>timeoutMs</code></td><td>150</td><td>How long a request waits for Redis before falling back to the database.</td></tr>
+<tr><td><code>namespace</code></td><td>the mount path</td><td>Rarely needed: override the router part of the cache key.</td></tr>
+</tbody></table></div>
+</section>
+
+<section class="section" id="cache-vary">
+<h2>Per-user data</h2>
+<p>By default each signed-in user gets their own cache entries (<code>req.auth.userId</code> is part of the key), so one user is never sent another user's page. Public routers without auth share one cache.</p>
+<div class="code-block" data-lang="javascript">
+<pre><code>// Everyone behind the guard sees the same data: share one cache.
+createRouter({ model: Product, middlewares: [auth.requireAuth], cache: { vary: () =&gt; '' }, allowedFields: [] });
+
+// Responses differ by something else — say, the tenant header:
+createRouter({ model: Invoice, cache: { vary: (req) =&gt; req.headers['x-tenant-id'] }, allowedFields: [] });</code></pre>
+</div>
+<p>Keys are built from the request <em>after</em> your middleware runs, so a middleware that pins a filter (like <a href="#only-my-records">only my records</a>) is part of the key too.</p>
+</section>
+
+<section class="section" id="cache-invalidate">
+<h2>Changes made elsewhere</h2>
+<p>Writes through these routes clear the cache automatically. If your own code changes records directly, clear it yourself — or let <code>ttl</code> expire it:</p>
+<div class="code-block" data-lang="javascript">
+<pre><code>const products = createRouter({ model: Product, cache: true, allowedFields: ['name'] });
+app.use('/api/products', products);
+
+// Somewhere else in your app
+await Product.updateMany({ category: 'sale' }, { $set: { price: 10 } });
+await products.invalidateCache();</code></pre>
+</div>
+<p>With <code>ControllerSets</code>, it is <code>controller.invalidateCache()</code>.</p>
+</section>
+
+<section class="section" id="cache-down">
+<h2>When Redis is down</h2>
+<p>The cache speeds things up; it never breaks your API.</p>
+<ul><li>Every cache call has a <code>timeoutMs</code> limit (150 ms). If Redis is slow, down or unreachable, the request is served from the database as if caching were off.</li><li>Failures are logged at most once every 30 seconds, not on every request.</li><li>When Redis comes back, caching resumes on its own — no restart.</li><li>Set <code>CACHE_ENABLED=false</code> to switch caching off everywhere without a deploy.</li></ul>
+</section>
+
+<section class="section" id="cache-local">
+<h2>Without Redis (development)</h2>
+<p>No Redis on your machine? Use the in-process store — same behaviour, nothing to install. Each process has its own copy, so use Redis in production.</p>
+<div class="code-block" data-lang="javascript">
+<pre><code>import { createRouter, createMemoryCacheStore } from 'express-controller-sets';
+
+const cacheStore = process.env.REDIS_URL ? undefined : createMemoryCacheStore();
+
+createRouter({
+  model: Product,
+  cache: cacheStore ? { store: cacheStore } : true,
+  allowedFields: ['name', 'price'],
+});</code></pre>
+</div>
+</section>
+
+<section class="section" id="cache-env">
+<h2>Environment</h2>
+<div class="code-block" data-lang="bash">
+<pre><code>REDIS_URL=redis://localhost:6379      # rediss:// for TLS · redis://:password@host:6379/0
+CACHE_TTL=60                          # seconds
+CACHE_PREFIX=cs:
+CACHE_ENABLED=true                    # false switches caching off everywhere</code></pre>
+</div>
+<p>Provider examples: <a href="env.html#env-redis">.env.example → Redis cache</a>.</p>
+</section>

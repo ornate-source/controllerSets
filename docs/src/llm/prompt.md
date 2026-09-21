@@ -12,7 +12,7 @@ Docs: https://ornate-source.github.io/controllerSets/
 - ES modules only (`import`, `"type": "module"`). From CommonJS use `await import('express-controller-sets')`.
 - Node 18+ (the HTTP `QUERY` route needs Node 22.2+; on older Node it is skipped with one warning).
 - Peer dependencies the app installs: `express` 5, `mongoose` 9.
-- Optional peers, only when used: `multer` + `@aws-sdk/client-s3` (uploads), `sharp` (image compression), `nodemailer` (the default mail sender built from `SMTP_*`).
+- Optional peers, only when used: `multer` + `@aws-sdk/client-s3` (uploads), `sharp` (image compression), `nodemailer` (the default mail sender built from `SMTP_*`), `ioredis` or `redis` (response cache).
 - The library never calls `dotenv`. The app loads env first: `import 'dotenv/config'` as the first import, or `node --env-file=.env`.
 - TypeScript types ship with the package.
 
@@ -37,6 +37,7 @@ import {
   requireAuth, requireRole, buildAuthConfig,
   hashPassword, verifyPassword, signToken, verifyToken,
   BUILT_IN_PROVIDERS, DEFAULT_TEMPLATES, AUTH_ROUTES,
+  createMemoryCacheStore, createRedisCacheStore,
 } from 'express-controller-sets';
 ```
 
@@ -124,6 +125,23 @@ Every router serves: `GET /` (list), `QUERY /` (list with a JSON body), `POST /`
 | `lean` | `false` | Plain objects (skips schema `toJSON`) |
 | `allowDiskUse`, `batchSize` | off | Driver passthroughs |
 | `logger` | console | `{ warn, error, debug? }` |
+| `cache` | off | `true` (uses `REDIS_URL`) or `{ ttl, url, client, store, prefix, vary, timeoutMs }` — see Caching |
+
+## Caching (Redis)
+
+```js
+// npm install ioredis   (or redis) · .env: REDIS_URL=redis://localhost:6379
+createRouter({ model: Product, cache: true, allowedFields: ['name', 'price'] });   // or cache: { ttl: 300 }
+```
+
+- Caches `GET /`, `QUERY /`, `GET /:id` (successful responses only); header `X-Cache: HIT|MISS`.
+- Any successful `POST`/`PATCH`/`DELETE` clears that model's cache on every router, before responding.
+- Keys include the mount path, parsed `req.query` (after middleware), `:id`, QUERY body, and
+  `vary(req)` — default `req.auth?.userId`, so signed-in users never share entries. `vary: () => ''` shares.
+- Redis down/slow → served from MongoDB (each call bounded by `timeoutMs`, default 150). Never an error.
+- Changes made outside the routes: `await router.invalidateCache()` (or `controller.invalidateCache()`), else `ttl` expiry.
+- Env: `REDIS_URL`, `CACHE_TTL` (60), `CACHE_PREFIX` (`cs:`), `CACHE_ENABLED=false` kill switch.
+- No Redis locally: `cache: { store: createMemoryCacheStore() }`.
 
 ## Query string (GET /)
 

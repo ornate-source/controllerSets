@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redis cache · express-controller-sets</title>
+  <meta name="description" content="Answer repeated reads from Redis in milliseconds — cleared automatically on every write.">
+  <link rel="canonical" href="https://ornate-source.github.io/controllerSets/cache.html">
+  <meta property="og:title" content="Redis cache · express-controller-sets">
+  <meta property="og:description" content="Answer repeated reads from Redis in milliseconds — cleared automatically on every write.">
+  <meta property="og:type" content="website">
+  <link rel="alternate" type="text/plain" title="LLM guide" href="llms-full.txt">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/components.css?v=10a91d487a">
+  <link rel="stylesheet" href="assets/css/shell.css?v=a1646e50a8">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%236366f1'/%3E%3Ctext x='50' y='68' font-family='monospace' font-size='54' font-weight='700' fill='white' text-anchor='middle'%3E%7B%7D%3C/text%3E%3C/svg%3E">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/http.min.js" defer></script>
+  <script src="assets/search-index.js" defer></script>
+  <script src="assets/js/docs.js?v=901f93388a" defer></script>
+</head>
+<body class="dark" data-page="cache">
+  <script>try{var t=localStorage.getItem('controllersets-theme');document.body.className=t||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark')}catch(e){}</script>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <header class="topbar">
+    <button class="icon-btn menu-btn" type="button" id="menu-open" aria-label="Open navigation"><i data-lucide="menu"></i></button>
+    <a class="brand" href="./" aria-label="controller-sets home">
+      <span class="brand-mark" aria-hidden="true">{}</span>
+      <span class="brand-name">controller-sets</span>
+      <span class="brand-version">v3.2.0</span>
+    </a>
+    <button class="search-trigger" type="button" id="search-open" aria-label="Search the docs">
+      <i data-lucide="search"></i><span>Search docs…</span><kbd>⌘K</kbd>
+    </button>
+    <nav class="topbar-links" aria-label="External">
+      <a class="topbar-link is-accent hide-sm" href="llm.html"><i data-lucide="sparkles"></i><span class="label">LLM prompt</span></a>
+      <a class="topbar-link hide-sm" href="https://github.com/ornate-source/controllerSets" target="_blank" rel="noopener"><svg class="gh-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span class="label">GitHub</span></a>
+      <a class="topbar-link hide-sm" href="https://www.npmjs.com/package/express-controller-sets" target="_blank" rel="noopener"><i data-lucide="package"></i><span class="label">npm</span></a>
+      <button class="icon-btn" type="button" id="theme-toggle" aria-label="Toggle colour theme"><i data-lucide="sun" class="sun-icon"></i><i data-lucide="moon" class="moon-icon"></i></button>
+    </nav>
+  </header>
+
+  <div class="nav-overlay" id="nav-overlay"></div>
+
+  <div class="layout">
+    <aside class="sidenav" id="sidenav" aria-label="Documentation">
+      <nav><div class="nav-group" data-group="getting-started">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="rocket"></i><span>Getting started</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="./"><i data-lucide="home"></i><span class="nav-page-label">Overview</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="how-to-use.html"><i data-lucide="play"></i><span class="nav-page-label">How to use</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="guides">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="book-open"></i><span>Guides</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="router.html"><i data-lucide="route"></i><span class="nav-page-label">Dynamic Router</span></a></li>
+<li class="nav-page-item is-open"><a class="nav-page" href="cache.html" aria-current="page"><i data-lucide="zap"></i><span class="nav-page-label">Redis cache</span></a><ul class="nav-sections"><li><a class="nav-section" href="#cache-setup" data-target="cache-setup">Turn it on</a></li><li><a class="nav-section" href="#cache-how" data-target="cache-how">What gets cached</a></li><li><a class="nav-section" href="#cache-options" data-target="cache-options">Options</a></li><li><a class="nav-section" href="#cache-vary" data-target="cache-vary">Per-user data</a></li><li><a class="nav-section" href="#cache-invalidate" data-target="cache-invalidate">Changes made elsewhere</a></li><li><a class="nav-section" href="#cache-down" data-target="cache-down">When Redis is down</a></li><li><a class="nav-section" href="#cache-local" data-target="cache-local">Without Redis (development)</a></li><li><a class="nav-section" href="#cache-env" data-target="cache-env">Environment</a></li></ul></li>
+<li class="nav-page-item"><a class="nav-page" href="uploads.html"><i data-lucide="upload-cloud"></i><span class="nav-page-label">S3 Upload</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="auth.html"><i data-lucide="key-round"></i><span class="nav-page-label">Auth setup</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="email.html"><i data-lucide="mail"></i><span class="nav-page-label">Email sender</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="env.html"><i data-lucide="file-cog"></i><span class="nav-page-label">.env.example</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="advanced.html"><i data-lucide="wrench"></i><span class="nav-page-label">Advanced</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="more">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="circle-help"></i><span>More</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="faq.html"><i data-lucide="messages-square"></i><span class="nav-page-label">FAQ</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="llm.html"><i data-lucide="bot"></i><span class="nav-page-label">Use with an LLM</span></a></li></ul>
+        </div></nav>
+    </aside>
+
+    <main class="doc" id="main" tabindex="-1">
+      <article class="doc-inner">
+        <header class="page-header">
+          <p class="breadcrumb">Guides <i data-lucide="chevron-right"></i> Redis cache</p>
+          <h1>Redis cache</h1>
+          <p class="page-summary">Answer repeated reads from Redis in milliseconds — cleared automatically on every write.</p>
+        </header>
+        <section class="section" id="cache-setup">
+<h2>Turn it on<a class="anchor" href="#cache-setup" aria-label="Link to this section">#</a></h2>
+<p>Cache list and read responses in Redis, so repeated requests skip the database. Three steps:</p>
+<ol class="steps"><li><h4>Install a Redis client</h4><div class="code-block" data-lang="bash">
+<pre><code class="language-bash">npm install ioredis        # or: npm install redis</code></pre>
+</div></li><li><h4>Set the URL in .env</h4><div class="code-block" data-lang="bash">
+<pre><code class="language-bash">REDIS_URL=redis://localhost:6379</code></pre>
+</div></li><li><h4>Add cache to a router</h4><div class="code-block" data-lang="javascript">
+<pre><code class="language-javascript">app.use('/api/products', createRouter({
+  model: Product,
+  cache: true,                    // or { ttl: 300 }
+  allowedFields: ['name', 'price'],
+}));</code></pre>
+</div></li></ol>
+<p>That is all. The first request reads the database and stores the response; the next identical request is answered from Redis.</p>
+</section>
+
+<section class="section" id="cache-how">
+<h2>What gets cached<a class="anchor" href="#cache-how" aria-label="Link to this section">#</a></h2>
+<div class="table-container"><table><thead><tr><th>Route</th><th>Cached?</th></tr></thead><tbody>
+<tr><td><span class="m m-get">GET</span> <code>/</code></td><td>Yes — every filter, search, sort and page combination separately</td></tr>
+<tr><td><span class="m m-query">QUERY</span> <code>/</code></td><td>Yes — keyed by the JSON body</td></tr>
+<tr><td><span class="m m-get">GET</span> <code>/:id</code></td><td>Yes</td></tr>
+<tr><td><span class="m m-post">POST</span> · <span class="m m-patch">PATCH</span> · <span class="m m-delete">DELETE</span></td><td>Never — a successful write clears the model's cache</td></tr>
+</tbody></table></div>
+<ul><li><strong>Always fresh after a write.</strong> A successful create, update or delete clears every cached response for that model — on every router using it — <em>before</em> the response is sent. A client that reads right after its own write sees the change.</li><li><strong>Only successes are cached.</strong> Errors (400, 404…) are always recomputed.</li><li><strong>Entries expire</strong> after <code>ttl</code> seconds (60 by default), which also bounds staleness from changes made outside these routes.</li></ul>
+<p>Every response carries <code>X-Cache: HIT</code> or <code>X-Cache: MISS</code>:</p>
+<div class="code-block" data-lang="bash">
+<pre><code class="language-bash">curl -i localhost:3000/api/products | grep -i x-cache    # X-Cache: MISS
+curl -i localhost:3000/api/products | grep -i x-cache    # X-Cache: HIT</code></pre>
+</div>
+</section>
+
+<section class="section" id="cache-options">
+<h2>Options<a class="anchor" href="#cache-options" aria-label="Link to this section">#</a></h2>
+<div class="code-block" data-lang="javascript">
+<pre><code class="language-javascript">createRouter({
+  model: Product,
+  allowedFields: ['name', 'price'],
+  cache: {
+    ttl: 300,                              // seconds · env CACHE_TTL · default 60
+    url: process.env.REDIS_URL,            // env REDIS_URL
+    prefix: 'shop:',                       // env CACHE_PREFIX · default 'cs:'
+    vary: (req) =&gt; req.auth?.userId,       // default: one cache per signed-in user
+    timeoutMs: 150,                        // give up on Redis after this, use the database
+    // client: myRedisClient,              // an ioredis / node-redis client you already have
+    // store: createMemoryCacheStore(),    // no Redis: in-process cache for development
+  },
+});</code></pre>
+</div>
+<div class="table-container"><table><thead><tr><th>Option</th><th>Default</th><th>Why use it</th></tr></thead><tbody>
+<tr><td><code>ttl</code></td><td>60 · <code>CACHE_TTL</code></td><td>Longer for data that rarely changes (a catalogue), shorter for busy data.</td></tr>
+<tr><td><code>url</code></td><td><code>REDIS_URL</code></td><td>Point at a different Redis than the default one.</td></tr>
+<tr><td><code>client</code></td><td>—</td><td>Reuse the Redis connection your app already has.</td></tr>
+<tr><td><code>store</code></td><td>—</td><td>Any object with <code>get</code> and <code>set</code> — the memory store, or your own backend.</td></tr>
+<tr><td><code>prefix</code></td><td>'cs:' · <code>CACHE_PREFIX</code></td><td>Keep several apps apart in one Redis.</td></tr>
+<tr><td><code>vary</code></td><td>the signed-in user</td><td>What else a response depends on. See below.</td></tr>
+<tr><td><code>timeoutMs</code></td><td>150</td><td>How long a request waits for Redis before falling back to the database.</td></tr>
+<tr><td><code>namespace</code></td><td>the mount path</td><td>Rarely needed: override the router part of the cache key.</td></tr>
+</tbody></table></div>
+</section>
+
+<section class="section" id="cache-vary">
+<h2>Per-user data<a class="anchor" href="#cache-vary" aria-label="Link to this section">#</a></h2>
+<p>By default each signed-in user gets their own cache entries (<code>req.auth.userId</code> is part of the key), so one user is never sent another user's page. Public routers without auth share one cache.</p>
+<div class="code-block" data-lang="javascript">
+<pre><code class="language-javascript">// Everyone behind the guard sees the same data: share one cache.
+createRouter({ model: Product, middlewares: [auth.requireAuth], cache: { vary: () =&gt; '' }, allowedFields: [] });
+
+// Responses differ by something else — say, the tenant header:
+createRouter({ model: Invoice, cache: { vary: (req) =&gt; req.headers['x-tenant-id'] }, allowedFields: [] });</code></pre>
+</div>
+<p>Keys are built from the request <em>after</em> your middleware runs, so a middleware that pins a filter (like <a href="router.html#only-my-records">only my records</a>) is part of the key too.</p>
+</section>
+
+<section class="section" id="cache-invalidate">
+<h2>Changes made elsewhere<a class="anchor" href="#cache-invalidate" aria-label="Link to this section">#</a></h2>
+<p>Writes through these routes clear the cache automatically. If your own code changes records directly, clear it yourself — or let <code>ttl</code> expire it:</p>
+<div class="code-block" data-lang="javascript">
+<pre><code class="language-javascript">const products = createRouter({ model: Product, cache: true, allowedFields: ['name'] });
+app.use('/api/products', products);
+
+// Somewhere else in your app
+await Product.updateMany({ category: 'sale' }, { $set: { price: 10 } });
+await products.invalidateCache();</code></pre>
+</div>
+<p>With <code>ControllerSets</code>, it is <code>controller.invalidateCache()</code>.</p>
+</section>
+
+<section class="section" id="cache-down">
+<h2>When Redis is down<a class="anchor" href="#cache-down" aria-label="Link to this section">#</a></h2>
+<p>The cache speeds things up; it never breaks your API.</p>
+<ul><li>Every cache call has a <code>timeoutMs</code> limit (150 ms). If Redis is slow, down or unreachable, the request is served from the database as if caching were off.</li><li>Failures are logged at most once every 30 seconds, not on every request.</li><li>When Redis comes back, caching resumes on its own — no restart.</li><li>Set <code>CACHE_ENABLED=false</code> to switch caching off everywhere without a deploy.</li></ul>
+</section>
+
+<section class="section" id="cache-local">
+<h2>Without Redis (development)<a class="anchor" href="#cache-local" aria-label="Link to this section">#</a></h2>
+<p>No Redis on your machine? Use the in-process store — same behaviour, nothing to install. Each process has its own copy, so use Redis in production.</p>
+<div class="code-block" data-lang="javascript">
+<pre><code class="language-javascript">import { createRouter, createMemoryCacheStore } from 'express-controller-sets';
+
+const cacheStore = process.env.REDIS_URL ? undefined : createMemoryCacheStore();
+
+createRouter({
+  model: Product,
+  cache: cacheStore ? { store: cacheStore } : true,
+  allowedFields: ['name', 'price'],
+});</code></pre>
+</div>
+</section>
+
+<section class="section" id="cache-env">
+<h2>Environment<a class="anchor" href="#cache-env" aria-label="Link to this section">#</a></h2>
+<div class="code-block" data-lang="bash">
+<pre><code class="language-bash">REDIS_URL=redis://localhost:6379      # rediss:// for TLS · redis://:password@host:6379/0
+CACHE_TTL=60                          # seconds
+CACHE_PREFIX=cs:
+CACHE_ENABLED=true                    # false switches caching off everywhere</code></pre>
+</div>
+<p>Provider examples: <a href="env.html#env-redis">.env.example → Redis cache</a>.</p>
+</section>
+
+        <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" href="router.html"><span class="pager-dir"><i data-lucide="arrow-left"></i> Previous</span><span class="pager-title">Dynamic Router</span></a>
+      <a class="next" href="uploads.html"><span class="pager-dir">Next <i data-lucide="arrow-right"></i></span><span class="pager-title">S3 Upload</span></a>
+    </nav>
+        <footer class="doc-footer">
+          <span>express-controller-sets v3.2.0 · MIT licensed · © 2024–present Sabbir Mahmud</span>
+          <a href="https://github.com/ornate-source/controllerSets/edit/main/docs/src/content/cache.html" target="_blank" rel="noopener"><i data-lucide="pencil"></i> Edit this page</a>
+        </footer>
+      </article>
+    </main>
+
+  </div>
+
+  <dialog class="search-dialog" id="search-dialog" aria-label="Search">
+    <div class="search-field"><i data-lucide="search"></i><input id="search-input" type="search" placeholder="Search the docs…" autocomplete="off" spellcheck="false" aria-controls="search-results"><kbd>Esc</kbd></div>
+    <ul class="search-results" id="search-results" role="listbox"></ul>
+    <div class="search-foot"><span><kbd>↑</kbd> <kbd>↓</kbd> to move</span><span><kbd>↵</kbd> to open</span></div>
+  </dialog>
+
+  <button id="back-to-top" class="back-to-top" type="button" aria-label="Back to top"><i data-lucide="arrow-up"></i></button>
+</body>
+</html>

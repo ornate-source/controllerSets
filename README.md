@@ -291,6 +291,26 @@ What it gives you is the faster strategy already built.
 
 ---
 
+## ⚡ Redis cache
+
+Answer repeated reads from Redis. Opt in per router; writes clear it automatically.
+
+```bash
+npm install ioredis            # or: npm install redis
+# .env
+REDIS_URL=redis://localhost:6379
+```
+
+```javascript
+createRouter({ model: Product, cache: true, allowedFields: ['name', 'price'] });   // or { ttl: 300 }
+```
+
+- `GET /`, `QUERY /` and `GET /:id` are cached per query, per signed-in user; responses carry `X-Cache: HIT|MISS`.
+- A successful `POST`, `PATCH` or `DELETE` clears the model's cache on every router before it responds.
+- If Redis is down or slow, requests are served from MongoDB — the cache can slow nothing down by more than `timeoutMs` (150 ms).
+- `router.invalidateCache()` after changes made outside the routes. `CACHE_ENABLED=false` turns caching off everywhere.
+- No Redis in development? `cache: { store: createMemoryCacheStore() }`.
+
 ## 🔐 Authentication
 
 You bring the model; the library never defines a schema. Point it at your fields and mount it:
