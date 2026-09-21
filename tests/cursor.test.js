@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert";
 import express from "express";
 import mongoose from "mongoose";
-import { createRouter, errorHandler } from "../src/index.js";
+import { createRouter, errorHandler, isQueryMethodSupported } from "../src/index.js";
 import { withServer } from "./helpers/mockModel.js";
 
 // Keyset pagination against a real MongoDB. A mock cannot prove the thing that
@@ -173,7 +173,7 @@ test(
             });
         });
 
-        await t.test("QUERY paginates by cursor through the same code path", async () => {
+        await t.test("QUERY paginates by cursor through the same code path", { skip: !isQueryMethodSupported() && "this runtime has no HTTP QUERY method" }, async () => {
             await withServer(buildApp(), async (base) => {
                 const send = (body) =>
                     fetch(`${base}/items`, {

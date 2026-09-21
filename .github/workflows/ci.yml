@@ -14,7 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         # 18 is the floor declared in package.json engines.
-        node: [18, 20, 22]
+        node: [20, 22, 24]
 
     steps:
       - uses: actions/checkout@v4
@@ -51,14 +51,16 @@ jobs:
           cache: npm
       - run: npm ci
 
-      # The published tarball must not carry docs, tests, or stray dotfiles.
+      # The published tarball must not carry docs, tests, or stray dotfiles —
+      # except llms-full.txt, which ships so AI tools can read the offline docs.
       - name: Verify published file list
         run: |
           npm pack --dry-run --json > pack.json
           node -e "
             const files = require('./pack.json')[0].files.map(f => f.path);
             const disallowed = files.filter(f =>
-              f.startsWith('docs/') || f.startsWith('tests/') || f.startsWith('.')
+              (f.startsWith('docs/') && f !== 'docs/llms-full.txt') ||
+              f.startsWith('tests/') || f.startsWith('.')
             );
             if (disallowed.length) {
               console.error('Unexpected files in tarball:\n' + disallowed.join('\n'));

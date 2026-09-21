@@ -31,6 +31,24 @@ One router for CRUD with or without files.
 - `createRouter` warns once when given top-level `path`, `fields` or `imgOptimizations`,
   which it ignores; they belong in `upload`.
 - Docs: the "Dynamic Router" guide is now "createRouter".
+- **`sharp` is an optional peer dependency** instead of an `optionalDependency`. The package
+  no longer installs its own copy: a nested sharp next to the app's loaded two libvips builds
+  into one process, and pinned a version with known libvips/libheif CVEs. Install `sharp`
+  yourself to compress images; without it, uploads store the original and warn once.
+- Peer floors raised past published advisories: `mongoose ^9.7.2` (prototype pollution in
+  update casting), `multer ^2.3.0` (several multipart DoS fixes), `sharp ^0.35.4`.
+- `engines.node` is now `>=20.19.0`, the minimum Mongoose 9 already required.
+
+### Fixed
+
+- An upload route no longer needs S3 for a request that carries no files: a JSON `PATCH`, or
+  multipart with only text fields, passes through instead of returning 503 when S3 isn't
+  configured, and doesn't load multer or the AWS SDK.
+- TypeScript: `createRouter({ model })` failed to compile with an ordinary
+  `mongoose.model(...)` because the generic was constrained to `Document`. It now takes the
+  model's raw document type, and `onRegister` / `onLogin` receive a `HydratedDocument`.
+- QUERY tests skip on runtimes without the method instead of failing.
+- CI allowed `docs/llms-full.txt` in the tarball, which `package.json` ships on purpose.
 
 ---
 

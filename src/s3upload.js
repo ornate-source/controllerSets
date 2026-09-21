@@ -47,11 +47,24 @@ const loadModules = () => {
     return modulesPromise;
 };
 
+// Resolves to null when sharp isn't installed: it is an optional peer, and an
+// upload without compression beats refusing the upload.
 let sharpPromise = null;
 const loadSharp = () => {
-    sharpPromise ??= import("sharp").then((mod) => mod.default ?? mod);
+    sharpPromise ??= import("sharp").then(
+        (mod) => mod.default ?? mod,
+        () => {
+            console.warn(
+                "[ControllerSet-S3] Image optimization is configured but 'sharp' is not installed; " +
+                    "uploading originals. Run 'npm install sharp' to enable it.",
+            );
+            return null;
+        },
+    );
     return sharpPromise;
 };
+
+const isMultipart = (req) => /^multipart\//i.test(req.headers?.["content-type"] ?? "");
 
 /**
  * Reads S3 configuration at call time.
@@ -153,6 +166,7 @@ async function compressImage(buffer, mimetypeOrFormat, level) {
     }
 
     const sharp = await loadSharp();
+    if (!sharp) return buffer;
     const minQuality = 25;
     const maxQuality = 95;
 
@@ -268,12 +282,11 @@ const fileUploadMiddleware = (req, res, next, ...rest) => {
 };
 
 async function runUpload(req, res, next, options) {
-    const { config, missing } = readConfig();
-    if (missing.length > 0) {
-        console.error(
-            `[ControllerSet-S3] Missing required S3 environment variables: ${missing.join(", ")}`,
-        );
-        return fail(res, 503, "S3 service is not properly configured on the server.");
+    // A JSON write on an upload route carries no files, so it needs neither the
+    // upload modules nor a configured bucket.
+    if (!isMultipart(req)) {
+        if (typeof next === "function") next();
+        return;
     }
 
     const { s3, multer } = await loadModules();
@@ -308,6 +321,19 @@ async function runUpload(req, res, next, options) {
 
     const level = resolveImageLevel(req, options);
     const filesToUpload = collectFiles(req, options.fields);
+
+    if (filesToUpload.length === 0) {
+        if (typeof next === "function") next();
+        return;
+    }
+
+    const { config, missing } = readConfig();
+    if (missing.length > 0) {
+        console.error(
+            `[ControllerSet-S3] Missing required S3 environment variables: ${missing.join(", ")}`,
+        );
+        return fail(res, 503, "S3 service is not properly configured on the server.");
+    }
 
     const client = await getClient(config);
 

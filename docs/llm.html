@@ -123,7 +123,7 @@ Docs: https://ornate-source.github.io/controllerSets/
 ## Environment
 
 - ES modules only (`import`, `&quot;type&quot;: &quot;module&quot;`). From CommonJS use `await import('express-controller-sets')`.
-- Node 18+ (the HTTP `QUERY` route needs Node 22.2+; on older Node it is skipped with one warning).
+- Node 20.19+ (the HTTP `QUERY` route needs Node 22.2+; on older Node it is skipped with one warning).
 - Peer dependencies the app installs: `express` 5, `mongoose` 9.
 - Optional peers, only when used: `multer` + `@aws-sdk/client-s3` (uploads), `sharp` (image compression), `nodemailer` (the default mail sender built from `SMTP_*`), `ioredis` or `redis` (response cache).
 - The library never calls `dotenv`. The app loads env first: `import 'dotenv/config'` as the first import, or `node --env-file=.env`.

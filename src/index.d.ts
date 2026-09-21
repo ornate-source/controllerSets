@@ -6,7 +6,7 @@ import {
     Response,
     Router,
 } from "express";
-import { Document, Model, PopulateOptions } from "mongoose";
+import { HydratedDocument, Model, PopulateOptions } from "mongoose";
 
 /** Result returned by the onGet hook */
 export interface OnGetResult {
@@ -38,7 +38,7 @@ export type FieldPolicy = string[] | { create?: string[]; update?: string[] };
 export type WriteOperation = "create" | "update";
 
 /** What a `validate` hook is told about the request it is checking. */
-export interface ValidateContext<T extends Document = any> {
+export interface ValidateContext<T = any> {
     req: Request;
     res: Response;
     operation: WriteOperation;
@@ -61,13 +61,13 @@ export interface ValidateContext<T extends Document = any> {
  * Throw `ValidationError` to reject with per-field messages, or any `HttpError`
  * for a plain status. Anything else thrown becomes a 500.
  */
-export type ValidateFn<T extends Document = any> = (
+export type ValidateFn<T = any> = (
     payload: Record<string, any>,
     context: ValidateContext<T>,
 ) => void | Record<string, any> | Promise<void | Record<string, any>>;
 
 /** One validator for both writes, or one per write. */
-export type ValidatePolicy<T extends Document = any> =
+export type ValidatePolicy<T = any> =
     | ValidateFn<T>
     | { create?: ValidateFn<T>; update?: ValidateFn<T> };
 
@@ -163,7 +163,7 @@ export interface CacheOptions {
     namespace?: string;
 }
 
-export interface ControllerOptions<T extends Document = any> {
+export interface ControllerOptions<T = any> {
     model: Model<T>;
     orderBy?: string;
     /** Query-string params exposed as equality filters. Also the default filterable/sortable set. */
@@ -245,7 +245,7 @@ export type Pagination =
 /**
  * ControllerSets - Express CRUD logic for Mongoose models.
  */
-export class ControllerSets<T extends Document = any> {
+export class ControllerSets<T = any> {
     constructor(options: ControllerOptions<T>);
     /** @deprecated Use the options-object form. */
     constructor(
@@ -312,7 +312,7 @@ export interface RouterUploadOptions extends Omit<UploadOptions, "uploadPath"> {
     path?: string;
 }
 
-export interface RouterOptions<T extends Document = any> extends ControllerOptions<T> {
+export interface RouterOptions<T = any> extends ControllerOptions<T> {
     middlewares?: any[];
     /** Mount the HTTP QUERY route on `/`. Default true. */
     enableQuery?: boolean;
@@ -324,7 +324,7 @@ export interface RouterOptions<T extends Document = any> extends ControllerOptio
 }
 
 /** @deprecated since 3.3.0, removed in 4.0. Use `RouterOptions` with `upload`. */
-export interface RouterS3Options<T extends Document = any> extends Omit<RouterOptions<T>, "upload"> {
+export interface RouterS3Options<T = any> extends Omit<RouterOptions<T>, "upload"> {
     path?: string;
     fields?: UploadField[];
     imgOptimizations?: ImageOptimizationLevel;
@@ -345,13 +345,13 @@ export function createRedisCacheStore(options: { url?: string; client?: unknown;
  * Creates an Express CRUD router for the given model. Pass `upload` to accept
  * files on `POST /` and `PATCH /:id`.
  */
-export function createRouter<T extends Document = any>(options: RouterOptions<T>): ControllerRouter;
+export function createRouter<T = any>(options: RouterOptions<T>): ControllerRouter;
 
 /**
  * Creates an Express router with S3 upload support for the given model.
  * @deprecated since 3.3.0, removed in 4.0. Use `createRouter({ upload: { path, fields, ... } })`.
  */
-export function createRouterS3upload<T extends Document = any>(
+export function createRouterS3upload<T = any>(
     options: RouterS3Options<T>,
 ): ControllerRouter;
 
@@ -631,7 +631,7 @@ export type AuthMiddlewares =
     | RequestHandler[]
     | ({ all?: RequestHandler[] } & Partial<Record<AuthRouteName, RequestHandler[]>>);
 
-export interface AuthOptions<T extends Document = any> {
+export interface AuthOptions<T = any> {
     model: Model<T>;
     /** Rename a route, or leave it unmounted with `false`. */
     routes?: Partial<Record<AuthRouteName, string | false>>;
@@ -666,9 +666,9 @@ export interface AuthOptions<T extends Document = any> {
     registerFields?: string[];
     /** Fields a client may change on itself. */
     updateFields?: string[];
-    onRegister?: (user: T, req: Request) => void | Promise<void>;
+    onRegister?: (user: HydratedDocument<T>, req: Request) => void | Promise<void>;
     /** Last word on whether a sign-in proceeds. Throw an `HttpError` to refuse. */
-    onLogin?: (user: T, req: Request) => void | Promise<void>;
+    onLogin?: (user: HydratedDocument<T>, req: Request) => void | Promise<void>;
     logger?: Logger;
     /** Caps for `GET /users`, as in `ControllerOptions`. */
     maxLimit?: number;
@@ -715,12 +715,12 @@ export const AUTH_ROUTES: readonly AuthUrl[];
  * Register, login, social sign-in, password change and reset by one-time code,
  * user listing and role management — mounted as one router.
  */
-export function createAuthRouter<T extends Document = any>(
+export function createAuthRouter<T = any>(
     options: AuthOptions<T>,
 ): AuthRouter;
 
 /** Verifies the bearer token and populates `req.auth`. */
-export function requireAuth<T extends Document = any>(
+export function requireAuth<T = any>(
     config: ReturnType<typeof buildAuthConfig>,
     options?: { loadUser?: boolean },
 ): RequestHandler;
@@ -729,7 +729,7 @@ export function requireAuth<T extends Document = any>(
 export function requireRole(...roles: (string | string[])[]): RequestHandler;
 
 /** Resolves raw options into the frozen auth config the middleware needs. */
-export function buildAuthConfig<T extends Document = any>(options: AuthOptions<T>): any;
+export function buildAuthConfig<T = any>(options: AuthOptions<T>): any;
 
 export function hashPassword(plain: string): Promise<string>;
 export function verifyPassword(plain: string, stored: string): Promise<boolean>;

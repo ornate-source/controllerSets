@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert";
 import express from "express";
-import { createRouter, errorHandler } from "../src/index.js";
+import { createRouter, errorHandler, isQueryMethodSupported } from "../src/index.js";
 import { createMockModel, objectId, withServer } from "./helpers/mockModel.js";
 
 // The options that decide what a read costs. A list endpoint's worst case is not
@@ -161,11 +161,13 @@ test("Read cost controls", async (t) => {
         assert.strictEqual(model.calls.counts.exact, 1, "only the allowed page counted");
     });
 
-    await t.test("maxPage is off by default, and applies to QUERY too", async () => {
+    await t.test("maxPage is off by default", async () => {
         const { app } = buildApp();
         const deep = await get(app, "/items?page=100000");
         assert.strictEqual(deep.status, 200);
+    });
 
+    await t.test("maxPage applies to QUERY too", { skip: !isQueryMethodSupported() && "this runtime has no HTTP QUERY method" }, async () => {
         const { app: capped } = buildApp({ maxPage: 2 });
         let out;
         await withServer(capped, async (base) => {
@@ -181,7 +183,7 @@ test("Read cost controls", async (t) => {
         assert.match(out.body.error, /beyond the maximum of 2/);
     });
 
-    await t.test("the QUERY route inherits every one of these caps", async () => {
+    await t.test("the QUERY route inherits every one of these caps", { skip: !isQueryMethodSupported() && "this runtime has no HTTP QUERY method" }, async () => {
         const { app, model } = buildApp({ countStrategy: "none", maxTimeMS: 100, maxLimit: 6 });
 
         let out;

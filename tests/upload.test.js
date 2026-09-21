@@ -262,3 +262,42 @@ test("M3: missing S3 configuration yields 503 and is re-read per request", async
         s3.close();
     }
 });
+
+test("requests without files never need S3", async (t) => {
+    const originalEnv = { ...process.env };
+    t.after(() => {
+        process.env = originalEnv;
+    });
+    delete process.env.S3_ENDPOINT;
+    delete process.env.S3_SPACES_KEY;
+    delete process.env.S3_SPACES_SECRET;
+    delete process.env.S3_BUCKET_NAME;
+
+    const app = express();
+    app.use(express.json());
+    app.post(
+        "/upload",
+        (req, res, next) => fileUploadMiddleware(req, res, next, {}),
+        (req, res) => res.status(201).json({ success: true, body: req.body }),
+    );
+
+    await withServer(app, async (base) => {
+        await t.test("a JSON body passes through untouched", async () => {
+            const res = await fetch(`${base}/upload`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: "Chair" }),
+            });
+            assert.strictEqual(res.status, 201);
+            assert.deepStrictEqual((await res.json()).body, { name: "Chair" });
+        });
+
+        await t.test("a multipart body with only text fields passes through", async () => {
+            const form = new FormData();
+            form.append("name", "Chair");
+            const res = await fetch(`${base}/upload`, { method: "POST", body: form });
+            assert.strictEqual(res.status, 201);
+            assert.deepStrictEqual((await res.json()).body, { name: "Chair" });
+        });
+    });
+});
