@@ -3,11 +3,7 @@ import express from "express";
 import { ControllerSets } from "./ControllerSets.js";
 import { fileUploadMiddleware } from "./s3upload.js";
 
-/**
- * Options consumed by the router itself rather than forwarded to the controller.
- * Everything else is passed through, so new controller options do not require a
- * corresponding change here.
- */
+// Consumed by the router; everything else is forwarded to the controller.
 const ROUTER_ONLY_OPTIONS = [
     "middlewares",
     "path",
@@ -23,24 +19,18 @@ const controllerOptionsFrom = (options) =>
     );
 
 /**
- * Whether this runtime can serve the HTTP QUERY method.
- *
- * Two things have to be true: Node's HTTP parser must recognise the method at all
- * (it rejects an unknown one before Express is reached), and this Express build's
- * router must expose a matching verb — Express derives its verb list from
- * `http.METHODS` at load time, so an older Node yields a router without `.query`.
+ * Whether this runtime can serve HTTP QUERY: Node's parser must recognise the
+ * method, and this Express build's router must expose the verb.
  */
 export const isQueryMethodSupported = () =>
     http.METHODS.includes("QUERY") && typeof express.Router().query === "function";
 
-/** Logged once per process: a missing QUERY route is otherwise just a silent 404. */
+// Warned once per process: a missing QUERY route is otherwise a silent 404.
 let queryUnsupportedWarned = false;
 
 const registerQueryRoute = (router, controller, logger) => {
     if (isQueryMethodSupported()) {
-        // RFC 10008 §4: advertise the accepted query format. Passing through to
-        // Express's own OPTIONS responder keeps the generated `Allow` header,
-        // which now lists QUERY alongside the rest.
+        // RFC 10008 §4. Passing through keeps Express's generated `Allow` header.
         router.options("/", (req, res, next) => {
             res.setHeader("Accept-Query", "application/json");
             next();

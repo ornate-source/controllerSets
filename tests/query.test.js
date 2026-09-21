@@ -9,13 +9,10 @@ import {
 } from "../src/index.js";
 import { createMockModel, objectId, withServer } from "./helpers/mockModel.js";
 
-/**
- * HTTP QUERY — a safe, idempotent read whose parameters live in the body.
- *
- * The point of these tests is not that the body is *read*, but that it is read
- * under the same rules as the query string: allowlisted fields, escaped search
- * terms, capped page sizes, and no path from a JSON key to a Mongo operator.
- */
+// HTTP QUERY — a safe, idempotent read whose parameters live in the body. The
+// point is not that the body is read, but that it is read under the same rules
+// as the query string: allowlisted fields, escaped terms, capped pages, and no
+// path from a JSON key to a Mongo operator.
 
 const silentLogger = { warn: () => {}, error: () => {}, debug: () => {} };
 

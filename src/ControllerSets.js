@@ -25,36 +25,19 @@ import {
 } from "./core/dataAccess.js";
 import { created, failure, ok, okMessage, okPaginated } from "./core/respond.js";
 
-/**
- * ControllerSets — Express CRUD handlers for a Mongoose model.
- *
- * The governing principle is implicit-deny: a field is not filterable, sortable,
- * or writable until the API author names it. This library generates *public*
- * endpoints, so anything left open is open to everyone.
- *
- * Each handler below is a thin composition of four steps — read the request,
- * check it against the policy, touch the database, write the envelope — and each
- * step lives in its own module under `core/`:
- *
- *   core/config.js      options in, one frozen config out
- *   core/readParams.js  request → filters, sort, page window (pure)
- *   core/search.js      search terms, including across relations
- *   core/write.js       body → payload: field policy, then your `validate` hook
- *   core/dataAccess.js  every Mongoose call, with the caps applied
- *   core/respond.js     the response envelope
- *
- * The handlers stay short on purpose: a rule that lives in one module applies to
- * every endpoint, and an endpoint added later cannot quietly skip one.
- */
+// Express CRUD handlers for a Mongoose model. Implicit-deny throughout: a field
+// is not filterable, sortable or writable until the author names it.
+//
+// Each handler composes the modules under `core/` — config, readParams, search,
+// write, dataAccess, respond — so a rule lives in one place and no endpoint can
+// skip it.
 class ControllerSets {
     constructor(...args) {
         const config = buildConfig(normalizeOptions(args));
 
-        /** The resolved, frozen configuration every handler runs on. */
         this.config = config;
 
-        // Long-standing public properties. They mirror `config` and are kept
-        // because consumers have always been able to read them off an instance.
+        // Mirrored from `config`: consumers have always read these off an instance.
         this.model = config.model;
         this.orderBy = config.orderBy;
         this.query = config.query;
@@ -75,16 +58,8 @@ class ControllerSets {
         warnIfUnprotected(config);
     }
 
-    /* ================================================================== *
-     * Shared plumbing
-     * ================================================================== */
-
-    /**
-     * Converts deliberate 4xx/415 errors into responses here rather than relying
-     * on the consumer having mounted `errorHandler`. Anything else propagates:
-     * Express 5 forwards rejected promises, and an unexpected failure should not
-     * be flattened into a tidy 400.
-     */
+    // Deliberate 4xx/415s answered here, so they work without `errorHandler`
+    // mounted. Anything unexpected propagates rather than becoming a tidy 400.
     #handler(run) {
         return async (req, res) => {
             try {
@@ -101,16 +76,9 @@ class ControllerSets {
         };
     }
 
-    /**
-     * A page window a client cannot widen past `maxLimit`, nor push past
-     * `maxPage`.
-     *
-     * A deep page is the one read that costs far more to serve than to ask for:
-     * `?page=9999999` makes the database walk every skipped index entry before
-     * returning anything. `maxPage` refuses it outright rather than clamping,
-     * because quietly serving a different page than the one requested is worse
-     * than saying no.
-     */
+    // `?page=9999999` costs far more to serve than to ask for: the database walks
+    // every skipped index entry. Refused rather than clamped, since serving a
+    // different page than the one asked for is worse than saying no.
     #pageWindow({ page, pageSize }) {
         const requested = Math.max(1, page ?? 1);
 
@@ -131,13 +99,6 @@ class ControllerSets {
         };
     }
 
-    /**
-     * The one read responder, shared by `GET /` and `QUERY /`.
-     *
-     * Both methods differ only in how their parameters were expressed; from here
-     * down they are the same request, which is why neither can drift into
-     * returning a shape — or a volume — the other would not.
-     */
     async #respondWithList(req, res, { filters, sort, paging, limit }) {
         const shape = await resolveReadShape(req, res, this.config);
 
@@ -151,9 +112,7 @@ class ControllerSets {
         return ok(res, documents);
     }
 
-    /* ================================================================== *
-     * GET / — list, filter, search, sort, paginate
-     * ================================================================== */
+    // ---- GET / — list, filter, search, sort, paginate ----
 
     getAll = this.#handler(async (req, res) => {
         const config = this.config;
@@ -170,20 +129,10 @@ class ControllerSets {
         });
     });
 
-    /* ================================================================== *
-     * QUERY / — the same read, described by a JSON body
-     * ================================================================== */
+    // ---- QUERY / — the same read, described by a JSON body ----
 
-    /**
-     * QUERY (RFC 10008) is safe and idempotent: GET with a body, for filters too
-     * long for a URL, too structured to flatten into a query string, or too
-     * sensitive to leave in proxy and access logs.
-     *
-     * The body is deliberately *not* a Mongo query. Field names are checked
-     * against the same allowlists the query string uses, operators are spelled
-     * without `$` and translated through a fixed table, and a body carrying a
-     * literal `$` key fails that lookup rather than reaching the driver.
-     */
+    // QUERY (RFC 10008) is GET with a body: safe, idempotent, same allowlists.
+    // The body is not a Mongo query — operators are spelled without `$`.
     queryAll = this.#handler(async (req, res) => {
         const config = this.config;
         const body = parseQueryBody(req, config);
@@ -199,9 +148,7 @@ class ControllerSets {
         });
     });
 
-    /* ================================================================== *
-     * GET /:id — one record
-     * ================================================================== */
+    // ---- GET /:id ----
 
     getById = this.#handler(async (req, res) => {
         const id = validateObjectId(req.params.id);
@@ -213,15 +160,8 @@ class ControllerSets {
         return ok(res, document);
     });
 
-    /* ================================================================== *
-     * POST / — create
-     * ================================================================== */
+    // ---- POST / ----
 
-    /**
-     * The body is filtered to the fields a client may write, handed to your
-     * `validate` hook if you configured one, and only then given to Mongoose —
-     * whose schema validators still run as the last line of defence.
-     */
     create = this.#handler(async (req, res) => {
         const payload = await buildWritePayload("create", { req, res, config: this.config });
 
@@ -231,9 +171,7 @@ class ControllerSets {
         return created(res, document);
     });
 
-    /* ================================================================== *
-     * PATCH /:id — partial update
-     * ================================================================== */
+    // ---- PATCH /:id ----
 
     update = this.#handler(async (req, res) => {
         const id = validateObjectId(req.params.id);
@@ -246,9 +184,7 @@ class ControllerSets {
         return ok(res, document);
     });
 
-    /* ================================================================== *
-     * DELETE /:id — remove
-     * ================================================================== */
+    // ---- DELETE /:id ----
 
     delete = this.#handler(async (req, res) => {
         const id = validateObjectId(req.params.id);
@@ -259,17 +195,10 @@ class ControllerSets {
         return okMessage(res, "Item successfully deleted.");
     });
 
-    /* ================================================================== *
-     * Public helpers, kept for handlers wired by hand
-     * ================================================================== */
-
-    /** Resolves `populate` / `select` from the `onGet` hook. */
     getPopulates = async (req, res) => resolveReadShape(req, res, this.config);
 
-    /** One paginated read, reading its page window from the query string. */
     getPaginatedResults = async (req, res, filters, sort, populates = [], selects = "") => {
-        // Not `pagingFromQueryString`: this helper paginates whether or not
-        // `?page=` was sent, which is how it has always behaved.
+        // Not `pagingFromQueryString`: this helper paginates with or without `?page=`.
         const window = this.#pageWindow({
             page: parseInt(req.query.page, 10) || 1,
             pageSize: parseInt(req.query.pageSize, 10) || this.config.defaultPageSize,
@@ -284,7 +213,6 @@ class ControllerSets {
         return okPaginated(res, page);
     };
 
-    /** Standard error reporter for the controller. */
     sendErrorResponse = (res, statusCode, message) => failure(res, statusCode, message);
 }
 

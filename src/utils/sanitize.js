@@ -1,39 +1,24 @@
-/**
- * Input sanitization helpers.
- *
- * Everything in this module exists for one reason: values arriving on `req.query`
- * and `req.body` are attacker-controlled, and MongoDB gives special meaning to
- * `$`-prefixed keys and `.` separators. Treating either as inert data is how a
- * filter becomes an operator and a body field becomes a privilege escalation.
- */
+// Values on `req.query` and `req.body` are attacker-controlled, and MongoDB gives
+// `$` and `.` special meaning — treating either as inert data is how a filter
+// becomes an operator and a body field becomes privilege escalation.
 
 const REGEX_SPECIALS = /[.*+?^${}()|[\]\\]/g;
 
-/** Depth cap for the recursive key scan. Refuse to vouch for what we did not inspect. */
 const MAX_SCAN_DEPTH = 8;
 
 /** Never writable by a client, regardless of the configured field policy. */
 export const IMMUTABLE_FIELDS = ["_id", "__v", "createdAt", "updatedAt"];
 
-/**
- * Keys that reach an object's prototype chain rather than its own data.
- *
- * `JSON.parse` creates `__proto__` as a real own property, so a body of
- * `{"__proto__": {"isAdmin": true}}` survives a naive key copy and re-points the
- * payload's prototype on assignment. These are never field names.
- */
+// `JSON.parse` makes `__proto__` a real own property, so `{"__proto__": {…}}`
+// survives a naive key copy and re-points the payload's prototype on assignment.
 export const POLLUTING_KEYS = ["__proto__", "constructor", "prototype"];
 
 const POLLUTING = new Set(POLLUTING_KEYS);
 
 /**
- * Error carrying an HTTP status. `expose` marks a message as deliberately
- * authored for the client, which lets the error handler distinguish it from an
- * internal failure whose message may leak infrastructure detail.
- *
- * `headers` carries response headers that belong with the status — a 415 that
- * names the format it wanted, for instance — so the handler that renders the
- * error does not need to know why.
+ * An HTTP status with a message written for the client — `expose` is what tells
+ * the error handler it is safe to return. `headers` carries any header that
+ * belongs with the status.
  */
 export class HttpError extends Error {
     constructor(status, message, { headers } = {}) {
@@ -45,14 +30,7 @@ export class HttpError extends Error {
     }
 }
 
-/**
- * A rejected request body, optionally with per-field messages.
- *
- * This is what a custom `validate` hook throws. It is deliberately separate from
- * Mongoose's own `ValidationError`: that one carries an `errors` map of
- * `ValidatorError` objects, while this one carries plain strings the API author
- * wrote for the client.
- */
+/** A rejected body with optional per-field messages — what a `validate` hook throws. */
 export class ValidationError extends HttpError {
     constructor(message, fields, status = 400) {
         super(status, message);
@@ -62,24 +40,19 @@ export class ValidationError extends HttpError {
 }
 
 /**
- * Escapes regex metacharacters so user input matches literally.
- * Without this, `(a+)+$` becomes a catastrophic-backtracking pattern executed
- * inside mongod — a database-tier denial of service from a single GET.
+ * Escapes regex metacharacters so user input matches literally. Without this,
+ * `(a+)+$` is a catastrophic-backtracking pattern executed inside mongod.
  */
 export const escapeRegex = (value) => String(value).replace(REGEX_SPECIALS, "\\$&");
 
-/**
- * A key is unsafe if it would be read as something other than a plain field:
- * `$` introduces a Mongo operator, `.` traverses into a subdocument, and
- * `__proto__` / `constructor` / `prototype` reach the prototype chain.
- */
+// `$` introduces a Mongo operator, `.` traverses into a subdocument, and the
+// polluting keys reach the prototype chain. None of them are field names.
 export const isUnsafeKey = (key) =>
     typeof key !== "string" ||
     key.startsWith("$") ||
     key.includes(".") ||
     POLLUTING.has(key);
 
-/** Recursively reports whether any key in a value would be interpreted by Mongo. */
 export const hasUnsafeKeysDeep = (value, depth = 0) => {
     if (depth > MAX_SCAN_DEPTH) return true;
     if (Array.isArray(value)) return value.some((item) => hasUnsafeKeysDeep(item, depth + 1));
@@ -93,17 +66,9 @@ export const hasUnsafeKeysDeep = (value, depth = 0) => {
     return false;
 };
 
-/**
- * Coerces an allowlisted query-string value into something safe to hand Mongo.
- *
- * Express 5 defaults to the `simple` query parser, under which `?a[$ne]=b` yields
- * the literal key `"a[$ne]"` and never reaches here as an object. But the host app
- * may set `query parser: 'extended'`, which this library cannot control — so the
- * value is validated regardless of how it was parsed.
- *
- * Repeated params (`?tag=a&tag=b`) arrive as arrays and are treated as `$in`,
- * which is what callers expect. Raw Mongo would read them as array equality.
- */
+// Express 5's `simple` parser turns `?a[$ne]=b` into the literal key `"a[$ne]"`,
+// but the host app may switch to `extended` — so values are checked either way.
+// Repeated params (`?tag=a&tag=b`) become `$in`, which is what callers expect.
 export const sanitizeFilterValue = (value, field) => {
     if (value === undefined || value === null) return undefined;
 
@@ -121,15 +86,8 @@ export const sanitizeFilterValue = (value, field) => {
     return value;
 };
 
-/**
- * Strips keys that are syntax rather than data from an object the *server* built
- * — the return value of a `validate` hook, for example.
- *
- * Unlike `pickWritable` this applies no allowlist: code running on the server is
- * trusted to set fields a client may not. It is only the keys that can change an
- * object's shape or meaning that are refused, because no legitimate hook needs
- * them.
- */
+// For objects the *server* built, such as a `validate` hook's return value: no
+// allowlist, since server code may set fields a client cannot.
 export const sanitizeAssignable = (value) => {
     if (!value || typeof value !== "object" || Array.isArray(value)) return {};
 
@@ -141,11 +99,6 @@ export const sanitizeAssignable = (value) => {
     return out;
 };
 
-/**
- * Normalizes `allowedFields` / `blockedFields` into a per-verb policy.
- * Each option accepts either a flat array (applied to both verbs) or
- * `{ create, update }` for per-verb control.
- */
 export const resolveFieldPolicy = (allowedFields, blockedFields) => {
     const forVerb = (option, verb) => {
         if (!option) return undefined;
@@ -166,13 +119,8 @@ export const resolveFieldPolicy = (allowedFields, blockedFields) => {
     };
 };
 
-/**
- * Filters a request body down to the fields a client is permitted to write.
- *
- * Mongoose's `strict` mode is not a substitute for this: it drops keys the schema
- * does not define, which means it discards harmless typos and faithfully persists
- * `{ role: "admin" }`.
- */
+// Mongoose's `strict` mode is no substitute: it drops keys the schema does not
+// define, which discards harmless typos and faithfully persists `{ role: "admin" }`.
 export const pickWritable = (body, rules) => {
     if (!body || typeof body !== "object" || Array.isArray(body)) return {};
 
@@ -188,14 +136,8 @@ export const pickWritable = (body, rules) => {
     return out;
 };
 
-/**
- * Operators a client may use inside a QUERY request body.
- *
- * The keys are deliberately un-prefixed: a client never writes `$gte`, it writes
- * `gte`, and this table is the only thing that can turn a word into a Mongo
- * operator. A body that contains a literal `$` key is therefore never one
- * operator away from being executed — it fails the lookup and is rejected.
- */
+// Deliberately un-prefixed: this table is the only thing that turns a word into a
+// Mongo operator, so a literal `$` key fails the lookup instead of executing.
 export const QUERY_FILTER_OPERATORS = Object.freeze({
     eq: "$eq",
     ne: "$ne",
@@ -207,7 +149,6 @@ export const QUERY_FILTER_OPERATORS = Object.freeze({
     nin: "$nin",
 });
 
-/** Operators taking a list rather than a single value. */
 const LIST_OPERATORS = new Set(["in", "nin"]);
 
 /** Upper bound on `in` / `nin` list length. An unbounded list is an unbounded query. */
@@ -245,14 +186,8 @@ const assertScalarList = (value, field, operator) => {
     return value;
 };
 
-/**
- * Translates one entry of a QUERY body's `filter` object into a Mongo clause.
- *
- * Accepts a scalar (equality), a list (treated as `in`, matching how repeated
- * query-string params behave), or a flat object of allowlisted operators.
- * Anything else — nested objects, functions, `$`-prefixed keys, mixed shapes —
- * is a 400 rather than something to interpret generously.
- */
+// One `filter` entry → one clause: a scalar (equality), a list (`in`), or a flat
+// object of allowlisted operators. Anything else is a 400.
 export const sanitizeStructuredFilter = (value, field) => {
     if (value === undefined) return undefined;
 

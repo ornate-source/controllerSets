@@ -1,30 +1,16 @@
 import mongoose from "mongoose";
 import { escapeRegex } from "../utils/sanitize.js";
 
-/**
- * Text search across configured fields, including fields on referenced models.
- */
-
-/**
- * Builds the `$regex` clause for a search term.
- *
- * Escaped by default: an unescaped term is a pattern the client authored and
- * mongod executes. Raw regex remains available for trusted callers via
- * `allowRawRegex`, but it must be a decision, not a default.
- */
+// Escaped by default: an unescaped term is a pattern the client authored and
+// mongod executes.
 export const regexFor = (term, config) => {
     const value = config.allowRawRegex || config.legacyMode ? String(term) : escapeRegex(term);
     return { $regex: value, $options: "i" };
 };
 
-/**
- * One clause per configured search field.
- *
- * A dotted field is a relation: the referenced collection is searched first and
- * the matching ids become an `$in` on the parent. Splitting on the *first*
- * separator only means `author.profile.name` targets the nested path
- * `profile.name` on the referenced model, not `profile`.
- */
+// A dotted field is a relation: the referenced collection is searched first and
+// its ids become an `$in`. Splitting on the first separator only means
+// `author.profile.name` targets `profile.name` on the referenced model.
 const clauseFor = async (field, term, config) => {
     const dot = field.indexOf(".");
     if (dot === -1) return { [field]: regexFor(term, config) };
@@ -54,12 +40,6 @@ const clauseFor = async (field, term, config) => {
     }
 };
 
-/**
- * Applies a search term to a filter document, in place.
- *
- * Shared by every read, so `?s=` and a QUERY body's `search` cannot diverge in
- * how they escape, how deep they resolve, or what they do when nothing matches.
- */
 export const applySearchTerm = async (filters, term, config) => {
     if (!term) return filters;
 

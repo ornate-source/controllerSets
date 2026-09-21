@@ -1,19 +1,13 @@
 import { resolveFieldPolicy } from "../utils/sanitize.js";
 import { sortSpecFor } from "./readParams.js";
 
-/**
- * Option normalization.
- *
- * Every option is read exactly once, here, and frozen into a plain config object
- * that the rest of the pipeline treats as read-only. The handlers therefore never
- * ask "what did the author configure?" mid-request — they are handed the answer.
- */
+// Every option is read once, here, and frozen — handlers are handed the answer
+// rather than asking what was configured mid-request.
 
 export const DEFAULT_MAX_LIMIT = 100;
 export const DEFAULT_PAGE_SIZE = 50;
 export const DEFAULT_MAX_SEARCH_LENGTH = 128;
 
-/** How a paginated read learns how many records matched. */
 const COUNT_STRATEGIES = ["exact", "estimated", "none"];
 
 export const defaultLogger = {
@@ -22,13 +16,9 @@ export const defaultLogger = {
     debug: () => {},
 };
 
-/** Models already warned about, so an unconfigured policy logs once rather than per instance. */
 const policyWarned = new Set();
 
-/**
- * Accepts both the options-object form and the legacy positional signature
- * `(model, orderBy, query, search, runAfterCreate, onGet)`.
- */
+/** Accepts the options object, or the legacy positional signature. */
 export function normalizeOptions(args) {
     const [first] = args;
     const isOptionsObject =
@@ -40,7 +30,6 @@ export function normalizeOptions(args) {
     return { model, orderBy, query, search, runAfterCreate, onGet };
 }
 
-/** Sorting defaults to the filterable set plus whatever `orderBy` already names. */
 function defaultSortable(query, orderBy) {
     const fields = [...query];
     if (orderBy && orderBy !== "none") {
@@ -50,7 +39,6 @@ function defaultSortable(query, orderBy) {
     return fields;
 }
 
-/** A hook accepted either as one function for both verbs, or one per verb. */
 function perVerbHook(option, verb) {
     if (typeof option === "function") return option;
     if (option && typeof option === "object" && typeof option[verb] === "function") {
@@ -63,15 +51,8 @@ function positiveIntOption(value, fallback) {
     return Number.isInteger(value) && value > 0 ? value : fallback;
 }
 
-/** `maxPage` is off unless asked for, so `null` is a legitimate resolved value. */
-
-/**
- * Turns raw options into the frozen config the pipeline runs on.
- *
- * Allowlists are kept as both the array the author gave (still readable on the
- * instance, since consumers have always been able to inspect it) and a `Set` for
- * the membership tests, which happen once per field per request.
- */
+// Allowlists are kept as both the author's array (consumers read it off the
+// instance) and a Set, since membership is tested once per field per request.
 export function buildConfig(options) {
     if (!options.model) {
         throw new Error("ControllerSets: Mongoose model is required.");
@@ -125,10 +106,8 @@ export function buildConfig(options) {
     });
 }
 
-/**
- * Mass assignment is silent and total when unconfigured, and consumers upgrading
- * from 2.x will not read a changelog. The console will reach them.
- */
+// Mass assignment is silent and total when unconfigured, and consumers upgrading
+// from 2.x will not read a changelog. The console reaches them.
 export function warnIfUnprotected(config) {
     if (config.legacyMode || config.fieldPolicy.configured) return;
 

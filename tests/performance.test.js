@@ -4,13 +4,10 @@ import express from "express";
 import { createRouter, errorHandler } from "../src/index.js";
 import { createMockModel, objectId, withServer } from "./helpers/mockModel.js";
 
-/**
- * The options that decide what a read costs.
- *
- * A list endpoint's worst case is not the documents it returns — it is the count
- * query beside them and the time the database is willing to spend. These pin
- * both, and that the caps cannot be widened from outside.
- */
+// The options that decide what a read costs. A list endpoint's worst case is not
+// the documents it returns — it is the count query beside them and the time the
+// database will spend. These pin both, and that the caps cannot be widened from
+// outside.
 
 const silentLogger = { warn: () => {}, error: () => {}, debug: () => {} };
 

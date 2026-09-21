@@ -4,13 +4,10 @@ import express from "express";
 import { ValidationError, createRouter, errorHandler } from "../src/index.js";
 import { createMockModel, objectId, withServer } from "./helpers/mockModel.js";
 
-/**
- * Custom write validation, and the boundary it runs inside.
- *
- * The field policy decides what a *client* may set; the `validate` hook decides
- * whether those values make sense. These tests pin the order of the two, because
- * a hook that ran first would be handed fields the policy was meant to strip.
- */
+// Custom write validation, and the boundary it runs inside. The field policy
+// decides what a *client* may set; the hook decides whether the values make
+// sense. These pin the order: a hook running first would be handed fields the
+// policy was meant to strip.
 
 const silentLogger = { warn: () => {}, error: () => {}, debug: () => {} };
 

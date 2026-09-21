@@ -1,13 +1,8 @@
 import { randomUUID } from "crypto";
 
-/**
- * Global Error Handler - Express error middleware.
- *
- * Client-facing messages are authored deliberately. Anything unclassified is
- * reported generically: Mongoose and the AWS SDK put connection strings, hostnames,
- * bucket names, and index definitions into `err.message`, and echoing that back
- * hands an attacker a map of the infrastructure.
- */
+// Anything unclassified is reported generically: Mongoose and the AWS SDK put
+// connection strings, hostnames and bucket names into `err.message`, and echoing
+// that hands an attacker a map of the infrastructure.
 export const errorHandler = (err, req, res, next) => {
     if (res.headersSent) {
         return next(err);
@@ -19,12 +14,10 @@ export const errorHandler = (err, req, res, next) => {
     let message = err.message || "Internal Server Error";
     let expose = err.expose === true;
 
-    // Per-field messages from a `validate` hook's ValidationError. Mongoose's
-    // own ValidationError is handled below and flattened into one string.
+    // Per-field messages from a `validate` hook; Mongoose's own are added below.
     let fields = err.fields && typeof err.fields === "object" ? err.fields : undefined;
 
-    // Some errors name the header that belongs with their status — a 415 that
-    // says which format it wanted, for instance.
+    // Some errors name the header that belongs with their status.
     if (err.headers && !res.headersSent) {
         for (const [name, value] of Object.entries(err.headers)) {
             res.setHeader(name, value);
@@ -50,8 +43,7 @@ export const errorHandler = (err, req, res, next) => {
         );
     }
 
-    // MongoDB: duplicate key. A unique-constraint collision is a client-correctable
-    // conflict, not a server fault, so it must not fall through to a 500.
+    // MongoDB duplicate key: a client-correctable conflict, not a server fault.
     if (err.code === 11000) {
         statusCode = 409;
         const duplicated = Object.keys(err.keyPattern ?? err.keyValue ?? {});
