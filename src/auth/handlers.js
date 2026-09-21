@@ -20,6 +20,7 @@ import { verifyAgainstDecoy } from "./password.js";
 import { generateOtp, hashOtp, otpMatches } from "./otp.js";
 import { durationToSeconds, signToken } from "./token.js";
 import { resolveProvider } from "./providers/index.js";
+import { availableChannels, sendCode } from "./delivery.js";
 import { closeSession, openSession, revokeAllSessions, useRefreshToken } from "./refresh.js";
 
 // The endpoints. Each one is short because the decisions live in `account.js`,
@@ -229,10 +230,29 @@ const SENT = "If that account exists, a code has been sent.";
 
 export const forgotPassword = handler(async (req, res, config) => {
     const identifier = req.body?.identifier ?? req.body?.[config.identifiers[0].field];
-    const channel = req.body?.channel === "sms" ? "sms" : "email";
+
+    // Settled before the account is looked up: what this server can send on is
+    // configuration, not something that varies by account.
+    const channels = availableChannels(config);
+    const requested = req.body?.channel;
+    if (requested !== undefined && requested !== "email" && requested !== "sms") {
+        throw new HttpError(400, "'channel' must be 'email' or 'sms'.");
+    }
+    if (requested && channels.length && !channels.includes(requested)) {
+        throw new HttpError(400, `Codes cannot be sent by ${requested} here.`);
+    }
+    const channel = requested ?? channels[0] ?? "email";
 
     const user = await findByIdentifier(identifier, config);
     if (!user) return okMessage(res, SENT);
+
+    if (!channels.length) {
+        config.logger.warn(
+            "[Auth] No mail transporter, mail/sms sender or 'otp.deliver' configured — " +
+                "the reset code would be generated but never sent.",
+        );
+        return okMessage(res, SENT);
+    }
 
     const code = generateOtp(config.otp.length);
 
@@ -248,20 +268,25 @@ export const forgotPassword = handler(async (req, res, config) => {
         },
     );
 
-    if (config.otp.deliver) {
-        // Delivery is the application's: this library has no opinion on your
-        // mail provider and no business holding its credentials.
-        try {
-            await config.otp.deliver({ user: publicUser(user, config), code, channel, req });
-        } catch (err) {
-            config.logger.error(`[Auth] OTP delivery failed: ${err.message}`);
-            throw new HttpError(503, "Could not send the code. Try again shortly.");
-        }
-    } else {
-        config.logger.warn(
-            "[Auth] No 'otp.deliver' configured — the reset code was generated but not sent.",
-        );
+    let sent;
+    try {
+        sent = await sendCode({
+            config,
+            rawUser: user,
+            user: publicUser(user, config),
+            code,
+            channel,
+            purpose: "passwordReset",
+            req,
+        });
+    } catch (err) {
+        config.logger.error(`[Auth] OTP delivery failed: ${err.message}`);
+        throw new HttpError(503, "Could not send the code. Try again shortly.");
     }
+
+    // No address or number on file for that channel. Said to the log, not the
+    // client: a different answer would tell it the account exists.
+    if (!sent) config.logger.warn(`[Auth] User ${user._id} has no ${channel} recipient; code not sent.`);
 
     return okMessage(res, SENT);
 });

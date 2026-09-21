@@ -421,8 +421,8 @@ export interface OtpOptions {
     /** Guesses allowed before the code is dead. Default 5. */
     maxAttempts?: number;
     /**
-     * Sends the code. This library never talks to your mail or SMS provider —
-     * without this the code is generated and a warning is logged.
+     * Sends the code yourself, bypassing `mail` and `sms` entirely. Kept for
+     * compatibility; prefer `mail.sender` / `sms.sender` and templates.
      */
     deliver?: (payload: {
         user: Record<string, any>;
@@ -447,6 +447,65 @@ export interface RefreshOptions {
     /** Sessions kept per user; the oldest is dropped. Default 5. */
     maxSessions?: number;
 }
+
+/** What a template sees. `user` is the public user — no secret fields. */
+export interface TemplateContext {
+    code: string;
+    purpose: "passwordReset";
+    minutes: number;
+    appName: string;
+    user: Record<string, any>;
+}
+
+export interface MailMessage {
+    subject: string;
+    text?: string;
+    html?: string;
+}
+
+/** A string template may use `{{code}}`, `{{minutes}}`, `{{appName}}`, `{{user.name}}`. */
+export type MailTemplate = MailMessage | ((context: TemplateContext) => MailMessage | Promise<MailMessage>);
+export type SmsTemplate = string | ((context: TemplateContext) => string | Promise<string>);
+
+export interface MailOptions {
+    /** A nodemailer transporter, or anything with `sendMail({ from, to, subject, text, html })`. */
+    transporter?: { sendMail: (message: Record<string, any>) => Promise<unknown> | unknown };
+    /** nodemailer transport options; built lazily. Default from `SMTP_URL` or `SMTP_HOST`/`SMTP_PORT`/`SMTP_SECURE`/`SMTP_USER`/`SMTP_PASS`. */
+    transport?: string | Record<string, any>;
+    /** Sender address. Default `MAIL_FROM`; required with a transporter. */
+    from?: string;
+    /** Replaces the transporter entirely — Resend, SES, Postmark, a queue. */
+    sender?: (message: MailMessage & {
+        to: string;
+        user: Record<string, any>;
+        purpose: string;
+        code: string;
+        req: Request;
+    }) => void | Promise<void>;
+    /** Field holding the address. Default `"email"`. */
+    toField?: string;
+    templates?: { passwordReset?: MailTemplate };
+}
+
+export interface SmsOptions {
+    /** Required to send by SMS: there is no default provider. */
+    sender?: (message: {
+        to: string;
+        text: string;
+        user: Record<string, any>;
+        purpose: string;
+        code: string;
+        req: Request;
+    }) => void | Promise<void>;
+    /** Field holding the number. Default `"phone"`. */
+    toField?: string;
+    templates?: { passwordReset?: SmsTemplate };
+}
+
+export declare const DEFAULT_TEMPLATES: {
+    readonly mail: { readonly passwordReset: MailMessage };
+    readonly sms: { readonly passwordReset: string };
+};
 
 export interface RoleOptions {
     /** Field holding the role. Default `"role"`. */
@@ -532,6 +591,12 @@ export interface AuthOptions<T extends Document = any> {
         verify?: (plain: string, stored: string) => Promise<boolean> | boolean;
     };
     otp?: OtpOptions;
+    /** Shown in the default templates as `{{appName}}`. Default `APP_NAME`. */
+    appName?: string;
+    /** Sending codes by email. */
+    mail?: MailOptions;
+    /** Sending codes by SMS. */
+    sms?: SmsOptions;
     /** Refresh tokens and sign-out. Off unless enabled here or via `AUTH_REFRESH_ENABLED`. */
     refresh?: RefreshOptions;
     /** Failed sign-ins before the account locks. Default 10 attempts, 900s. */

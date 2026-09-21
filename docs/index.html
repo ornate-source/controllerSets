@@ -3205,8 +3205,8 @@ POST /auth/password/reset   { "identifier": "ada@example.com",
                             (<code>refresh.enabled</code> or <code>AUTH_REFRESH_ENABLED</code>), so keep
                             <code>expiresIn</code> short and turn them on. No rate limiting on the endpoints themselves beyond
                             the per-account lockout, so put a limiter in front of <code>/login</code>,
-                            <code>/register</code> and <code>/password/forgot</code>. No email verification flow. And
-                            it sends nothing: <code>otp.deliver</code> is where your provider goes.</p>
+                            <code>/register</code> and <code>/password/forgot</code>. No email verification flow. Mail goes
+                            through your transporter (or <code>SMTP_*</code>); SMS needs an <code>sms.sender</code>.</p>
                     </div>
                 </div>
             </section>

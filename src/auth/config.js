@@ -1,4 +1,5 @@
 import { MIN_SECRET_LENGTH, durationToSeconds } from "./token.js";
+import { resolveDelivery } from "./delivery.js";
 
 // The contract with your user model.
 //
@@ -205,6 +206,7 @@ export const buildAuthConfig = (options = {}) => {
         }),
 
         otp: Object.freeze(otp),
+        delivery: resolveDelivery(options),
         refresh,
         lockout: Object.freeze({ ...DEFAULT_LOCKOUT, ...(options.lockout ?? {}) }),
         roles: Object.freeze(normalizeRoles(options.roles)),

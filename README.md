@@ -302,8 +302,10 @@ const auth = createAuthRouter({
     registerFields: ['name'],                 // what a registrant may also set
     updateFields: ['name'],                   // what they may change later
 
-    // The code is yours to deliver — no mail or SMS credentials live here.
-    otp: { deliver: async ({ user, code, channel }) => sendCode(user, code, channel) },
+    // Reset codes: mail through a nodemailer transporter, SMS through your provider.
+    appName: 'Acme',
+    mail: { transporter: nodemailer.createTransport(smtp), from: 'Acme <no-reply@acme.com>' },
+    sms: { sender: async ({ to, text }) => twilio.messages.create({ to, from: TWILIO_FROM, body: text }) },
 
     social: {
         google: { clientId: process.env.GOOGLE_CLIENT_ID },
@@ -370,6 +372,61 @@ createAuthRouter({
 Sign-in responses then carry `refreshToken` and `refreshExpiresIn` alongside `token`. Refresh
 tokens are opaque, stored only as an HMAC, and revoked on password change or reset. The library
 reads `process.env` but does not load `.env` — call `dotenv` (or `node --env-file`) first.
+
+### Sending codes by mail and SMS
+
+`POST /password/forgot` sends a one-time code by `email` (default) or `sms` — the client may
+pass `channel`, and only configured channels are accepted.
+
+**Mail** goes through a transporter by default: pass a nodemailer transporter (or anything with
+`sendMail`), or set the environment and let the library build one (install `nodemailer`):
+
+```bash
+SMTP_HOST=smtp.example.com   # or SMTP_URL=smtps://user:pass@smtp.example.com
+SMTP_PORT=587
+SMTP_USER=apikey
+SMTP_PASS=secret
+MAIL_FROM="Acme <no-reply@acme.com>"
+APP_NAME=Acme
+```
+
+**Swap the sender** for anything else — Resend, SES, a job queue. SMS has no default, so
+`sms.sender` is how it is turned on:
+
+```javascript
+createAuthRouter({
+    model: User,
+    token: { secret: process.env.JWT_SECRET },
+    mail: { sender: async ({ to, subject, text, html }) => resend.emails.send({ from, to, subject, text, html }) },
+    sms:  { sender: async ({ to, text }) => twilio.messages.create({ to, from: TWILIO_FROM, body: text }) },
+});
+```
+
+**Templates** are strings with `{{code}}`, `{{minutes}}`, `{{appName}}` and `{{user.<field>}}`
+(escaped in HTML), or functions that get the same values and return the message:
+
+```javascript
+mail: {
+    transporter,
+    from: 'Acme <no-reply@acme.com>',
+    templates: {
+        passwordReset: {
+            subject: 'Reset your {{appName}} password',
+            text: 'Hi {{user.name}}, your code is {{code}} ({{minutes}} min).',
+            html: '<p>Hi {{user.name}}, your code is <b>{{code}}</b>.</p>',
+        },
+        // or: passwordReset: async ({ code, user, minutes }) => ({ subject, html: await render(...) }),
+    },
+},
+sms: {
+    sender,
+    templates: { passwordReset: '{{appName}}: {{code}} is your reset code' },
+},
+```
+
+The recipient is read from `email` / `phone`; change it with `mail.toField` / `sms.toField`.
+An account with nothing on file for the channel gets the same response as any other, so the
+endpoint never reveals which accounts exist. `otp.deliver` still works and overrides all of this.
 
 ### Your URLs, not ours
 

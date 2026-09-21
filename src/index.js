@@ -14,6 +14,7 @@ export {
     signToken,
     verifyToken,
     BUILT_IN_PROVIDERS,
+    DEFAULT_TEMPLATES,
 } from "./auth/index.js";
 export {
     HttpError,

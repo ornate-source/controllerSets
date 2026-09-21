@@ -7,3 +7,4 @@ export { signToken, verifyToken, durationToSeconds } from "./token.js";
 export { generateOtp, hashOtp, otpMatches } from "./otp.js";
 export { BUILT_IN_PROVIDERS } from "./providers/index.js";
 export { publicUser } from "./account.js";
+export { DEFAULT_TEMPLATES, interpolate } from "./delivery.js";
