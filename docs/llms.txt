@@ -5,46 +5,22 @@
 Install: `npm install express-controller-sets express mongoose`. ES modules, Node 20+, Express 5, Mongoose 9.
 For a complete, self-contained guide written for language models, read https://ornate-source.github.io/controllerSets/llms-full.txt.
 
-## Get started
+## Getting started
 
-- [Overview](https://ornate-source.github.io/controllerSets/): What the library is and what one call gives you.
-- [Quickstart](https://ornate-source.github.io/controllerSets/quickstart.html): A working API in one file, in five minutes.
-- [How to use](https://ornate-source.github.io/controllerSets/how-to-use.html): Put CRUD, auth, uploads and email together — plus ready-made answers to common tasks.
+- [Overview](https://ornate-source.github.io/controllerSets/): Why controller-sets, and how to install it.
+- [How to use](https://ornate-source.github.io/controllerSets/how-to-use.html): Build a working products API with createRouter in five steps.
 
-## CRUD
+## Guides
 
-- [Endpoints & responses](https://ornate-source.github.io/controllerSets/endpoints.html): The six routes every router serves, and what they return.
-- [Filter, search & paginate](https://ornate-source.github.io/controllerSets/filtering.html): Let clients find records — only by the fields you allow.
-- [Create, update & validate](https://ornate-source.github.io/controllerSets/writing.html): Choose which fields clients may write, and check them before saving.
+- [Dynamic Router](https://ornate-source.github.io/controllerSets/router.html): Every option of createRouter and createRouterS3upload, why you would use it, and every API endpoint they create.
+- [S3 Upload](https://ornate-source.github.io/controllerSets/uploads.html): Upload files on your own routes with the upload middleware, and connect your bucket.
+- [Auth setup](https://ornate-source.github.io/controllerSets/auth.html): Sign-up, login, roles, refresh tokens and social sign-in on your own user model.
+- [Email sender](https://ornate-source.github.io/controllerSets/email.html): Send password-reset codes by email or SMS, with your own transporter and templates.
+- [.env.example](https://ornate-source.github.io/controllerSets/env.html): Every environment variable, with ready-made setups for common providers.
+- [Advanced](https://ornate-source.github.io/controllerSets/advanced.html): Use each ControllerSets method — getAll, query, get, create, update, delete — on your own routes.
 
-## S3 Upload
+## More
 
-- [Upload files](https://ornate-source.github.io/controllerSets/uploads.html): Accept files with a record and store them in S3-compatible storage.
-- [S3 setup](https://ornate-source.github.io/controllerSets/s3.html): Connect AWS S3, Cloudflare R2, DigitalOcean Spaces or MinIO.
-
-## Dynamic Router
-
-- [Router & middlewares](https://ornate-source.github.io/controllerSets/router.html): Mount, guard and split the generated routes.
-- [HTTP QUERY](https://ornate-source.github.io/controllerSets/http-query.html): Reads whose filters travel in a JSON body.
-- [Custom routes](https://ornate-source.github.io/controllerSets/custom-routes.html): Use the handlers on your own router.
-
-## Auth
-
-- [Auth setup](https://ornate-source.github.io/controllerSets/auth.html): Sign-up, login, roles and route guards on your own user model.
-- [Refresh tokens](https://ornate-source.github.io/controllerSets/auth-refresh.html): Short access tokens, long sessions — with rotation on or off.
-- [Social sign-in](https://ornate-source.github.io/controllerSets/auth-social.html): Google, Apple, Facebook, GitHub — or any provider.
-
-## Email Sender
-
-- [Email Sender](https://ornate-source.github.io/controllerSets/email.html): Send password-reset codes with your transporter, sender and templates.
-
-## .env examples
-
-- [.env examples](https://ornate-source.github.io/controllerSets/env.html): Every environment variable, with ready-made setups for common providers.
-
-## Reference
-
-- [All options](https://ornate-source.github.io/controllerSets/options.html): Every option, default and export.
 - [FAQ](https://ornate-source.github.io/controllerSets/faq.html): Answers to the questions people hit first.
 - [Use with an LLM](https://ornate-source.github.io/controllerSets/llm.html): One prompt so ChatGPT, Claude or Copilot write correct code for this package.
 

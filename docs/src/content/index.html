@@ -6,9 +6,9 @@
                     and optional S3 file uploads already wired up. You write the model and the rules; it writes the
                     controller.</p>
                 <div class="hero-actions">
-                    <a class="btn btn-primary" href="quickstart.html"><i data-lucide="rocket"></i> Get started <i
+                    <a class="btn btn-primary" href="#installation"><i data-lucide="download"></i> Install <i
                             data-lucide="arrow-right"></i></a>
-                    <a class="btn btn-ghost" href="how-to-use.html"><i data-lucide="map"></i> How to use <i data-lucide="arrow-right"></i></a>
+                    <a class="btn btn-ghost" href="how-to-use.html"><i data-lucide="play"></i> See a demo <i data-lucide="arrow-right"></i></a>
                 </div>
 
                 <div class="hero-demo">
@@ -53,24 +53,70 @@
                 </div>
             </section>
 
-<section class="section" id="features">
-    <h2>What is in the box</h2>
-<p>Six features, each one import away. Use only what you need — uploads and email load nothing until used.</p>
-<div class="path-grid"><a class="path-card" href="endpoints.html"><i data-lucide="database"></i><strong>CRUD</strong><span>List, read, create, update and delete for any Mongoose model, with filtering, search and pagination.</span></a><a class="path-card" href="uploads.html"><i data-lucide="upload-cloud"></i><strong>S3 Upload</strong><span>Multipart uploads to S3, R2, Spaces or MinIO, with type checks and image compression.</span></a><a class="path-card" href="router.html"><i data-lucide="route"></i><strong>Dynamic Router</strong><span>One call mounts every route. Guard them, split them, or wire the handlers yourself.</span></a><a class="path-card" href="auth.html"><i data-lucide="key-round"></i><strong>Auth</strong><span>Register, login, roles, refresh tokens and social sign-in — on your own user model.</span></a><a class="path-card" href="email.html"><i data-lucide="mail"></i><strong>Email Sender</strong><span>Password-reset codes by email or SMS, with your own transporter and templates.</span></a><a class="path-card" href="env.html"><i data-lucide="file-cog"></i><strong>.env examples</strong><span>Every environment variable, with ready-made setups for common providers.</span></a></div>
+<section class="section" id="why">
+<h2>Why choose controller-sets</h2>
+<p>Every Express + Mongoose API writes the same controllers again: list with filters, read one, create, update, delete — and each copy has its own bugs. controller-sets writes them once, correctly, and lets you configure the rest.</p>
+<div class="card-grid"><div class="card"><div class="card-icon"><i data-lucide="timer"></i></div><h4>Minutes, not days</h4><p>One call gives a model six working endpoints with filtering, search, sorting and pagination. No controller code to write or test.</p></div><div class="card"><div class="card-icon"><i data-lucide="shield-check"></i></div><h4>Secure by default</h4><p>Nothing is writable, filterable or sortable until you allow it. Mass assignment, NoSQL injection and regex attacks are closed off out of the box.</p></div><div class="card"><div class="card-icon"><i data-lucide="gauge"></i></div><h4>Fast at any size</h4><p>Same queries you would write by hand, plus cursor pagination: page 1,000 of 100,000 records in under a millisecond.</p></div><div class="card"><div class="card-icon"><i data-lucide="boxes"></i></div><h4>Batteries included</h4><p>S3 uploads with image compression, JWT auth with refresh tokens and social sign-in, and email / SMS codes — all optional.</p></div><div class="card"><div class="card-icon"><i data-lucide="database"></i></div><h4>Your models, your rules</h4><p>No schema of its own. Point it at the Mongoose models you already have and it adapts to your field names.</p></div><div class="card"><div class="card-icon"><i data-lucide="code"></i></div><h4>TypeScript built in</h4><p>Full types ship with the package. Autocomplete for every option; a wrong route name is a compile error.</p></div></div>
 </section>
 
-<section class="section" id="how-it-works">
-    <h2>How it works</h2>
-<ol class="steps"><li><h4>You define a Mongoose model</h4><p>Nothing special — the schema you already have.</p></li><li><h4>You call <code>createRouter({ model, … })</code></h4><p>It returns an Express router with six endpoints already wired.</p></li><li><h4>You say what clients may do</h4><p>Which fields they can write, filter, search and sort. Anything you don't list is refused.</p></li></ol>
-<div class="callout callout-tip"><i data-lucide="rocket"></i><div><p>New here? Go to the <a href="quickstart.html">Quickstart</a> — a working API in one file.</p></div></div>
+<section class="section" id="compare">
+<h2>Less code, same result</h2>
+<div class="tabs"><div class="tab-list" role="tablist"><button class="tab-btn" type="button" data-tab="cmp-with" role="tab">With controller-sets</button><button class="tab-btn" type="button" data-tab="cmp-without" role="tab">By hand</button></div><div class="tab-panel" id="cmp-with" role="tabpanel"><div class="code-block" data-lang="javascript">
+<pre><code>app.use('/api/products', createRouter({
+  model: Product,
+  query: ['category'],
+  search: ['name'],
+  sortableFields: ['price', 'createdAt'],
+  allowedFields: ['name', 'price', 'category'],
+}));</code></pre>
+</div><p>Six endpoints, validated input, pagination, consistent errors.</p></div><div class="tab-panel" id="cmp-without" role="tabpanel"><div class="code-block" data-lang="javascript">
+<pre><code>router.get('/', async (req, res, next) =&gt; {
+  try {
+    const filter = {};
+    if (req.query.category) filter.category = req.query.category;
+    if (req.query.s) filter.name = { $regex: escape(req.query.s), $options: 'i' };
+    const sort = ['price', 'createdAt'].includes(req.query.sort?.replace('-', ''))
+      ? req.query.sort : '-createdAt';
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, parseInt(req.query.pageSize) || 50);
+    const [data, total] = await Promise.all([
+      Product.find(filter).sort(sort).skip((page - 1) * limit).limit(limit),
+      Product.countDocuments(filter),
+    ]);
+    res.json({ success: true, data, pagination: { page, total } });
+  } catch (err) { next(err); }
+});
+// …and POST, GET /:id, PATCH /:id, DELETE /:id, input filtering, id validation…</code></pre>
+</div></div></div>
 </section>
 
-<section class="section" id="advanced">
-    <h2>Advanced</h2>
-    <p class="section-intro">Background reading: the ideas behind the library.</p>
+<section class="section" id="installation">
+<h2>Installation</h2>
+<div class="code-block" data-lang="bash">
+<pre><code>npm install express-controller-sets express mongoose</code></pre>
+</div>
+<p>Optional packages — install only for the features you use. They load lazily, so an app that never uploads never loads the AWS SDK.</p>
+<div class="table-container"><table><thead><tr><th>Feature</th><th>Install</th></tr></thead><tbody>
+<tr><td>CRUD, Dynamic Router, Auth</td><td>nothing extra</td></tr>
+<tr><td>S3 Upload</td><td><code>npm install multer @aws-sdk/client-s3</code></td></tr>
+<tr><td>Image compression</td><td><code>npm install sharp</code></td></tr>
+<tr><td>Email sender (SMTP)</td><td><code>npm install nodemailer</code></td></tr>
+</tbody></table></div>
+<div class="table-container"><table><thead><tr><th>Requirement</th><th>Version</th></tr></thead><tbody>
+<tr><td>Node.js</td><td>18+ (22.2+ for the HTTP QUERY route)</td></tr>
+<tr><td>Express</td><td>5</td></tr>
+<tr><td>Mongoose</td><td>9</td></tr>
+<tr><td>Modules</td><td>ES modules — add <code>"type": "module"</code> to package.json</td></tr>
+</tbody></table></div>
+<div class="callout callout-tip"><i data-lucide="arrow-right"></i><div><p>Next: <a href="how-to-use.html">How to use</a> — a working API in five steps.</p></div></div>
+</section>
+
+<section class="section" id="background">
+<h2>Background</h2>
+<p class="section-intro">The ideas behind the library — read when you are curious.</p>
 <details class="advanced" id="basics">
-  <summary>Never built a REST API before? Start here.</summary>
-  <div class="details-body"><p class="section-intro">Skip ahead if <code>router.get('/:id', …)</code> is muscle memory for you.</p>
+<summary>New to REST APIs? Start here</summary>
+<div class="details-body"><p class="section-intro">Skip ahead if <code>router.get('/:id', …)</code> is muscle memory for you.</p>
 
     <div class="callout callout-plain">
         <i data-lucide="lightbulb"></i>
@@ -147,119 +193,11 @@
                 before this reaches the internet.</p>
         </div>
     </div>
-  </div>
+</div>
 </details>
-
-<details class="advanced" id="what-you-get">
-  <summary>What you actually get</summary>
-  <div class="details-body"><p class="section-intro">Three exports carry almost all the value. The rest is detail.</p>
-
-                <div class="card-grid">
-                    <div class="card">
-                        <div class="card-icon"><i data-lucide="route"></i></div>
-                        <h4>createRouter()</h4>
-                        <p>Six REST endpoints for one model, ready to mount — including HTTP <code>QUERY</code>.</p>
-                    </div>
-                    <div class="card">
-                        <div class="card-icon"><i data-lucide="upload-cloud"></i></div>
-                        <h4>createRouterS3upload()</h4>
-                        <p>The same six, plus file uploads to S3 on <code>POST</code> and <code>PATCH</code>.</p>
-                    </div>
-                    <div class="card">
-                        <div class="card-icon"><i data-lucide="alert-circle"></i></div>
-                        <h4>errorHandler</h4>
-                        <p>One Express error handler that turns any failure into consistent JSON.</p>
-                    </div>
-                </div>
-
-                <p>That is the whole surface for most projects:</p>
-
-                <div class="code-block" data-lang="javascript">
-                    <pre><code>import { createRouter, createRouterS3upload, errorHandler } from 'express-controller-sets';
-
-app.use('/api/products', createRouter({ model: Product, /* rules */ }));
-app.use('/api/users',    createRouterS3upload({ model: User, /* rules */ }));
-app.use(errorHandler);   // always last</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
-                </div>
-
-                <p>Four more exports exist for when you need them: the <code>ControllerSets</code> class (<a
-                        href="#custom">wire handlers into your own routes</a>), <code>fileUploadMiddleware</code>
-                    (uploads without the CRUD), <code>compressImage</code>, and <code>HttpError</code> /
-                    <code>escapeRegex</code> for your own code.</p>
-  </div>
-</details>
-
-<details class="advanced" id="lifecycle">
-  <summary>A request, step by step</summary>
-  <div class="details-body"><p class="section-intro">What happens between <code>GET /api/products?s=laptop</code> and the JSON that
-        comes back.</p>
-
-    <div class="flow">
-        <div class="flow-track">
-            <div class="flow-node" style="--i:0">
-                <div class="flow-dot"><i data-lucide="shield"></i></div>
-                <span class="flow-actor">Your code</span>
-                <h5>Middlewares</h5>
-                <p>Auth, rate limits, tenancy</p>
-            </div>
-            <div class="flow-node" style="--i:1">
-                <div class="flow-dot"><i data-lucide="filter"></i></div>
-                <span class="flow-actor">Library</span>
-                <h5>Build filters</h5>
-                <p>Only allowlisted params</p>
-            </div>
-            <div class="flow-node" style="--i:2">
-                <div class="flow-dot"><i data-lucide="search"></i></div>
-                <span class="flow-actor">Library</span>
-                <h5>Apply search</h5>
-                <p>Escaped, relations resolved</p>
-            </div>
-            <div class="flow-node" style="--i:3">
-                <div class="flow-dot"><i data-lucide="git-branch"></i></div>
-                <span class="flow-actor">Your hook</span>
-                <h5>onGet</h5>
-                <p>Choose populate &amp; select</p>
-            </div>
-            <div class="flow-node" style="--i:4">
-                <div class="flow-dot"><i data-lucide="database"></i></div>
-                <span class="flow-actor">MongoDB</span>
-                <h5>Query</h5>
-                <p>Capped at maxLimit</p>
-            </div>
-            <div class="flow-node" style="--i:5">
-                <div class="flow-dot"><i data-lucide="braces"></i></div>
-                <span class="flow-actor">Library</span>
-                <h5>JSON out</h5>
-                <p>Always the same shape</p>
-            </div>
-        </div>
-    </div>
-
-    <p>A write (<code>POST</code> or <code>PATCH</code>) follows the same path with two differences: on an
-        upload router the file middleware runs first and replaces the file with its URL, and the request
-        body is filtered down to the fields you allowed before it reaches Mongoose.</p>
-
-    <p>A <a href="#http-query"><code>QUERY</code></a> read walks the same track from the second step
-        onward. Only the first differs: the filters are built from a JSON body rather than the query
-        string, against the same allowlists. Everything after that — search, <code>onGet</code>, the
-        <code>maxLimit</code> cap, the response shape — is one shared implementation.</p>
-
-    <div class="callout callout-plain">
-        <i data-lucide="corner-down-right"></i>
-        <div>
-            <p><strong>Where do errors go?</strong> Deliberate 4xx answers — a bad ID, a field that isn't
-                filterable — are returned by the controller itself, so they work even if you forgot to mount
-                <code>errorHandler</code>. Anything unexpected is re-thrown; Express 5 forwards it to your
-                error handler instead of hanging the request.</p>
-        </div>
-    </div>
-  </div>
-</details>
-
 <details class="advanced" id="implicit-deny">
-  <summary>Nothing is open until you open it</summary>
-  <div class="details-body"><p class="section-intro">One idea explains almost every option in this library. Learn it once and the
+<summary>Nothing is open until you open it</summary>
+<div class="details-body"><p class="section-intro">One idea explains almost every option in this library. Learn it once and the
         rest of the page reads itself.</p>
 
     <div class="mode-grid">
@@ -388,6 +326,72 @@ app.use(errorHandler);   // always last</code></pre>
                 <code>prototype</code> are refused wherever a key is read.</p>
         </div>
     </div>
-  </div>
+</div>
+</details>
+<details class="advanced" id="lifecycle">
+<summary>A request, step by step</summary>
+<div class="details-body"><p class="section-intro">What happens between <code>GET /api/products?s=laptop</code> and the JSON that
+        comes back.</p>
+
+    <div class="flow">
+        <div class="flow-track">
+            <div class="flow-node" style="--i:0">
+                <div class="flow-dot"><i data-lucide="shield"></i></div>
+                <span class="flow-actor">Your code</span>
+                <h5>Middlewares</h5>
+                <p>Auth, rate limits, tenancy</p>
+            </div>
+            <div class="flow-node" style="--i:1">
+                <div class="flow-dot"><i data-lucide="filter"></i></div>
+                <span class="flow-actor">Library</span>
+                <h5>Build filters</h5>
+                <p>Only allowlisted params</p>
+            </div>
+            <div class="flow-node" style="--i:2">
+                <div class="flow-dot"><i data-lucide="search"></i></div>
+                <span class="flow-actor">Library</span>
+                <h5>Apply search</h5>
+                <p>Escaped, relations resolved</p>
+            </div>
+            <div class="flow-node" style="--i:3">
+                <div class="flow-dot"><i data-lucide="git-branch"></i></div>
+                <span class="flow-actor">Your hook</span>
+                <h5>onGet</h5>
+                <p>Choose populate &amp; select</p>
+            </div>
+            <div class="flow-node" style="--i:4">
+                <div class="flow-dot"><i data-lucide="database"></i></div>
+                <span class="flow-actor">MongoDB</span>
+                <h5>Query</h5>
+                <p>Capped at maxLimit</p>
+            </div>
+            <div class="flow-node" style="--i:5">
+                <div class="flow-dot"><i data-lucide="braces"></i></div>
+                <span class="flow-actor">Library</span>
+                <h5>JSON out</h5>
+                <p>Always the same shape</p>
+            </div>
+        </div>
+    </div>
+
+    <p>A write (<code>POST</code> or <code>PATCH</code>) follows the same path with two differences: on an
+        upload router the file middleware runs first and replaces the file with its URL, and the request
+        body is filtered down to the fields you allowed before it reaches Mongoose.</p>
+
+    <p>A <a href="#http-query"><code>QUERY</code></a> read walks the same track from the second step
+        onward. Only the first differs: the filters are built from a JSON body rather than the query
+        string, against the same allowlists. Everything after that — search, <code>onGet</code>, the
+        <code>maxLimit</code> cap, the response shape — is one shared implementation.</p>
+
+    <div class="callout callout-plain">
+        <i data-lucide="corner-down-right"></i>
+        <div>
+            <p><strong>Where do errors go?</strong> Deliberate 4xx answers — a bad ID, a field that isn't
+                filterable — are returned by the controller itself, so they work even if you forgot to mount
+                <code>errorHandler</code>. Anything unexpected is re-thrown; Express 5 forwards it to your
+                error handler instead of hanging the request.</p>
+        </div>
+    </div>
+</div>
 </details>
 </section>

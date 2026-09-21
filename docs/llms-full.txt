@@ -128,9 +128,9 @@ Every router serves: `GET /` (list), `QUERY /` (list with a JSON body), `POST /`
 ## Query string (GET /)
 
 ```
-?page=2&pageSize=20                 paginate (adds a pagination block)
+?page=2&pageSize=20                 paginate (adds a pagination block); pageSize alone does NOT paginate
 ?s=laptop  or  ?search=laptop       literal, case-insensitive, OR across search fields
-?sort=-price                        must be in sortableFields; '-' = descending
+?sort=-price                        one field, must be in sortableFields; '-' = descending (multi-key: QUERY only)
 ?category=65af…                     equality on a `query` field; repeat for $in
 ?rangeField=price&range=10-100      inclusive; either side optional
 ?compareField=price&compareValue=50&compareOperator=gt   gt|gte|lt|lte|ne|eq
@@ -325,7 +325,16 @@ mail: {
 sms: { sender, templates: { passwordReset: '{{appName}}: {{code}} is your code' } },
 ```
 
-## Custom routes
+## Custom routes (every ControllerSets method)
+
+Methods are pre-bound arrow functions — pass them directly. `get`, `update`, `delete` read
+`req.params.id`, so the route parameter must be named `:id`. They send the response themselves;
+client errors (400/404/409) are answered directly, unexpected errors are thrown to `errorHandler`.
+
+`fileUploadMiddleware(req, res, next, { uploadPath, fields, acl, allowedMimeTypes, maxFileSize,
+maxFiles, imgOptimizations, allowClientImageOptions })` uploads multipart files to S3 on any route
+and puts the URL(s) on `req.body[field]` (plus `req.file(s)[].key` / `.location`).
+
 
 ```js
 import express from 'express';

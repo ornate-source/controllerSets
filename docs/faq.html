@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/components.css?v=10a91d487a">
-  <link rel="stylesheet" href="assets/css/shell.css?v=94b1910641">
+  <link rel="stylesheet" href="assets/css/shell.css?v=a1646e50a8">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%236366f1'/%3E%3Ctext x='50' y='68' font-family='monospace' font-size='54' font-weight='700' fill='white' text-anchor='middle'%3E%7B%7D%3C/text%3E%3C/svg%3E">
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
@@ -48,49 +48,31 @@
 
   <div class="layout">
     <aside class="sidenav" id="sidenav" aria-label="Documentation">
-      <nav><div class="nav-group" data-group="get-started">
-          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="rocket"></i><span>Get started</span><i data-lucide="chevron-down" class="chev"></i></button>
-          <ul class="nav-pages"><li><a class="nav-page" href="./"><i data-lucide="home"></i><span class="nav-page-label">Overview</span></a></li>
-<li><a class="nav-page" href="quickstart.html"><i data-lucide="zap"></i><span class="nav-page-label">Quickstart</span></a></li>
-<li><a class="nav-page" href="how-to-use.html"><i data-lucide="map"></i><span class="nav-page-label">How to use</span></a></li></ul>
+      <nav><div class="nav-group" data-group="getting-started">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="rocket"></i><span>Getting started</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="./"><i data-lucide="home"></i><span class="nav-page-label">Overview</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="how-to-use.html"><i data-lucide="play"></i><span class="nav-page-label">How to use</span></a></li></ul>
         </div>
-<div class="nav-group" data-group="crud">
-          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="database"></i><span>CRUD</span><i data-lucide="chevron-down" class="chev"></i></button>
-          <ul class="nav-pages"><li><a class="nav-page" href="endpoints.html"><i data-lucide="network"></i><span class="nav-page-label">Endpoints &amp; responses</span></a></li>
-<li><a class="nav-page" href="filtering.html"><i data-lucide="filter"></i><span class="nav-page-label">Filter, search &amp; paginate</span></a></li>
-<li><a class="nav-page" href="writing.html"><i data-lucide="file-pen"></i><span class="nav-page-label">Create, update &amp; validate</span></a></li></ul>
+<div class="nav-group" data-group="guides">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="book-open"></i><span>Guides</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="router.html"><i data-lucide="route"></i><span class="nav-page-label">Dynamic Router</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="uploads.html"><i data-lucide="upload-cloud"></i><span class="nav-page-label">S3 Upload</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="auth.html"><i data-lucide="key-round"></i><span class="nav-page-label">Auth setup</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="email.html"><i data-lucide="mail"></i><span class="nav-page-label">Email sender</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="env.html"><i data-lucide="file-cog"></i><span class="nav-page-label">.env.example</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="advanced.html"><i data-lucide="wrench"></i><span class="nav-page-label">Advanced</span></a></li></ul>
         </div>
-<div class="nav-group" data-group="s3-upload">
-          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="upload-cloud"></i><span>S3 Upload</span><i data-lucide="chevron-down" class="chev"></i></button>
-          <ul class="nav-pages"><li><a class="nav-page" href="uploads.html"><i data-lucide="upload"></i><span class="nav-page-label">Upload files</span></a></li>
-<li><a class="nav-page" href="s3.html"><i data-lucide="hard-drive"></i><span class="nav-page-label">S3 setup</span></a></li></ul>
-        </div>
-<div class="nav-group" data-group="dynamic-router">
-          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="route"></i><span>Dynamic Router</span><i data-lucide="chevron-down" class="chev"></i></button>
-          <ul class="nav-pages"><li><a class="nav-page" href="router.html"><i data-lucide="lock"></i><span class="nav-page-label">Router &amp; middlewares</span></a></li>
-<li><a class="nav-page" href="http-query.html"><i data-lucide="file-search"></i><span class="nav-page-label">HTTP QUERY</span></a></li>
-<li><a class="nav-page" href="custom-routes.html"><i data-lucide="puzzle"></i><span class="nav-page-label">Custom routes</span></a></li></ul>
-        </div>
-<div class="nav-group" data-group="auth">
-          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="key-round"></i><span>Auth</span><i data-lucide="chevron-down" class="chev"></i></button>
-          <ul class="nav-pages"><li><a class="nav-page" href="auth.html"><i data-lucide="key-round"></i><span class="nav-page-label">Auth setup</span></a></li>
-<li><a class="nav-page" href="auth-refresh.html"><i data-lucide="refresh-cw"></i><span class="nav-page-label">Refresh tokens</span></a></li>
-<li><a class="nav-page" href="auth-social.html"><i data-lucide="users"></i><span class="nav-page-label">Social sign-in</span></a></li></ul>
-        </div>
-<div class="nav-group nav-single"><a class="nav-page nav-top" href="email.html"><i data-lucide="mail"></i><span class="nav-page-label">Email Sender</span></a></div>
-<div class="nav-group nav-single"><a class="nav-page nav-top" href="env.html"><i data-lucide="file-cog"></i><span class="nav-page-label">.env examples</span></a></div>
-<div class="nav-group" data-group="reference">
-          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="library"></i><span>Reference</span><i data-lucide="chevron-down" class="chev"></i></button>
-          <ul class="nav-pages"><li><a class="nav-page" href="options.html"><i data-lucide="sliders-horizontal"></i><span class="nav-page-label">All options</span></a></li>
-<li><a class="nav-page" href="faq.html" aria-current="page"><i data-lucide="messages-square"></i><span class="nav-page-label">FAQ</span></a></li>
-<li><a class="nav-page" href="llm.html"><i data-lucide="bot"></i><span class="nav-page-label">Use with an LLM</span></a></li></ul>
+<div class="nav-group" data-group="more">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="circle-help"></i><span>More</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item is-open"><a class="nav-page" href="faq.html" aria-current="page"><i data-lucide="messages-square"></i><span class="nav-page-label">FAQ</span></a><ul class="nav-sections"><li><a class="nav-section" href="#faq" data-target="faq">Common questions</a></li><li><a class="nav-section" href="#advanced" data-target="advanced">Advanced</a></li></ul></li>
+<li class="nav-page-item"><a class="nav-page" href="llm.html"><i data-lucide="bot"></i><span class="nav-page-label">Use with an LLM</span></a></li></ul>
         </div></nav>
     </aside>
 
     <main class="doc" id="main" tabindex="-1">
       <article class="doc-inner">
         <header class="page-header">
-          <p class="breadcrumb">Reference <i data-lucide="chevron-right"></i> FAQ</p>
+          <p class="breadcrumb">More <i data-lucide="chevron-right"></i> FAQ</p>
           <h1>FAQ</h1>
           <p class="page-summary">Answers to the questions people hit first.</p>
         </header>
@@ -128,7 +110,7 @@
                 <strong>Two:</strong> you sent it to <code>/:id</code>; QUERY is a collection method
                 only. <strong>Three:</strong> something between you and the app — a proxy, CDN or
                 gateway — refused the unrecognised method before it arrived. See
-                <a href="http-query.html#http-query">HTTP QUERY</a>.</p>
+                <a href="router.html#http-query">HTTP QUERY</a>.</p>
         </div>
     </details>
 
@@ -388,8 +370,9 @@ new ControllerSets({ model: Model, orderBy: '-createdAt', query: ['category'] })
 </details>
 </section>
 
+
         <nav class="pager" aria-label="Previous and next page">
-      <a class="prev" href="options.html"><span class="pager-dir"><i data-lucide="arrow-left"></i> Previous</span><span class="pager-title">All options</span></a>
+      <a class="prev" href="advanced.html"><span class="pager-dir"><i data-lucide="arrow-left"></i> Previous</span><span class="pager-title">Advanced</span></a>
       <a class="next" href="llm.html"><span class="pager-dir">Next <i data-lucide="arrow-right"></i></span><span class="pager-title">Use with an LLM</span></a>
     </nav>
         <footer class="doc-footer">

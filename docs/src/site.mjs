@@ -20,68 +20,29 @@ export const SITE = {
 
 export const NAV = [
     {
-        title: "Get started",
+        title: "Getting started",
         icon: "rocket",
         pages: [
-            { slug: "index", title: "Overview", icon: "home", summary: "What the library is and what one call gives you." },
-            { slug: "quickstart", title: "Quickstart", icon: "zap", summary: "A working API in one file, in five minutes." },
-            { slug: "how-to-use", title: "How to use", icon: "map", summary: "Put CRUD, auth, uploads and email together — plus ready-made answers to common tasks." },
+            { slug: "index", title: "Overview", icon: "home", summary: "Why controller-sets, and how to install it." },
+            { slug: "how-to-use", title: "How to use", icon: "play", summary: "Build a working products API with createRouter in five steps." },
         ],
     },
     {
-        title: "CRUD",
-        icon: "database",
+        title: "Guides",
+        icon: "book-open",
         pages: [
-            { slug: "endpoints", title: "Endpoints & responses", icon: "network", summary: "The six routes every router serves, and what they return." },
-            { slug: "filtering", title: "Filter, search & paginate", icon: "filter", summary: "Let clients find records — only by the fields you allow." },
-            { slug: "writing", title: "Create, update & validate", icon: "file-pen", summary: "Choose which fields clients may write, and check them before saving." },
+            { slug: "router", title: "Dynamic Router", icon: "route", summary: "Every option of createRouter and createRouterS3upload, why you would use it, and every API endpoint they create." },
+            { slug: "uploads", title: "S3 Upload", icon: "upload-cloud", summary: "Upload files on your own routes with the upload middleware, and connect your bucket." },
+            { slug: "auth", title: "Auth setup", icon: "key-round", summary: "Sign-up, login, roles, refresh tokens and social sign-in on your own user model." },
+            { slug: "email", title: "Email sender", icon: "mail", summary: "Send password-reset codes by email or SMS, with your own transporter and templates." },
+            { slug: "env", title: ".env.example", icon: "file-cog", summary: "Every environment variable, with ready-made setups for common providers." },
+            { slug: "advanced", title: "Advanced", icon: "wrench", summary: "Use each ControllerSets method — getAll, query, get, create, update, delete — on your own routes." },
         ],
     },
     {
-        title: "S3 Upload",
-        icon: "upload-cloud",
+        title: "More",
+        icon: "circle-help",
         pages: [
-            { slug: "uploads", title: "Upload files", icon: "upload", summary: "Accept files with a record and store them in S3-compatible storage." },
-            { slug: "s3", title: "S3 setup", icon: "hard-drive", summary: "Connect AWS S3, Cloudflare R2, DigitalOcean Spaces or MinIO." },
-        ],
-    },
-    {
-        title: "Dynamic Router",
-        icon: "route",
-        pages: [
-            { slug: "router", title: "Router & middlewares", icon: "lock", summary: "Mount, guard and split the generated routes." },
-            { slug: "http-query", title: "HTTP QUERY", icon: "file-search", summary: "Reads whose filters travel in a JSON body." },
-            { slug: "custom-routes", title: "Custom routes", icon: "puzzle", summary: "Use the handlers on your own router." },
-        ],
-    },
-    {
-        title: "Auth",
-        icon: "key-round",
-        pages: [
-            { slug: "auth", title: "Auth setup", icon: "key-round", summary: "Sign-up, login, roles and route guards on your own user model." },
-            { slug: "auth-refresh", title: "Refresh tokens", icon: "refresh-cw", summary: "Short access tokens, long sessions — with rotation on or off." },
-            { slug: "auth-social", title: "Social sign-in", icon: "users", summary: "Google, Apple, Facebook, GitHub — or any provider." },
-        ],
-    },
-    {
-        title: "Email Sender",
-        icon: "mail",
-        pages: [
-            { slug: "email", title: "Email Sender", icon: "mail", summary: "Send password-reset codes with your transporter, sender and templates." },
-        ],
-    },
-    {
-        title: ".env examples",
-        icon: "file-cog",
-        pages: [
-            { slug: "env", title: ".env examples", icon: "file-cog", summary: "Every environment variable, with ready-made setups for common providers." },
-        ],
-    },
-    {
-        title: "Reference",
-        icon: "library",
-        pages: [
-            { slug: "options", title: "All options", icon: "sliders-horizontal", summary: "Every option, default and export." },
             { slug: "faq", title: "FAQ", icon: "messages-square", summary: "Answers to the questions people hit first." },
             { slug: "llm", title: "Use with an LLM", icon: "bot", summary: "One prompt so ChatGPT, Claude or Copilot write correct code for this package." },
         ],

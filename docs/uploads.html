@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Upload files · express-controller-sets</title>
-  <meta name="description" content="Accept files with a record and store them in S3-compatible storage.">
+  <title>S3 Upload · express-controller-sets</title>
+  <meta name="description" content="Upload files on your own routes with the upload middleware, and connect your bucket.">
   <link rel="canonical" href="https://ornate-source.github.io/controllerSets/uploads.html">
-  <meta property="og:title" content="Upload files · express-controller-sets">
-  <meta property="og:description" content="Accept files with a record and store them in S3-compatible storage.">
+  <meta property="og:title" content="S3 Upload · express-controller-sets">
+  <meta property="og:description" content="Upload files on your own routes with the upload middleware, and connect your bucket.">
   <meta property="og:type" content="website">
   <link rel="alternate" type="text/plain" title="LLM guide" href="llms-full.txt">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/components.css?v=10a91d487a">
-  <link rel="stylesheet" href="assets/css/shell.css?v=94b1910641">
+  <link rel="stylesheet" href="assets/css/shell.css?v=a1646e50a8">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%236366f1'/%3E%3Ctext x='50' y='68' font-family='monospace' font-size='54' font-weight='700' fill='white' text-anchor='middle'%3E%7B%7D%3C/text%3E%3C/svg%3E">
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
@@ -48,95 +48,118 @@
 
   <div class="layout">
     <aside class="sidenav" id="sidenav" aria-label="Documentation">
-      <nav><div class="nav-group" data-group="get-started">
-          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="rocket"></i><span>Get started</span><i data-lucide="chevron-down" class="chev"></i></button>
-          <ul class="nav-pages"><li><a class="nav-page" href="./"><i data-lucide="home"></i><span class="nav-page-label">Overview</span></a></li>
-<li><a class="nav-page" href="quickstart.html"><i data-lucide="zap"></i><span class="nav-page-label">Quickstart</span></a></li>
-<li><a class="nav-page" href="how-to-use.html"><i data-lucide="map"></i><span class="nav-page-label">How to use</span></a></li></ul>
+      <nav><div class="nav-group" data-group="getting-started">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="rocket"></i><span>Getting started</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="./"><i data-lucide="home"></i><span class="nav-page-label">Overview</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="how-to-use.html"><i data-lucide="play"></i><span class="nav-page-label">How to use</span></a></li></ul>
         </div>
-<div class="nav-group" data-group="crud">
-          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="database"></i><span>CRUD</span><i data-lucide="chevron-down" class="chev"></i></button>
-          <ul class="nav-pages"><li><a class="nav-page" href="endpoints.html"><i data-lucide="network"></i><span class="nav-page-label">Endpoints &amp; responses</span></a></li>
-<li><a class="nav-page" href="filtering.html"><i data-lucide="filter"></i><span class="nav-page-label">Filter, search &amp; paginate</span></a></li>
-<li><a class="nav-page" href="writing.html"><i data-lucide="file-pen"></i><span class="nav-page-label">Create, update &amp; validate</span></a></li></ul>
+<div class="nav-group" data-group="guides">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="book-open"></i><span>Guides</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="router.html"><i data-lucide="route"></i><span class="nav-page-label">Dynamic Router</span></a></li>
+<li class="nav-page-item is-open"><a class="nav-page" href="uploads.html" aria-current="page"><i data-lucide="upload-cloud"></i><span class="nav-page-label">S3 Upload</span></a><ul class="nav-sections"><li><a class="nav-section" href="#upload-router" data-target="upload-router">Upload router</a></li><li><a class="nav-section" href="#upload-middleware" data-target="upload-middleware">Upload middleware on your own routes</a></li><li><a class="nav-section" href="#s3-setup" data-target="s3-setup">Connect your bucket</a></li><li><a class="nav-section" href="#upload-more" data-target="upload-more">More detail</a></li></ul></li>
+<li class="nav-page-item"><a class="nav-page" href="auth.html"><i data-lucide="key-round"></i><span class="nav-page-label">Auth setup</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="email.html"><i data-lucide="mail"></i><span class="nav-page-label">Email sender</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="env.html"><i data-lucide="file-cog"></i><span class="nav-page-label">.env.example</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="advanced.html"><i data-lucide="wrench"></i><span class="nav-page-label">Advanced</span></a></li></ul>
         </div>
-<div class="nav-group" data-group="s3-upload">
-          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="upload-cloud"></i><span>S3 Upload</span><i data-lucide="chevron-down" class="chev"></i></button>
-          <ul class="nav-pages"><li><a class="nav-page" href="uploads.html" aria-current="page"><i data-lucide="upload"></i><span class="nav-page-label">Upload files</span></a></li>
-<li><a class="nav-page" href="s3.html"><i data-lucide="hard-drive"></i><span class="nav-page-label">S3 setup</span></a></li></ul>
-        </div>
-<div class="nav-group" data-group="dynamic-router">
-          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="route"></i><span>Dynamic Router</span><i data-lucide="chevron-down" class="chev"></i></button>
-          <ul class="nav-pages"><li><a class="nav-page" href="router.html"><i data-lucide="lock"></i><span class="nav-page-label">Router &amp; middlewares</span></a></li>
-<li><a class="nav-page" href="http-query.html"><i data-lucide="file-search"></i><span class="nav-page-label">HTTP QUERY</span></a></li>
-<li><a class="nav-page" href="custom-routes.html"><i data-lucide="puzzle"></i><span class="nav-page-label">Custom routes</span></a></li></ul>
-        </div>
-<div class="nav-group" data-group="auth">
-          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="key-round"></i><span>Auth</span><i data-lucide="chevron-down" class="chev"></i></button>
-          <ul class="nav-pages"><li><a class="nav-page" href="auth.html"><i data-lucide="key-round"></i><span class="nav-page-label">Auth setup</span></a></li>
-<li><a class="nav-page" href="auth-refresh.html"><i data-lucide="refresh-cw"></i><span class="nav-page-label">Refresh tokens</span></a></li>
-<li><a class="nav-page" href="auth-social.html"><i data-lucide="users"></i><span class="nav-page-label">Social sign-in</span></a></li></ul>
-        </div>
-<div class="nav-group nav-single"><a class="nav-page nav-top" href="email.html"><i data-lucide="mail"></i><span class="nav-page-label">Email Sender</span></a></div>
-<div class="nav-group nav-single"><a class="nav-page nav-top" href="env.html"><i data-lucide="file-cog"></i><span class="nav-page-label">.env examples</span></a></div>
-<div class="nav-group" data-group="reference">
-          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="library"></i><span>Reference</span><i data-lucide="chevron-down" class="chev"></i></button>
-          <ul class="nav-pages"><li><a class="nav-page" href="options.html"><i data-lucide="sliders-horizontal"></i><span class="nav-page-label">All options</span></a></li>
-<li><a class="nav-page" href="faq.html"><i data-lucide="messages-square"></i><span class="nav-page-label">FAQ</span></a></li>
-<li><a class="nav-page" href="llm.html"><i data-lucide="bot"></i><span class="nav-page-label">Use with an LLM</span></a></li></ul>
+<div class="nav-group" data-group="more">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="circle-help"></i><span>More</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="faq.html"><i data-lucide="messages-square"></i><span class="nav-page-label">FAQ</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="llm.html"><i data-lucide="bot"></i><span class="nav-page-label">Use with an LLM</span></a></li></ul>
         </div></nav>
     </aside>
 
     <main class="doc" id="main" tabindex="-1">
       <article class="doc-inner">
         <header class="page-header">
-          <p class="breadcrumb">S3 Upload <i data-lucide="chevron-right"></i> Upload files</p>
-          <h1>Upload files</h1>
-          <p class="page-summary">Accept files with a record and store them in S3-compatible storage.</p>
+          <p class="breadcrumb">Guides <i data-lucide="chevron-right"></i> S3 Upload</p>
+          <h1>S3 Upload</h1>
+          <p class="page-summary">Upload files on your own routes with the upload middleware, and connect your bucket.</p>
         </header>
-        <section class="section" id="upload-basics">
-    <h2>Upload files with a record<a class="anchor" href="#upload-basics" aria-label="Link to this section">#</a></h2>
-<div class="code-block" data-lang="bash">
-<pre><code class="language-bash">npm install multer @aws-sdk/client-s3     # add sharp for image compression</code></pre>
-</div>
+        <section class="section" id="upload-router">
+<h2>Upload router<a class="anchor" href="#upload-router" aria-label="Link to this section">#</a></h2>
+<p>For CRUD with files, use <code>createRouterS3upload</code> — every <a href="router.html">Dynamic Router</a> option plus upload options. The full option list and how to send files are on <a href="router.html#s3-router">Dynamic Router → S3 upload router</a>.</p>
 <div class="code-block" data-lang="javascript">
-<pre><code class="language-javascript">import { createRouterS3upload } from 'express-controller-sets';
-
-app.use('/api/products', createRouterS3upload({
+<pre><code class="language-javascript">app.use('/api/products', createRouterS3upload({
   model: Product,
-  path: 'products/',                          // folder in the bucket
-  fields: [
-    { name: 'cover', maxCount: 1 },
-    { name: 'gallery', maxCount: 6 },
-  ],
-  allowedFields: ['name', 'cover', 'gallery'],
+  fields: [{ name: 'cover', maxCount: 1 }],
+  allowedFields: ['name', 'cover'],
 }));</code></pre>
 </div>
-<div class="code-block" data-lang="bash">
-<pre><code class="language-bash">curl -X POST localhost:3000/api/products \
-  -F name=Chair -F cover=@cover.jpg -F gallery=@side.jpg -F gallery=@back.jpg</code></pre>
+</section>
+
+
+
+<section class="section" id="upload-middleware">
+<h2>Upload middleware on your own routes<a class="anchor" href="#upload-middleware" aria-label="Link to this section">#</a></h2>
+<p>Need uploads outside a CRUD router — an avatar endpoint, a file inbox? Import <code>fileUploadMiddleware</code> and put it in front of any handler.</p>
+<div class="code-block" data-lang="javascript">
+<pre><code class="language-javascript">import { fileUploadMiddleware } from 'express-controller-sets';
+
+const avatarUpload = (req, res, next) =&gt;
+  fileUploadMiddleware(req, res, next, {
+    uploadPath: 'avatars/',
+    fields: [{ name: 'avatar', maxCount: 1 }],
+    imgOptimizations: 'medium',
+    acl: 'public-read',
+    allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+    maxFileSize: 2 * 1024 * 1024,
+  });
+
+app.post('/api/me/avatar', auth.requireAuth, avatarUpload, async (req, res) =&gt; {
+  // The middleware has uploaded the file and put its URL on req.body
+  await User.updateOne({ _id: req.auth.userId }, { avatar: req.body.avatar });
+  res.json({ success: true, data: { avatar: req.body.avatar } });
+});</code></pre>
 </div>
-<p>The saved record holds the file URLs. You get all six CRUD routes too. Set the <a href="s3.html">S3 variables</a> first.</p>
-</section>
-
-<section class="section" id="upload-options-short">
-    <h2>Common options<a class="anchor" href="#upload-options-short" aria-label="Link to this section">#</a></h2>
-<div class="table-container"><table><thead><tr><th>Option</th><th>Default</th><th>What it does</th></tr></thead><tbody>
-<tr><td><code>path</code></td><td><code>'files/'</code></td><td>Folder inside the bucket.</td></tr>
-<tr><td><code>fields</code></td><td><code>[{ name: 'file', maxCount: 1 }]</code></td><td>Form fields that carry files.</td></tr>
-<tr><td><code>imgOptimizations</code></td><td>off</td><td><code>'low'</code>, <code>'medium'</code> or <code>'high'</code> compression (needs sharp).</td></tr>
-<tr><td><code>upload.acl</code></td><td><code>'private'</code></td><td><code>'public-read'</code> makes URLs open in a browser.</td></tr>
-<tr><td><code>upload.allowedMimeTypes</code></td><td>images + PDF</td><td>Checked from the file bytes, not the client.</td></tr>
-<tr><td><code>upload.maxFileSize</code></td><td>10 MB</td><td>Per file.</td></tr>
+<div class="table-container"><table><thead><tr><th>After it runs</th><th>Contains</th></tr></thead><tbody>
+<tr><td><code>req.body[field]</code></td><td>The file URL (or an array, or <code>{ url }</code> — same rules as the router).</td></tr>
+<tr><td><code>req.file</code> / <code>req.files</code></td><td>Multer's file objects, plus <code>key</code> (the S3 key) and <code>location</code> (the URL).</td></tr>
+<tr><td>other form fields</td><td>Also on <code>req.body</code>, as strings.</td></tr>
 </tbody></table></div>
+<div class="table-container"><table><thead><tr><th>Middleware option</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>uploadPath</code></td><td><code>'files/'</code></td></tr>
+<tr><td><code>fields</code></td><td><code>[{ name: 'file', maxCount: 1 }]</code></td></tr>
+<tr><td><code>acl</code></td><td><code>'private'</code></td></tr>
+<tr><td><code>allowedMimeTypes</code></td><td>JPEG, PNG, GIF, WebP, AVIF, PDF</td></tr>
+<tr><td><code>maxFileSize</code></td><td>10 MB</td></tr>
+<tr><td><code>maxFiles</code></td><td><code>10</code></td></tr>
+<tr><td><code>imgOptimizations</code></td><td>off</td></tr>
+<tr><td><code>allowClientImageOptions</code></td><td><code>false</code></td></tr>
+</tbody></table></div>
+<div class="table-container"><table><thead><tr><th>Failure</th><th>Response</th></tr></thead><tbody>
+<tr><td>S3 variables missing</td><td><strong>503</strong> — the log names the missing ones</td></tr>
+<tr><td>Too large, too many files, wrong field name</td><td><strong>400</strong> "File upload error: …"</td></tr>
+<tr><td>File type not allowed or unrecognised</td><td><strong>400</strong></td></tr>
+</tbody></table></div>
+<p>Just want compression? <code>compressImage(buffer, 'image/jpeg', 'medium')</code> returns a smaller buffer (needs sharp).</p>
 </section>
 
-<section class="section" id="advanced">
-    <h2>Advanced<a class="anchor" href="#advanced" aria-label="Link to this section">#</a></h2>
-    <p class="section-intro">Deeper detail — open what you need.</p>
+<section class="section" id="s3-setup">
+<h2>Connect your bucket<a class="anchor" href="#s3-setup" aria-label="Link to this section">#</a></h2>
+<p>Five environment variables. Any S3-compatible storage works.</p>
+<div class="code-block" data-lang="bash">
+<pre><code class="language-bash">S3_ENDPOINT=https://s3.us-east-1.amazonaws.com
+S3_SPACES_KEY=your-access-key
+S3_SPACES_SECRET=your-secret-key
+S3_BUCKET_NAME=your-bucket
+S3_REGION=us-east-1          # optional</code></pre>
+</div>
+<div class="table-container"><table><thead><tr><th>Provider</th><th><code>S3_ENDPOINT</code></th><th><code>S3_REGION</code></th></tr></thead><tbody>
+<tr><td>AWS S3</td><td><code>https://s3.&lt;region&gt;.amazonaws.com</code></td><td>your region</td></tr>
+<tr><td>Cloudflare R2</td><td><code>https://&lt;account-id&gt;.r2.cloudflarestorage.com</code></td><td><code>auto</code></td></tr>
+<tr><td>DigitalOcean Spaces</td><td><code>https://&lt;region&gt;.digitaloceanspaces.com</code></td><td><code>us-east-1</code></td></tr>
+<tr><td>MinIO (local)</td><td><code>http://localhost:9000</code></td><td><code>us-east-1</code></td></tr>
+</tbody></table></div>
+<p>Ready-made files per provider: <a href="env.html#env-s3">.env.example</a>.</p>
+</section>
+
+<section class="section" id="upload-more">
+<h2>More detail<a class="anchor" href="#upload-more" aria-label="Link to this section">#</a></h2>
+<p class="section-intro">How files are checked and stored.</p>
 <details class="advanced" id="uploads">
-  <summary>How uploads work</summary>
-  <div class="details-body"><p class="section-intro">Swap one function name and <code>POST</code>/<code>PATCH</code> start
+<summary>How uploads work</summary>
+<div class="details-body"><p class="section-intro">Swap one function name and <code>POST</code>/<code>PATCH</code> start
                     accepting files.</p>
 
                 <div class="code-block" data-lang="javascript">
@@ -281,121 +304,11 @@ req.body.gallery === ['https://…', 'https://…']</code></pre>
                         </tbody>
                     </table>
                 </div>
-  </div>
+</div>
 </details>
-
-<details class="advanced" id="upload-options">
-  <summary>Upload options</summary>
-  <div class="details-body"><p class="section-intro">Everything about files lives in three top-level keys plus the
-                    <code>upload</code> object.</p>
-
-                <div class="code-block" data-lang="javascript">
-                    <pre><code class="language-javascript">createRouterS3upload({
-  model: Document,
-
-  path: 'documents/',                                  // key prefix
-  fields: [
-    { name: 'file',  maxCount: 1 },
-    { name: 'pages', maxCount: 10, formatToUrlObject: true },
-  ],
-  imgOptimizations: 'high',
-
-  upload: {
-    acl: 'public-read',                                // opt in deliberately
-    allowedMimeTypes: ['image/jpeg', 'image/png', 'application/pdf'],
-    maxFileSize: 5 * 1024 * 1024,                      // 5 MB per file
-    maxFiles: 5,
-    allowClientImageOptions: false,
-  },
-});</code></pre>
-                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
-                </div>
-
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Option</th>
-                                <th>Default</th>
-                                <th>What it controls</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><code>path</code></td>
-                                <td><code>'files/'</code></td>
-                                <td>Key prefix inside the bucket. Normalised so it cannot escape upwards with
-                                    <code>../</code>.</td>
-                            </tr>
-                            <tr>
-                                <td><code>fields</code></td>
-                                <td><code>[{ name: 'file', maxCount: 1 }]</code></td>
-                                <td>Which multipart fields carry files, how many each accepts, and whether the saved
-                                    value is a string or <code>{ url }</code>.</td>
-                            </tr>
-                            <tr>
-                                <td><code>imgOptimizations</code></td>
-                                <td><em>off</em></td>
-                                <td><code>'low'</code>, <code>'medium'</code> (or <code>'med'</code>) or
-                                    <code>'high'</code>.</td>
-                            </tr>
-                            <tr>
-                                <td><code>upload.acl</code></td>
-                                <td><code>'private'</code></td>
-                                <td>S3 object ACL. <code>'public-read'</code> makes the returned URL work in a browser
-                                    — and works for everyone else too.</td>
-                            </tr>
-                            <tr>
-                                <td><code>upload.allowedMimeTypes</code></td>
-                                <td>JPEG, PNG, GIF, WebP, AVIF, PDF</td>
-                                <td>Compared against the <em>detected</em> type, never the client's header.</td>
-                            </tr>
-                            <tr>
-                                <td><code>upload.maxFileSize</code></td>
-                                <td>10 MB</td>
-                                <td>Per file, in bytes. Exceeding it is a 400 from Multer.</td>
-                            </tr>
-                            <tr>
-                                <td><code>upload.maxFiles</code></td>
-                                <td>10</td>
-                                <td>Total files per request.</td>
-                            </tr>
-                            <tr>
-                                <td><code>upload.allowClientImageOptions</code></td>
-                                <td><code>false</code></td>
-                                <td>Whether a client may pick the compression level. See the warning below.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="callout callout-warn">
-                    <i data-lucide="key-round"></i>
-                    <div>
-                        <p><strong>Private files aren't reachable from a browser.</strong> With the default ACL, the
-                            URL in your database returns 403 to the public. That is intended — serve those objects
-                            through a presigned URL or a CDN with origin access. Each uploaded file also carries
-                            <code>file.key</code> alongside <code>file.location</code>, which is what a presigner
-                            needs.</p>
-                    </div>
-                </div>
-
-                <div class="callout callout-plain">
-                    <i data-lucide="folder-tree"></i>
-                    <div>
-                        <p><strong>Filenames are not preserved.</strong> Every object is stored as
-                            <code>&lt;timestamp&gt;-&lt;random&gt;</code> plus an extension derived from its bytes. A
-                            user-supplied name is untrusted input in a path, and two users uploading
-                            <code>photo.jpg</code> must not collide. Keep the original name in a database column if you
-                            need to show it.</p>
-                    </div>
-                </div>
-  </div>
-</details>
-
 <details class="advanced" id="images">
-  <summary>Image optimization</summary>
-  <div class="details-body"><p class="section-intro">Shrink images on the way to S3, without picking quality numbers yourself.</p>
+<summary>Image optimization levels</summary>
+<div class="details-body"><p class="section-intro">Shrink images on the way to S3, without picking quality numbers yourself.</p>
 
                 <p>Set a level and the library re-encodes the image toward a target size, binary-searching encoder
                     quality (bounded between 25 and 95, at most seven attempts) until it lands in range. You get
@@ -482,13 +395,87 @@ const smaller = await compressImage(buffer, 'image/jpeg', 'medium');</code></pre
                             <code>x-img-optimizations</code> header.</p>
                     </div>
                 </div>
-  </div>
+</div>
+</details>
+<details class="advanced" id="image-uploads">
+<summary>Recipe: admin-only product images</summary>
+<div class="details-body"><p>Install <code>multer</code>, <code>@aws-sdk/client-s3</code> and (for compression) <code>sharp</code>,
+        and set the <a href="uploads.html">S3 variables</a>. Clients send <code>multipart/form-data</code> with the
+        file fields named as below; the stored document gets the URLs.</p>
+    <div class="code-block" data-lang="javascript">
+        <pre><code class="language-javascript">import { createRouterS3upload } from 'express-controller-sets';
+
+app.use('/api/admin/products', createRouterS3upload({
+  model: Product,
+  middlewares: [auth.requireAuth, auth.requireRole('admin')],
+  path: 'products/',
+  fields: [
+    { name: 'cover', maxCount: 1 },
+    { name: 'gallery', maxCount: 6 },
+  ],
+  imgOptimizations: 'medium',
+  upload: {
+    acl: 'public-read',                                 // product photos are meant to be seen
+    allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+    maxFileSize: 5 * 1024 * 1024,
+  },
+  allowedFields: ['name', 'price', 'cover', 'gallery'],
+}));</code></pre>
+    </div>
+    <div class="code-block" data-lang="bash">
+        <pre><code class="language-bash">curl -X POST localhost:3000/api/admin/products \
+  -H "Authorization: Bearer $TOKEN" \
+  -F name=Chair -F price=120 \
+  -F cover=@cover.jpg -F gallery=@side.jpg -F gallery=@back.jpg</code></pre>
+    </div>
+</div>
+</details>
+<details class="advanced" id="s3-env">
+<summary>S3 environment details</summary>
+<div class="details-body"><p class="section-intro">Five variables. Only needed if you use an upload router.</p>
+
+                <div class="code-block" data-lang="bash">
+                    <pre><code class="language-bash">S3_ENDPOINT=https://nyc3.digitaloceanspaces.com   # required
+S3_SPACES_KEY=your-access-key                     # required
+S3_SPACES_SECRET=your-secret-key                  # required
+S3_BUCKET_NAME=your-bucket                        # required
+S3_REGION=us-east-1                               # optional, defaults to us-east-1</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>The variable names carry "SPACES" because the client is configured with path-style addressing, which
+                    works with DigitalOcean Spaces, MinIO, Cloudflare R2 and Amazon S3 alike. Any S3-compatible
+                    endpoint will do.</p>
+
+                <div class="callout callout-warn">
+                    <i data-lucide="file-cog"></i>
+                    <div>
+                        <p><strong>This library does not call <code>dotenv.config()</code>.</strong> Loading
+                            environment is your application's decision, not a side effect a dependency imposes. Load it
+                            yourself before you start handling requests:</p>
+                        <div class="code-block" data-lang="javascript" style="margin-top:.6rem">
+                            <pre><code class="language-javascript">import 'dotenv/config';   // first import in your entry file</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="callout callout-tip">
+                    <i data-lucide="refresh-cw"></i>
+                    <div>
+                        <p><strong>Configuration is read per request, not at import.</strong> An app that loads its
+                            environment after importing the package still works — no permanent 503 caused by a snapshot
+                            taken a moment too early. Missing variables produce a 503 and a server log naming exactly
+                            which ones are absent.</p>
+                    </div>
+                </div>
+</div>
 </details>
 </section>
 
         <nav class="pager" aria-label="Previous and next page">
-      <a class="prev" href="writing.html"><span class="pager-dir"><i data-lucide="arrow-left"></i> Previous</span><span class="pager-title">Create, update &amp; validate</span></a>
-      <a class="next" href="s3.html"><span class="pager-dir">Next <i data-lucide="arrow-right"></i></span><span class="pager-title">S3 setup</span></a>
+      <a class="prev" href="router.html"><span class="pager-dir"><i data-lucide="arrow-left"></i> Previous</span><span class="pager-title">Dynamic Router</span></a>
+      <a class="next" href="auth.html"><span class="pager-dir">Next <i data-lucide="arrow-right"></i></span><span class="pager-title">Auth setup</span></a>
     </nav>
         <footer class="doc-footer">
           <span>express-controller-sets v3.2.0 · MIT licensed · © 2024–present Sabbir Mahmud</span>

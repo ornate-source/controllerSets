@@ -1127,3 +1127,10 @@ details.advanced .details-body h3 {
     opacity: 1;
     color: var(--primary);
 }
+
+/* Option and parameter names never break mid-word in a table's first column. */
+.table-container td:first-child code {
+    white-space: nowrap;
+    word-break: normal;
+    overflow-wrap: normal;
+}

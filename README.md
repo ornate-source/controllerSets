@@ -8,9 +8,9 @@ An advanced, unified toolkit for Express.js that accelerates API development by 
 [![License](https://img.shields.io/badge/License-MIT-yellow)](https://opensource.org/licenses/MIT)
 
 **[Documentation](https://ornate-source.github.io/controllerSets/)** ·
-**[Quickstart](https://ornate-source.github.io/controllerSets/quickstart.html)** ·
 **[How to use](https://ornate-source.github.io/controllerSets/how-to-use.html)** ·
-**[.env examples](https://ornate-source.github.io/controllerSets/env.html)** ·
+**[API endpoints](https://ornate-source.github.io/controllerSets/router.html#api-overview)** ·
+**[.env.example](https://ornate-source.github.io/controllerSets/env.html)** ·
 **[LLM prompt](https://ornate-source.github.io/controllerSets/llm.html)**
 
 > **Using ChatGPT, Claude, Cursor or Copilot?** Give it

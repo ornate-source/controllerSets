@@ -137,7 +137,14 @@ const sidebar = (current) =>
         const pages = group.pages
             .map((p) => {
                 const isCurrent = p.slug === current.slug;
-                return `<li><a class="nav-page" href="${href(p.slug)}"${isCurrent ? ' aria-current="page"' : ""}>${icon(p.icon)}<span class="nav-page-label">${escapeHtml(p.title)}</span>${p.badge ? `<span class="nav-badge">${p.badge}</span>` : ""}</a></li>`;
+                // Only the current page lists its sections: nested, without the clutter.
+                const sections = isCurrent
+                    ? parsed.find((x) => x.slug === p.slug).headings.filter((h) => h.depth === 2)
+                    : [];
+                const nested = sections.length > 1
+                    ? `<ul class="nav-sections">${sections.map((h) => `<li><a class="nav-section" href="#${h.id}" data-target="${h.id}">${escapeHtml(h.title)}</a></li>`).join("")}</ul>`
+                    : "";
+                return `<li class="nav-page-item${nested ? " is-open" : ""}"><a class="nav-page" href="${href(p.slug)}"${isCurrent ? ' aria-current="page"' : ""}>${icon(p.icon)}<span class="nav-page-label">${escapeHtml(p.title)}</span>${p.badge ? `<span class="nav-badge">${p.badge}</span>` : ""}</a>${nested}</li>`;
             })
             .join("\n");
         const key = slugify(group.title) || "env";

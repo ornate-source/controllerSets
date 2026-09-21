@@ -1,42 +1,568 @@
-<section class="section" id="router-basics">
-    <h2>One call, all routes</h2>
-<p><code>createRouter</code> returns a normal Express router. Mount it anywhere, add middleware, or mount several on one model.</p>
+<section class="section" id="router-options">
+<h2>Options available in createRouter (no file upload)</h2>
+<p>Every option <code>createRouter</code> accepts. Only <code>model</code> is required — start with <code>model</code> and <code>allowedFields</code>, and add the rest as you need them. Each one is explained below.</p>
 <div class="code-block" data-lang="javascript">
-<pre><code>const router = createRouter({
-  model: Order,
-  middlewares: [auth.requireAuth],     // runs before every route
-  allowedFields: ['status', 'note'],
-});
+<pre><code>createRouter({
+  // Model &amp; response
+  model: Product,
+  orderBy: '-createdAt',
+  onGet: (req, res) =&gt; ({ populates: 'category', selects: '-secret' }),
+  lean: false,
+  logger: console,
 
-app.use('/api/orders', router);</code></pre>
+  // Filtering, search &amp; sorting
+  query: ['category', 'inStock'],
+  search: ['name', 'category.name'],
+  filterableFields: ['price', 'category'],
+  sortableFields: ['price', 'name', 'createdAt'],
+  maxSearchLength: 128,
+  maxRelationMatches: 1000,
+  allowRawRegex: false,
+
+  // Pagination &amp; limits
+  pagination: 'offset',            // or 'cursor'
+  defaultPageSize: 50,
+  maxLimit: 100,
+  maxPage: 500,
+  countStrategy: 'exact',          // or 'estimated' | 'none'
+  maxTimeMS: 5000,
+  allowDiskUse: false,
+  batchSize: 1000,
+
+  // Writing &amp; validation
+  allowedFields: ['name', 'price', 'category', 'inStock'],
+  blockedFields: ['internalCode'],
+  validate: { create: (p) =&gt; p, update: (p) =&gt; p },
+  runAfterCreate: async (doc) =&gt; {},
+  strictAfterCreate: false,
+
+  // Router
+  middlewares: [],
+  enableQuery: true,
+  legacyMode: false,
+});</code></pre>
 </div>
-<div class="table-container"><table><thead><tr><th>Option</th><th>Default</th><th>What it does</th></tr></thead><tbody>
-<tr><td><code>middlewares</code></td><td><code>[]</code></td><td>Middleware for every route: auth, rate limits, logging.</td></tr>
-<tr><td><code>enableQuery</code></td><td><code>true</code></td><td>Mount the <a href="http-query.html">HTTP QUERY</a> route.</td></tr>
-</tbody></table></div>
+<p>The router it returns serves six routes: <code>GET /</code>, <code>QUERY /</code>, <code>POST /</code>, <code>GET /:id</code>, <code>PATCH /:id</code> and <code>DELETE /:id</code> — see <a href="#api-overview">API endpoints</a>.</p>
 </section>
 
-<section class="section" id="router-split">
-    <h2>Different rules for reads and writes</h2>
-<p>Middleware guards all routes of a router. For public reads and private writes, use two routers on the same model:</p>
+<section class="section" id="opts-core">
+<h2>Model &amp; response</h2>
+<div class="table-container"><table><thead><tr><th>Option</th><th>Default</th><th>Why use it</th></tr></thead><tbody>
+<tr><td><code>model</code></td><td>required</td><td>Tells the router which collection to serve. Everything else is optional.</td></tr>
+<tr><td><code>orderBy</code></td><td>none</td><td>Gives lists a sensible default order — usually newest first — so clients don't have to ask for one.</td></tr>
+<tr><td><code>onGet</code></td><td>none</td><td>Return related data (populate a ref) or hide heavy or private fields, without writing a custom route. Runs on every read.</td></tr>
+<tr><td><code>lean</code></td><td><code>false</code></td><td>Faster reads and less memory on large lists, when you don't need schema virtuals or <code>toJSON</code> transforms.</td></tr>
+<tr><td><code>logger</code></td><td>console</td><td>Send the library's warnings to your own logger (pino, winston) instead of the console.</td></tr>
+</tbody></table></div>
 <div class="code-block" data-lang="javascript">
-<pre><code>app.use('/api/products', createRouter({ model: Product, allowedFields: [] }));        // anyone reads
+<pre><code>createRouter({
+  model: Book,
+  orderBy: '-publishedAt',
+  onGet: (req) =&gt; ({
+    populates: [{ path: 'author', select: 'name' }],
+    selects: '-internalNotes',
+  }),
+  allowedFields: ['title', 'author'],
+});</code></pre>
+</div>
+</section>
 
-app.use('/api/admin/products', createRouter({                                      // admins write
+<section class="section" id="opts-read">
+<h2>Filtering, search &amp; sorting</h2>
+<div class="table-container"><table><thead><tr><th>Option</th><th>Default</th><th>Why use it</th></tr></thead><tbody>
+<tr><td><code>query</code></td><td><code>[]</code></td><td>Let clients narrow a list by exact value — <code>?category=chairs</code>, <code>?status=paid</code>. Fields not listed are ignored.</td></tr>
+<tr><td><code>search</code></td><td><code>[]</code></td><td>Power a search box across one or more text fields — including a referenced model, like <code>'author.name'</code>.</td></tr>
+<tr><td><code>filterableFields</code></td><td>same as <code>query</code></td><td>Allow ranges and comparisons (price between 50 and 200, rating above 4) and QUERY-body filters — only on fields you choose.</td></tr>
+<tr><td><code>sortableFields</code></td><td><code>query</code> + <code>orderBy</code></td><td>Let clients sort, while refusing sorts on unindexed fields that would be slow.</td></tr>
+<tr><td><code>maxSearchLength</code></td><td><code>128</code></td><td>Stop very long search strings from costing database time.</td></tr>
+<tr><td><code>maxRelationMatches</code></td><td><code>1000</code></td><td>Keep relational searches bounded as the referenced collection grows.</td></tr>
+<tr><td><code>allowRawRegex</code></td><td><code>false</code></td><td>Only for trusted internal tools that need regex search. Public input could slow the database down.</td></tr>
+</tbody></table></div>
+<div class="code-block" data-lang="javascript">
+<pre><code>createRouter({
+  model: Product,
+  query: ['category', 'inStock'],
+  search: ['name', 'description', 'brand.name'],
+  filterableFields: ['price', 'category'],
+  sortableFields: ['price', 'name', 'createdAt'],
+  allowedFields: ['name', 'price'],
+});</code></pre>
+</div>
+</section>
+
+<section class="section" id="opts-paging">
+<h2>Pagination &amp; limits</h2>
+<div class="table-container"><table><thead><tr><th>Option</th><th>Default</th><th>Why use it</th></tr></thead><tbody>
+<tr><td><code>pagination</code></td><td><code>'offset'</code></td><td>Page numbers suit normal lists. Switch to <code>'cursor'</code> for feeds and huge collections, where deep pages get slow.</td></tr>
+<tr><td><code>defaultPageSize</code></td><td><code>50</code></td><td>Match the page size your UI shows when the client doesn't send one.</td></tr>
+<tr><td><code>maxLimit</code></td><td><code>100</code></td><td>Cap response size so one request can't pull the whole collection into memory.</td></tr>
+<tr><td><code>maxPage</code></td><td>off</td><td>Block very deep offset pages, which force the database to skip huge numbers of records.</td></tr>
+<tr><td><code>countStrategy</code></td><td><code>'exact'</code></td><td>Counting every match is the slow part of a big list. Use <code>'estimated'</code> or <code>'none'</code> to skip it.</td></tr>
+<tr><td><code>maxTimeMS</code></td><td>off</td><td>Stop a runaway query instead of letting it tie up the database.</td></tr>
+<tr><td><code>allowDiskUse</code></td><td><code>false</code></td><td>Allow sorts larger than MongoDB's 100 MB in-memory limit.</td></tr>
+<tr><td><code>batchSize</code></td><td>driver default</td><td>Fewer round trips when reading large result sets.</td></tr>
+</tbody></table></div>
+<div class="code-block" data-lang="javascript">
+<pre><code>createRouter({
+  model: Event,
+  orderBy: '-createdAt',
+  pagination: 'cursor',       // clients follow pagination.nextCursor
+  defaultPageSize: 25,
+  maxLimit: 200,
+  maxTimeMS: 2000,
+  allowedFields: [],
+});</code></pre>
+</div>
+</section>
+
+<section class="section" id="opts-write">
+<h2>Writing &amp; validation</h2>
+<div class="table-container"><table><thead><tr><th>Option</th><th>Default</th><th>Why use it</th></tr></thead><tbody>
+<tr><td><code>allowedFields</code></td><td>every field ⚠</td><td>The most important setting: it stops clients writing fields like <code>role</code>, <code>isAdmin</code> or <code>ownerId</code>. Use <code>{ create, update }</code> for different rules per verb.</td></tr>
+<tr><td><code>blockedFields</code></td><td>none</td><td>Deny a few fields while allowing the rest — handy on large models.</td></tr>
+<tr><td><code>validate</code></td><td>none</td><td>Business rules your schema can't express, and server-owned values (the author from the token). Throw <code>ValidationError</code> to reject.</td></tr>
+<tr><td><code>runAfterCreate</code></td><td>none</td><td>Side effects after a create — send an email, write an audit log, clear a cache — without a custom route.</td></tr>
+<tr><td><code>strictAfterCreate</code></td><td><code>false</code></td><td>Turn on when that side effect must succeed, or the request should fail.</td></tr>
+</tbody></table></div>
+<div class="code-block" data-lang="javascript">
+<pre><code>import { createRouter, ValidationError } from 'express-controller-sets';
+
+createRouter({
+  model: Post,
+  allowedFields: { create: ['title', 'body', 'slug'], update: ['title', 'body'] },
+  blockedFields: ['views'],
+  validate: {
+    create: (payload, { req }) =&gt; {
+      if (!payload.title?.trim()) throw new ValidationError('Check the fields.', { title: 'is required' });
+      return { ...payload, author: req.auth.userId };       // server-owned field
+    },
+  },
+  runAfterCreate: async (post) =&gt; notifySubscribers(post),
+});</code></pre>
+</div>
+</section>
+
+<section class="section" id="opts-router">
+<h2>Router options</h2>
+<div class="table-container"><table><thead><tr><th>Option</th><th>Default</th><th>Why use it</th></tr></thead><tbody>
+<tr><td><code>middlewares</code></td><td><code>[]</code></td><td>Auth, rate limiting or logging for every route of this router.</td></tr>
+<tr><td><code>enableQuery</code></td><td><code>true</code></td><td>Turn off the <code>QUERY</code> route when you don't need it, or when a middleware scopes reads through <code>req.query</code>.</td></tr>
+<tr><td><code>legacyMode</code></td><td><code>false</code></td><td>Only while migrating a 2.x app. It removes the allowlists and limits.</td></tr>
+</tbody></table></div>
+<div class="code-block" data-lang="javascript">
+<pre><code>// Anyone can read; only admins can write — two routers, one model
+app.use('/api/products', createRouter({ model: Product, allowedFields: [] }));
+app.use('/api/admin/products', createRouter({
   model: Product,
   middlewares: [auth.requireAuth, auth.requireRole('admin')],
   allowedFields: ['name', 'price'],
 }));</code></pre>
 </div>
-<p>Need each user to see only their own records? See <a href="how-to-use.html#only-my-records">Only my records</a>.</p>
 </section>
 
-<section class="section" id="advanced">
-    <h2>Advanced</h2>
-    <p class="section-intro">Deeper detail — open what you need.</p>
+<section class="section" id="s3-router">
+<h2>S3 upload router</h2>
+<p><code>createRouterS3upload</code> is <code>createRouter</code> plus file uploads: every option above, and the upload options below. <code>POST</code> and <code>PATCH</code> accept <code>multipart/form-data</code>; files go to your bucket and their URLs are saved on the record.</p>
+<div class="code-block" data-lang="bash">
+<pre><code>npm install multer @aws-sdk/client-s3     # plus sharp for image compression</code></pre>
+</div>
+<div class="code-block" data-lang="javascript">
+<pre><code>import { createRouterS3upload } from 'express-controller-sets';
+
+createRouterS3upload({
+  // Every createRouter option above works here too, for example:
+  model: Product,
+  middlewares: [auth.requireAuth],
+  allowedFields: ['name', 'price', 'cover', 'gallery'],   // include the file fields
+
+  // File upload
+  path: 'products/',                                      // folder in the bucket
+  fields: [
+    { name: 'cover', maxCount: 1 },                       // saved as a URL string
+    { name: 'gallery', maxCount: 6 },                     // saved as an array of URLs
+    { name: 'manual', maxCount: 1, formatToUrlObject: true },  // saved as { url }
+  ],
+  imgOptimizations: 'medium',                             // 'low' | 'medium' | 'high' (needs sharp)
+  upload: {
+    acl: 'private',                                       // or 'public-read'
+    allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
+    maxFileSize: 10 * 1024 * 1024,                        // per file, bytes
+    maxFiles: 10,                                         // per request
+    allowClientImageOptions: false,
+  },
+});</code></pre>
+</div>
+<div class="table-container"><table><thead><tr><th>Option</th><th>Default</th><th>Why use it</th></tr></thead><tbody>
+<tr><td><code>path</code></td><td><code>'files/'</code></td><td>Keep each model's files in their own folder of the bucket.</td></tr>
+<tr><td><code>fields</code></td><td><code>[{ name: 'file', maxCount: 1 }]</code></td><td>Name the form fields that carry files. <code>maxCount: 1</code> saves a string; more saves an array.</td></tr>
+<tr><td><code>fields[].formatToUrlObject</code></td><td><code>false</code></td><td>Save <code>{ url }</code> instead of a string, when your schema stores file objects.</td></tr>
+<tr><td><code>imgOptimizations</code></td><td>off</td><td>Shrink JPEG, PNG and WebP images before storing them — smaller bills, faster pages.</td></tr>
+<tr><td><code>upload.acl</code></td><td><code>'private'</code></td><td>Private by default. <code>'public-read'</code> when the URL should open in a browser, like product photos.</td></tr>
+<tr><td><code>upload.allowedMimeTypes</code></td><td>JPEG, PNG, GIF, WebP, AVIF, PDF</td><td>Accept only the file types you expect. Checked from the file bytes, not the client's claim.</td></tr>
+<tr><td><code>upload.maxFileSize</code></td><td>10 MB</td><td>Stop oversized uploads before they reach your bucket.</td></tr>
+<tr><td><code>upload.maxFiles</code></td><td><code>10</code></td><td>Cap the number of files in one request.</td></tr>
+<tr><td><code>upload.allowClientImageOptions</code></td><td><code>false</code></td><td>Let clients choose the compression level. Costs CPU — keep it off on public routes.</td></tr>
+</tbody></table></div>
+<h3>Sending files</h3>
+<div class="tabs"><div class="tab-list" role="tablist"><button class="tab-btn" type="button" data-tab="send-curl" role="tab">curl</button><button class="tab-btn" type="button" data-tab="send-fetch" role="tab">Browser (fetch)</button></div><div class="tab-panel" id="send-curl" role="tabpanel"><div class="code-block" data-lang="bash">
+<pre><code>curl -X POST localhost:3000/api/products \
+  -F name=Chair -F price=120 \
+  -F cover=@cover.jpg \
+  -F gallery=@side.jpg -F gallery=@back.jpg</code></pre>
+</div></div><div class="tab-panel" id="send-fetch" role="tabpanel"><div class="code-block" data-lang="javascript">
+<pre><code>const form = new FormData();
+form.append('name', 'Chair');
+form.append('price', '120');
+form.append('cover', coverInput.files[0]);
+for (const file of galleryInput.files) form.append('gallery', file);
+
+const res = await fetch('/api/products', { method: 'POST', body: form });   // no Content-Type header
+const { data } = await res.json();
+console.log(data.cover, data.gallery);</code></pre>
+</div></div></div>
+<div class="code-block" data-lang="json">
+<pre><code>{ "success": true,
+  "data": { "_id": "65af…", "name": "Chair", "price": 120,
+            "cover": "https://s3.us-east-1.amazonaws.com/acme-uploads/products/1726…-51234.jpg",
+            "gallery": ["https://…/products/1726…-11.jpg", "https://…/products/1726…-12.jpg"] } }</code></pre>
+</div>
+
+<p>Uploading outside a CRUD router, and connecting your bucket: <a href="uploads.html">S3 Upload</a>.</p>
+</section>
+
+<section class="section" id="api-overview">
+<h2>API endpoints</h2>
+<p>What a client (web app, mobile app, curl) can call on any router. Examples use <code>/api/products</code>.</p>
+<div class="table-container"><table><thead><tr><th>Method</th><th>Path</th><th>Body</th><th>Response</th></tr></thead><tbody>
+<tr><td><span class="m m-get">GET</span></td><td><code>/api/products</code></td><td>—</td><td>200 list</td></tr>
+<tr><td><span class="m m-query">QUERY</span></td><td><code>/api/products</code></td><td>JSON filters</td><td>200 list</td></tr>
+<tr><td><span class="m m-post">POST</span></td><td><code>/api/products</code></td><td>JSON record</td><td>201 record</td></tr>
+<tr><td><span class="m m-get">GET</span></td><td><code>/api/products/:id</code></td><td>—</td><td>200 record</td></tr>
+<tr><td><span class="m m-patch">PATCH</span></td><td><code>/api/products/:id</code></td><td>JSON fields to change</td><td>200 record</td></tr>
+<tr><td><span class="m m-delete">DELETE</span></td><td><code>/api/products/:id</code></td><td>—</td><td>200 message</td></tr>
+</tbody></table></div>
+<div class="callout callout-warn"><i data-lucide="info"></i><div><p>A parameter only works on fields the server allows — in <code>query</code>, <code>search</code>, <code>filterableFields</code> or <code>sortableFields</code>. An equality filter on any other field is ignored; a range, compare or sort on one is a <strong>400</strong> naming the field. See <a href="#opts-read">Dynamic Router</a>.</p></div></div>
+</section>
+
+<section class="section" id="api-filtering">
+<h2>Filtering</h2>
+<div class="table-container"><table><thead><tr><th>Filter</th><th>Example</th><th>Matches</th></tr></thead><tbody>
+<tr><td>Equals</td><td><code>?category=chairs</code></td><td>category is "chairs"</td></tr>
+<tr><td>Any of</td><td><code>?category=chairs&amp;category=tables</code></td><td>category is chairs <em>or</em> tables</td></tr>
+<tr><td>Several fields</td><td><code>?category=chairs&amp;inStock=true</code></td><td>both must match (AND)</td></tr>
+<tr><td>Range</td><td><code>?rangeField=price&amp;range=50-200</code></td><td>50 ≤ price ≤ 200</td></tr>
+<tr><td>Open range</td><td><code>?rangeField=price&amp;range=50-</code></td><td>price ≥ 50 (or <code>-200</code> for ≤ 200)</td></tr>
+<tr><td>Compare</td><td><code>?compareField=price&amp;compareOperator=gt&amp;compareValue=100</code></td><td>price &gt; 100</td></tr>
+</tbody></table></div>
+<div class="table-container"><table><thead><tr><th><code>compareOperator</code></th><th>Means</th></tr></thead><tbody>
+<tr><td><code>eq</code> (default)</td><td>equal</td></tr>
+<tr><td><code>ne</code></td><td>not equal</td></tr>
+<tr><td><code>gt</code></td><td>greater than</td></tr>
+<tr><td><code>gte</code></td><td>greater than or equal</td></tr>
+<tr><td><code>lt</code></td><td>less than</td></tr>
+<tr><td><code>lte</code></td><td>less than or equal</td></tr>
+</tbody></table></div>
+<p>Equality works on fields in <code>query</code>; range and compare on fields in <code>filterableFields</code>. Range bounds and numeric-looking compare values are treated as numbers. One range and one compare filter per request — use <a href="#api-query">QUERY</a> for more.</p>
+</section>
+
+<section class="section" id="api-search">
+<h2>Searching</h2>
+<div class="code-block" data-lang="bash">
+<pre><code>GET /api/products?s=oak
+GET /api/products?search=oak          # same thing</code></pre>
+</div>
+<ul><li>Case-insensitive, matches anywhere in the text: <code>oak</code> finds "Oak chair" and "Cloak".</li><li>Searches every field in the server's <code>search</code> list — a match in any one counts.</li><li>Matched literally: <code>.*</code> or <code>(</code> are just characters.</li><li>Combines with filters: <code>?s=oak&amp;category=chairs</code> = oak items that are chairs.</li><li>Up to 128 characters.</li></ul>
+</section>
+
+<section class="section" id="api-sorting">
+<h2>Sorting</h2>
+<div class="code-block" data-lang="bash">
+<pre><code>GET /api/products?sort=price          # cheapest first
+GET /api/products?sort=-price         # most expensive first</code></pre>
+</div>
+<ul><li>One field per request, from the server's <code>sortableFields</code>. <code>-</code> means descending.</li><li>Without <code>sort</code>, the server's default order (<code>orderBy</code>) applies.</li><li>Need several sort keys? Use <a href="#api-query">QUERY</a>: <code>"sort": ["-price", "name"]</code>.</li></ul>
+</section>
+
+<section class="section" id="api-pagination">
+<h2>Pagination</h2>
+<p><strong>Page numbers</strong> (the default). Add <code>page</code> to paginate; <code>pageSize</code> sets the size.</p>
+<div class="code-block" data-lang="bash">
+<pre><code>GET /api/products?page=2&amp;pageSize=20</code></pre>
+</div>
+<div class="code-block" data-lang="json">
+<pre><code>{
+  "success": true,
+  "data": [ … 20 records … ],
+  "pagination": { "currentPage": 2, "pageSize": 20, "totalPages": 7, "totalRecords": 132 }
+}</code></pre>
+</div>
+<ul><li>Without <code>page</code>, the list is not paginated but still capped (100 records by default).</li><li><code>pageSize</code> defaults to 50 and is capped by the server's <code>maxLimit</code>.</li><li>Some servers skip counting: then <code>pagination</code> has <code>hasMore</code> instead of <code>totalPages</code>.</li></ul>
+<p><strong>Cursor</strong> (when the server sets <code>pagination: 'cursor'</code>). No page numbers — follow <code>nextCursor</code>:</p>
+<div class="code-block" data-lang="bash">
+<pre><code>GET /api/events?pageSize=50
+→ { "data": [ … ], "pagination": { "pageSize": 50, "hasMore": true, "nextCursor": "eyJpIjoi…" } }
+
+GET /api/events?pageSize=50&amp;cursor=eyJpIjoi…
+→ … until "hasMore": false</code></pre>
+</div>
+</section>
+
+<section class="section" id="api-combined">
+<h2>Putting it together</h2>
+<div class="code-block" data-lang="bash">
+<pre><code># Chairs in stock, 50–200, matching "oak", most expensive first, page 2 of 20
+GET /api/products?category=chairs&amp;inStock=true&amp;rangeField=price&amp;range=50-200&amp;s=oak&amp;sort=-price&amp;page=2&amp;pageSize=20</code></pre>
+</div>
+<div class="code-block" data-lang="javascript">
+<pre><code>// From JavaScript
+const params = new URLSearchParams({
+  category: 'chairs', inStock: 'true',
+  rangeField: 'price', range: '50-200',
+  s: 'oak', sort: '-price', page: '2', pageSize: '20',
+});
+const res = await fetch(`/api/products?${params}`);
+const { success, data, pagination, error } = await res.json();
+if (!success) throw new Error(error);</code></pre>
+</div>
+</section>
+
+<section class="section" id="api-query">
+<h2>QUERY: filters in a JSON body</h2>
+<p>For filters too long or complex for a URL. Same response as <code>GET</code>. Requires the server on Node 22.2+.</p>
+<div class="code-block" data-lang="javascript">
+<pre><code>const res = await fetch('/api/products', {
+  method: 'QUERY',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    filter: {
+      category: ['chairs', 'tables'],          // any of
+      price: { gte: 50, lte: 200 },            // range
+      inStock: true,                           // equals
+    },
+    search: 'oak',
+    sort: ['-price', 'name'],              // several keys
+    page: 1,
+    pageSize: 20,
+  }),
+});</code></pre>
+</div>
+<div class="table-container"><table><thead><tr><th>Body key</th><th>Meaning</th></tr></thead><tbody>
+<tr><td><code>filter</code></td><td>Field → value, array (any of), or operators: <code>eq ne gt gte lt lte in nin</code> — no <code>$</code>.</td></tr>
+<tr><td><code>search</code></td><td>Search term.</td></tr>
+<tr><td><code>sort</code></td><td>A field, or up to five: <code>["-price", "name"]</code>.</td></tr>
+<tr><td><code>page</code>, <code>pageSize</code></td><td>Page numbers.</td></tr>
+<tr><td><code>limit</code></td><td>Cap an unpaginated list (not with <code>page</code>).</td></tr>
+<tr><td><code>cursor</code></td><td>Next page in cursor mode.</td></tr>
+</tbody></table></div>
+<p>Every field in <code>filter</code> must be in the server's <code>filterableFields</code> — being in <code>query</code> is not enough. An unknown key is a <strong>400</strong>, so a typo never silently returns everything.</p>
+</section>
+
+<section class="section" id="api-single">
+<h2>Read, create, update, delete</h2>
+<div class="code-block" data-lang="javascript">
+<pre><code>// Read one
+await fetch('/api/products/65af…');
+
+// Create — only fields the server allows are saved
+await fetch('/api/products', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ name: 'Oak chair', price: 120 }),
+});
+
+// Update — send only what changes
+await fetch('/api/products/65af…', {
+  method: 'PATCH',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ price: 99 }),
+});
+
+// Delete
+await fetch('/api/products/65af…', { method: 'DELETE' });</code></pre>
+</div>
+<p>Protected routes also need <code>Authorization: Bearer &lt;token&gt;</code>. Upload routes take <code>multipart/form-data</code> — see <a href="#sending-files">Sending files</a>.</p>
+</section>
+
+<section class="section" id="api-errors">
+<h2>Errors</h2>
+<div class="code-block" data-lang="json">
+<pre><code>{ "success": false, "error": "Field 'color' is not sortable." }
+{ "success": false, "error": "Check the submitted values.", "fields": { "price": "must not be negative" } }</code></pre>
+</div>
+<div class="table-container"><table><thead><tr><th>Status</th><th>Meaning</th></tr></thead><tbody>
+<tr><td>400</td><td>Bad request — invalid id, a field not allowed, bad value, failed validation</td></tr>
+<tr><td>401 / 403</td><td>Not signed in / not allowed</td></tr>
+<tr><td>404</td><td>No record with that id</td></tr>
+<tr><td>409</td><td>Duplicate — a unique field already exists</td></tr>
+<tr><td>500</td><td>Server error (details are logged, never sent)</td></tr>
+</tbody></table></div>
+</section>
+
+<section class="section" id="patterns">
+<h2>Patterns &amp; more detail</h2>
+<p class="section-intro">Complete answers to common questions. Open the one you need.</p>
+<details class="advanced" id="public-read-admin-write">
+<summary>Two routers, one model</summary>
+<div class="details-body"><p>The most common shape: the public reads, staff edit. Each router carries its own allowlists, so the
+        public one can never write — even if a guard is misconfigured.</p>
+    <div class="code-block" data-lang="javascript">
+        <pre><code>const catalogue = {
+  model: Product,
+  orderBy: '-createdAt',
+  query: ['category', 'isFeatured'],
+  search: ['name', 'description'],
+  filterableFields: ['price', 'category'],
+  sortableFields: ['price', 'name', 'createdAt'],
+};
+
+// Anyone: read
+app.use('/api/products', createRouter({ ...catalogue, allowedFields: [] }));
+
+// Staff: read and write
+app.use('/api/admin/products', createRouter({
+  ...catalogue,
+  middlewares: [auth.requireAuth, auth.requireRole('staff', 'admin')],
+  allowedFields: ['name', 'price', 'description', 'category', 'isFeatured'],
+}));</code></pre>
+    </div>
+</div>
+</details>
+<details class="advanced" id="owner-from-token">
+<summary>Server-owned fields</summary>
+<div class="details-body"><p>Fields like <code>author</code>, <code>ownerId</code> or <code>tenantId</code> come from the signed-in
+        user, never from the body. Keep them <strong>out</strong> of <code>allowedFields</code> and set them in
+        <code>validate.create</code> — whatever the client sent for them was already stripped.</p>
+    <div class="code-block" data-lang="javascript">
+        <pre><code>app.use('/api/posts', createRouter({
+  model: Post,
+  middlewares: [auth.requireAuth],
+  allowedFields: ['title', 'body', 'tags'],          // no 'author'
+  validate: {
+    create: (payload, { req }) =&gt; ({ ...payload, author: req.auth.userId }),
+  },
+}));</code></pre>
+    </div>
+</div>
+</details>
+<details class="advanced" id="only-my-records">
+<summary>Only my records</summary>
+<div class="details-body"><p>Three pieces: force the owner into every list, check ownership on every <code>/:id</code>, and stamp
+        the owner on create. Tested end to end — a user cannot list, read, change or delete another user's
+        records, even by sending <code>?ownerId=</code> themselves.</p>
+    <div class="code-block" data-lang="javascript">
+        <pre><code>import express from 'express';
+import mongoose from 'mongoose';
+import { createRouter, HttpError } from 'express-controller-sets';
+
+// 1. Lists: pin ownerId to the caller. Express 5 re-parses req.query on every
+//    read, so assigning to it does nothing — shadow it with a real property.
+const onlyMine = (req, res, next) =&gt; {
+  Object.defineProperty(req, 'query', {
+    value: { ...req.query, ownerId: String(req.auth.userId) },
+    writable: true, configurable: true, enumerable: true,
+  });
+  next();
+};
+
+// 2. Single records: 404 unless the caller owns it (404, not 403 — don't
+//    confirm that someone else's record exists).
+const ownsNote = async (req, res, next) =&gt; {
+  if (!mongoose.isValidObjectId(req.params.id)) return next();   // the controller answers 400
+  const mine = await Note.exists({ _id: req.params.id, ownerId: req.auth.userId });
+  if (!mine) throw new HttpError(404, 'Entry not found.');
+  next();
+};
+
+const notes = express.Router();
+notes.use(auth.requireAuth, onlyMine);
+notes.use('/:id', ownsNote);
+notes.use(createRouter({
+  model: Note,
+  orderBy: '-createdAt',
+  query: ['ownerId'],
+  enableQuery: false,                                  // QUERY filters from the body — keep it off here
+  allowedFields: ['title', 'body'],
+  validate: { create: (p, { req }) =&gt; ({ ...p, ownerId: req.auth.userId }) },   // 3. stamp the owner
+}));
+
+app.use('/api/notes', notes);</code></pre>
+    </div>
+    <div class="callout callout-warn">
+        <i data-lucide="alert-triangle"></i>
+        <div>
+            <p><strong>Don't skip step 2.</strong> The list filter only covers <code>GET /</code>. Without the
+                <code>/:id</code> check, anyone who learns an id can read, edit or delete that record.</p>
+        </div>
+    </div>
+</div>
+</details>
+<details class="advanced" id="populate-and-search">
+<summary>Populate &amp; search a ref</summary>
+<div class="details-body"><p><code>onGet</code> decides, per request, what to populate and select. Search can reach into a referenced
+        model with a dotted path.</p>
+    <div class="code-block" data-lang="javascript">
+        <pre><code>app.use('/api/books', createRouter({
+  model: Book,                                  // author: { type: ObjectId, ref: 'Author' }
+  search: ['title', 'author.name'],             // ?s=tolkien matches the author's name
+  allowedFields: [],
+  onGet: (req) =&gt; ({
+    populates: [{ path: 'author', select: 'name avatar' }],
+    selects: req.query.full ? '' : '-body',     // lists skip the heavy field
+  }),
+}));</code></pre>
+    </div>
+</div>
+</details>
+<details class="advanced" id="validate-input">
+<summary>Validate &amp; normalise</summary>
+<div class="details-body"><p>Throw <code>ValidationError</code> with a field map and the client gets it back as <code>fields</code>.
+        Return an object to replace the payload — that is how you trim, lowercase or derive values.</p>
+    <div class="code-block" data-lang="javascript">
+        <pre><code>import { createRouter, ValidationError } from 'express-controller-sets';
+
+const check = (p) =&gt; {
+  const fields = {};
+  if (p.price !== undefined &amp;&amp; !(p.price &gt;= 0)) fields.price = 'must be zero or more';
+  if (p.sku !== undefined &amp;&amp; !/^[A-Z0-9-]{4,20}$/.test(p.sku)) fields.sku = 'use 4–20 letters, digits or dashes';
+  if (Object.keys(fields).length) throw new ValidationError('Check the submitted values.', fields);
+  return p.name ? { ...p, name: p.name.trim() } : p;
+};
+
+createRouter({
+  model: Product,
+  allowedFields: { create: ['name', 'price', 'sku'], update: ['name', 'price'] },   // sku is set once
+  validate: { create: check, update: check },
+});</code></pre>
+    </div>
+    <div class="code-block" data-lang="json">
+        <pre><code>{ "success": false, "error": "Check the submitted values.",
+  "fields": { "price": "must be zero or more" } }</code></pre>
+    </div>
+</div>
+</details>
+<details class="advanced" id="large-collections">
+<summary>Large collections</summary>
+<div class="details-body"><p>Offset pages get slower the deeper you go, and counting every match costs a full scan. Cursor pagination
+        is one index seek per page at any depth. Index the sort field.</p>
+    <div class="code-block" data-lang="javascript">
+        <pre><code>// Schema: eventSchema.index({ createdAt: -1 });
+
+app.use('/api/events', createRouter({
+  model: Event,
+  orderBy: '-createdAt',
+  pagination: 'cursor',       // follow pagination.nextCursor: ?cursor=…
+  maxTimeMS: 2000,            // a slow query is cut off, not left running
+  allowedFields: [],
+}));</code></pre>
+    </div>
+    <p>If you need page numbers but not totals, keep offset pagination and set
+        <code>countStrategy: 'none'</code> — responses carry <code>hasMore</code> instead of
+        <code>totalPages</code>.</p>
+</div>
+</details>
 <details class="advanced" id="middlewares">
-  <summary>Guards, tenancy and per-user data</summary>
-  <div class="details-body"><p class="section-intro">The library builds the routes. Deciding who may call them is entirely yours.</p>
+<summary>Guards, tenancy and per-user data</summary>
+<div class="details-body"><p class="section-intro">The library builds the routes. Deciding who may call them is entirely yours.</p>
 
                 <div class="code-block" data-lang="javascript">
                     <pre><code>createRouter({
@@ -111,6 +637,1608 @@ createRouter({
                             record and compares its owner — or keep those verbs on an admin-only router.</p>
                     </div>
                 </div>
-  </div>
+</div>
+</details>
+<details class="advanced" id="validation">
+<summary>Everything about validate</summary>
+<div class="details-body"><p class="section-intro">Two gates stand between a request body and your collection, and they answer
+                    different questions.</p>
+
+                <div class="card-grid">
+                    <div class="card">
+                        <div class="card-icon"><i data-lucide="key-round"></i></div>
+                        <h4>The field policy</h4>
+                        <p><code>allowedFields</code> decides <em>what a client may set</em>. A question of
+                            authority — not yours to delegate.</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon"><i data-lucide="check-check"></i></div>
+                        <h4>Your validator</h4>
+                        <p><code>validate</code> decides <em>whether the values make sense</em>. A question only your
+                            domain can answer.</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon"><i data-lucide="database"></i></div>
+                        <h4>The schema</h4>
+                        <p>Mongoose's own validators run last, unchanged — types, <code>required</code>,
+                            <code>enum</code>, your custom paths.</p>
+                    </div>
+                </div>
+
+                <p>The order matters: your hook is handed the payload <strong>after</strong> the field policy has
+                    filtered it, so it never has to wonder whether <code>role</code> in front of it came from an
+                    admin or from a stranger. It cannot be there.</p>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>import { createRouter, ValidationError } from 'express-controller-sets';
+
+createRouter({
+  model: Product,
+  allowedFields: ['name', 'price', 'sku'],
+
+  validate: {
+    create: async (payload, { req }) =&gt; {
+      if (payload.price &lt; 0) {
+        throw new ValidationError('Check the submitted values.', {
+          price: 'must not be negative',
+        });
+      }
+
+      if (await Product.exists({ sku: payload.sku })) {
+        throw new ValidationError('That SKU is taken.', { sku: 'already in use' });
+      }
+
+      // Returning an object replaces the payload: normalise what came in,
+      // and set fields the client is not allowed to send.
+      return { ...payload, name: payload.name.trim(), ownerId: req.user.id };
+    },
+
+    update: (payload) =&gt; {
+      if (payload.price === 0) throw new ValidationError('Price cannot be zero.');
+    },
+  },
+});</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>Pass a single function instead of <code>{ create, update }</code> to run the same rules on both.</p>
+
+                <h3>What the hook receives</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Argument</th>
+                                <th>What it holds</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>payload</code></td>
+                                <td>The body, already filtered to the fields this client may write. Never empty — an
+                                    empty one is a 400 before the hook runs.</td>
+                            </tr>
+                            <tr>
+                                <td><code>context.req</code> · <code>context.res</code></td>
+                                <td>The Express request and response, for <code>req.user</code>, headers, uploaded
+                                    files.</td>
+                            </tr>
+                            <tr>
+                                <td><code>context.operation</code></td>
+                                <td><code>'create'</code> or <code>'update'</code> — useful when one function serves
+                                    both.</td>
+                            </tr>
+                            <tr>
+                                <td><code>context.id</code></td>
+                                <td>The target document's id on an update; <code>undefined</code> on a create.</td>
+                            </tr>
+                            <tr>
+                                <td><code>context.model</code></td>
+                                <td>The Mongoose model, so a uniqueness check needs no extra import.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>What it may return, and what it may throw</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>The hook…</th>
+                                <th>Result</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>returns nothing</td>
+                                <td>The payload is written as filtered. The common case.</td>
+                            </tr>
+                            <tr>
+                                <td>returns an object</td>
+                                <td>That object is written instead — your chance to normalise values or add
+                                    server-owned fields.</td>
+                            </tr>
+                            <tr>
+                                <td>throws <code>ValidationError</code></td>
+                                <td><strong>400</strong> (or the status you pass) with a <code>fields</code> map.</td>
+                            </tr>
+                            <tr>
+                                <td>throws any <code>HttpError</code></td>
+                                <td>That status, with your message. Use it for <code>403</code> and friends.</td>
+                            </tr>
+                            <tr>
+                                <td>throws anything else</td>
+                                <td><strong>500</strong>, with the detail kept in your log and out of the
+                                    response.</td>
+                            </tr>
+                            <tr>
+                                <td>is <code>async</code></td>
+                                <td>Awaited. Query the database in it if the rule needs to.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>The rejection a client sees</h3>
+                <div class="code-block" data-lang="json">
+                    <pre><code>// 400 Bad Request
+{
+  "success": false,
+  "error": "Check the submitted values.",
+  "fields": { "price": "must not be negative" }
+}</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p><code>fields</code> appears only when there is one, so a client that never looks for it sees the
+                    shape it always has. Mongoose validation failures and duplicate-key conflicts fill it in too, which
+                    means one rendering path on the client covers every rejected write. It is never sent on a
+                    <strong>5xx</strong> — an internal failure's detail is not the caller's business.</p>
+
+                <div class="callout callout-warn">
+                    <i data-lucide="alert-triangle"></i>
+                    <div>
+                        <p><strong>Your hook runs before the schema, so required fields may be missing.</strong>
+                            That ordering is deliberate — it is what lets a hook supply a <code>required</code> field
+                            like <code>ownerId</code> before Mongoose checks for it. The corollary is that
+                            <code>payload.name.trim()</code> throws when the client omitted <code>name</code>, and an
+                            unexpected throw is a 500. Check before you dereference:</p>
+                        <div class="code-block" data-lang="javascript">
+                            <pre><code>validate: (payload) =&gt; ({
+  ...payload,
+  // not payload.name.trim() — `name` may not be here yet
+  ...(payload.name ? { name: payload.name.trim() } : {}),
+});</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="callout callout-warn">
+                    <i data-lucide="shield-alert"></i>
+                    <div>
+                        <p><strong>A validator is not a substitute for <code>allowedFields</code>.</strong> It runs
+                            on what the policy already let through, so a model with no policy hands your hook every
+                            schema field and trusts you to remember which ones a stranger may set. Configure both.</p>
+                    </div>
+                </div>
+
+                <div class="callout callout-plain">
+                    <i data-lucide="shield"></i>
+                    <div>
+                        <p><strong>A returned object is trusted, but not blindly.</strong> Your hook runs on the
+                            server, so it may set fields no client can. Keys that are syntax rather than data —
+                            <code>$</code>-prefixed, dotted, or <code>__proto__</code> — are still stripped from what
+                            it returns. No legitimate hook needs them as field names.</p>
+                    </div>
+                </div>
+</div>
+</details>
+<details class="advanced" id="after-create">
+<summary>Everything about runAfterCreate</summary>
+<div class="details-body"><p class="section-intro">Run something once a record exists — send a welcome email, push a job onto a
+                    queue, warm a cache.</p>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>createRouter({
+  model: User,
+  allowedFields: ['name', 'email'],
+
+  runAfterCreate: async (user) =&gt; {
+    await sendWelcomeEmail(user.email);
+    await queue.add('index-user', { id: user._id });
+  },
+});</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>The hook receives the created document and is awaited before the 201 goes out.</p>
+
+                <div class="mode-grid">
+                    <div class="mode-card">
+                        <span class="mode-eyebrow"><i data-lucide="shield"></i> Default</span>
+                        <h4>Failures are logged, not raised</h4>
+                        <p>If the email service is down, the user is still created and the client still gets
+                            <strong>201</strong>. The record exists, so reporting failure would tell the client to
+                            retry a write that already landed.</p>
+                    </div>
+                    <div class="mode-card">
+                        <span class="mode-eyebrow"><i data-lucide="alert-octagon"></i> strictAfterCreate: true</span>
+                        <h4>Failures propagate</h4>
+                        <p>The error reaches your <code>errorHandler</code> and the client sees a 500 — <em>even though
+                                the record was created</em>. Choose this only when a missed side effect is worse than a
+                            confusing response.</p>
+                    </div>
+                </div>
+
+                <div class="callout callout-warn">
+                    <i data-lucide="clock"></i>
+                    <div>
+                        <p><strong>Keep it short.</strong> The client is waiting on this hook. Anything slow or
+                            failure-prone belongs on a queue — enqueue inside the hook, do the work elsewhere.</p>
+                    </div>
+                </div>
+</div>
+</details>
+<details class="advanced" id="writing">
+<summary>How writes are filtered</summary>
+<div class="details-body"><p class="section-intro">The request body is filtered before Mongoose ever sees it. This section is the
+                    single most important one for security.</p>
+
+                <h3>Say what a client may write</h3>
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>// Allowlist — name what IS writable (recommended)
+createRouter({
+  model: User,
+  allowedFields: ['name', 'email', 'avatar'],
+});
+
+// Blocklist — name what is NOT writable
+createRouter({
+  model: User,
+  blockedFields: ['role', 'isAdmin', 'balance'],
+});
+
+// Per verb — stricter on update than on create
+createRouter({
+  model: User,
+  allowedFields: {
+    create: ['name', 'email', 'password'],
+    update: ['name', 'avatar'],          // email and password need their own flow
+  },
+});</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>Both options may be combined; <code>blockedFields</code> is applied after <code>allowedFields</code>,
+                    so a field on both lists is blocked.</p>
+
+                <div class="callout callout-danger">
+                    <i data-lucide="user-x"></i>
+                    <div>
+                        <p><strong>Mongoose's <code>strict</code> mode is not a substitute for this.</strong> Strict
+                            mode drops keys your <em>schema doesn't define</em> — it throws away typos and faithfully
+                            saves <code>{"role": "admin"}</code>, because <code>role</code> is a real field. The only
+                            thing standing between a signup form and an admin account is a field policy.</p>
+                    </div>
+                </div>
+
+                <h3>What a client sends vs. what gets saved</h3>
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>// allowedFields: ['name', 'email']
+
+// The client POSTs:
+{
+  "name":  "Ayesha",
+  "email": "ayesha@example.com",
+  "role":  "admin",          // ✘ not allowlisted        → dropped
+  "_id":   "65af…",          // ✘ always immutable       → dropped
+  "$where": "1 === 1"        // ✘ Mongo operator syntax  → dropped
+}
+
+// What reaches the database:
+{ "name": "Ayesha", "email": "ayesha@example.com" }</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>Dropped fields are dropped quietly — the request still succeeds with the fields that survived. One
+                    exception: if <em>nothing</em> survives, you get <strong>400 "Request body contains no writable
+                        fields."</strong> rather than an empty record being created.</p>
+
+                <div class="callout callout-tip">
+                    <i data-lucide="search-check"></i>
+                    <div>
+                        <p><strong>Debugging a field that "won't save"?</strong> Nine times out of ten it isn't in
+                            <code>allowedFields</code>. Check that list first, then check for a typo against the
+                            schema.</p>
+                    </div>
+                </div>
+</div>
+</details>
+<details class="advanced" id="on-get">
+<summary>Everything about onGet</summary>
+<div class="details-body"><p class="section-intro">One hook that decides, per request, which relations to expand and which fields
+                    to return.</p>
+
+                <p>Populating relations is expensive, and different callers need different amounts of data. A mobile
+                    list view wants names; an admin screen wants everything. <code>onGet</code> lets one router serve
+                    both.</p>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>onGet: (req, res) =&gt; ({
+  populates: [],   // Mongoose .populate() argument — string, object, or array
+  selects: '',     // Mongoose .select() argument — e.g. 'name price -_id'
+})</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <div class="tabs">
+                    <div class="tab-list" role="tablist" aria-label="onGet examples">
+                        <button class="tab-btn" role="tab" aria-selected="true" data-tab="og-simple">Simple</button>
+                        <button class="tab-btn" role="tab" aria-selected="false" data-tab="og-role">By role</button>
+                        <button class="tab-btn" role="tab" aria-selected="false" data-tab="og-detail">List vs
+                            detail</button>
+                    </div>
+
+                    <div class="tab-panel" id="og-simple" role="tabpanel">
+                        <div class="code-block" data-lang="javascript">
+                            <pre><code>createRouter({
+  model: Product,
+  onGet: () =&gt; ({
+    populates: 'category',
+    selects: 'name price category',
+  }),
+});</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                    </div>
+
+                    <div class="tab-panel" id="og-role" role="tabpanel">
+                        <p>The hook receives the live <code>req</code>, so anything your auth middleware attached is
+                            available.</p>
+                        <div class="code-block" data-lang="javascript">
+                            <pre><code>createRouter({
+  model: Order,
+  middlewares: [requireAuth],
+  onGet: (req) =&gt; {
+    if (req.user?.role === 'admin') {
+      return {
+        populates: [
+          { path: 'customer', select: 'name email phone' },
+          { path: 'items.product', select: 'name price' },
+        ],
+        selects: '',                       // everything
+      };
+    }
+    return { populates: 'items.product', selects: '-internalNotes -margin' };
+  },
+});</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                    </div>
+
+                    <div class="tab-panel" id="og-detail" role="tabpanel">
+                        <p>Keep list responses light and expand only on the single-record route.</p>
+                        <div class="code-block" data-lang="javascript">
+                            <pre><code>const onGet = async (req) =&gt; {
+  const isDetail = Boolean(req.params.id);
+  return {
+    populates: isDetail ? ['category', 'reviews'] : 'category',
+    selects: isDetail ? '' : 'name price category',
+  };
+};
+
+createRouter({ model: Product, onGet });   // reuse across routers</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Route</th>
+                                <th class="center"><code>onGet</code> applies?</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><span class="m m-get">GET</span> <code>/</code></td><td class="center yes">✔</td></tr>
+                            <tr><td><span class="m m-query">QUERY</span> <code>/</code></td><td class="center yes">✔</td></tr>
+                            <tr><td><span class="m m-get">GET</span> <code>/:id</code></td><td class="center yes">✔</td></tr>
+                            <tr><td><span class="m m-patch">PATCH</span> <code>/:id</code> (the returned document)</td><td class="center yes">✔</td></tr>
+                            <tr><td><span class="m m-post">POST</span> <code>/</code></td><td class="center no">✘ — returns the created document as-is</td></tr>
+                            <tr><td><span class="m m-delete">DELETE</span> <code>/:id</code></td><td class="center no">✘ — returns a message, not a document</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="callout callout-warn">
+                    <i data-lucide="life-buoy"></i>
+                    <div>
+                        <p><strong>If your hook throws, the request still succeeds.</strong> The error is logged and
+                            the request falls back to no populate and no select. That keeps a broken hook from taking
+                            down every read — but it also means a hook you rely on to <em>hide</em> fields could
+                            silently stop hiding them. Use <code>selects</code> for convenience; use schema
+                            <code>toJSON</code> transforms or a separate router for anything that must never be
+                            returned.</p>
+                    </div>
+                </div>
+
+                <div class="callout callout-plain">
+                    <i data-lucide="info"></i>
+                    <div>
+                        <p><strong>A note on <code>lean</code>.</strong> Reads return real Mongoose documents by
+                            default, so <code>schema.set('toJSON', { transform })</code> runs and any fields you strip
+                            there really are stripped. <code>lean: true</code> is faster but bypasses those transforms
+                            — only enable it if you have checked that nothing sensitive was relying on them.</p>
+                    </div>
+                </div>
+</div>
+</details>
+<details class="advanced" id="query-reference">
+<summary>Every query parameter</summary>
+<div class="details-body"><p class="section-intro">Everything <code>GET /</code> understands. For the body form of the same
+                    read, see <a href="#http-query">HTTP QUERY</a>.</p>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Example</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>page</code></td>
+                                <td><code>?page=2</code></td>
+                                <td>Switches on the <code>pagination</code> block. Starts at 1; junk values become 1.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><code>pageSize</code></td>
+                                <td><code>?pageSize=20</code></td>
+                                <td>Default 50, clamped to <code>maxLimit</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>s</code> / <code>search</code></td>
+                                <td><code>?s=laptop</code></td>
+                                <td>Case-insensitive, matched literally, across the <code>search</code> fields. Max 128
+                                    characters.</td>
+                            </tr>
+                            <tr>
+                                <td><code>sort</code></td>
+                                <td><code>?sort=-price</code></td>
+                                <td>Must be in <code>sortableFields</code>, else 400. <code>-</code> means descending.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>any field named in <code>query</code></td>
+                                <td><code>?category=65af…</code></td>
+                                <td>Equality filter. Repeat the parameter for an <code>$in</code> match.</td>
+                            </tr>
+                            <tr>
+                                <td><code>rangeField</code> + <code>range</code></td>
+                                <td><code>?rangeField=price&amp;range=10-100</code></td>
+                                <td>Inclusive bounds; either side may be omitted. Field must be in
+                                    <code>filterableFields</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>compareField</code> + <code>compareValue</code></td>
+                                <td><code>?compareField=price&amp;compareValue=50</code></td>
+                                <td>Field must be in <code>filterableFields</code>. Numeric-looking values become
+                                    numbers.</td>
+                            </tr>
+                            <tr>
+                                <td><code>compareOperator</code></td>
+                                <td><code>?compareOperator=gt</code></td>
+                                <td><code>gt</code>, <code>gte</code>, <code>lt</code>, <code>lte</code>,
+                                    <code>ne</code>, <code>eq</code>. Defaults to <code>eq</code>.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>In <a href="#sorting-paging">cursor mode</a> two more apply: <code>?cursor=</code> continues a
+                    scan from a previous response's <code>nextCursor</code>, and <code>?page=</code> is refused.</p>
+
+                <h3>Putting several together</h3>
+                <div class="code-block" data-lang="bash">
+                    <pre><code># featured laptops between 500 and 1500, cheapest first, second page of 20
+GET /api/products
+      ?isFeatured=true
+      &amp;s=laptop
+      &amp;rangeField=price&amp;range=500-1500
+      &amp;sort=price
+      &amp;page=2&amp;pageSize=20</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+                <p>Filters combine with AND. The search term is the one exception: it becomes an OR across your
+                    <code>search</code> fields, and that whole group is ANDed with everything else.</p>
+
+                <p>The same request as a <a href="#http-query">QUERY</a> body — identical result, nothing in the URL:
+                </p>
+                <div class="code-block" data-lang="json">
+                    <pre><code>{
+  "filter": { "isFeatured": true, "price": { "gte": 500, "lte": 1500 } },
+  "search": "laptop",
+  "sort": "price",
+  "page": 2,
+  "pageSize": 20
+}</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+</div>
+</details>
+<details class="advanced" id="responses">
+<summary>Every response shape</summary>
+<div class="details-body"><p class="section-intro">Four shapes, and <code>success</code> is always there to branch on. A
+                    <code>QUERY</code> read returns the same list and paginated shapes as <code>GET /</code>. Under
+                    <code>countStrategy: 'none'</code> the <code>pagination</code> block carries <code>hasMore</code>
+                    in place of <code>totalPages</code> and <code>totalRecords</code>; under
+                    <code>pagination: 'cursor'</code> it carries <code>hasMore</code> and
+                    <code>nextCursor</code>.</p>
+
+                <div class="tabs">
+                    <div class="tab-list" role="tablist" aria-label="Response shapes">
+                        <button class="tab-btn" role="tab" aria-selected="true" data-tab="r-list">List</button>
+                        <button class="tab-btn" role="tab" aria-selected="false" data-tab="r-paged">Paginated</button>
+                        <button class="tab-btn" role="tab" aria-selected="false" data-tab="r-one">Single</button>
+                        <button class="tab-btn" role="tab" aria-selected="false" data-tab="r-err">Delete &amp;
+                            error</button>
+                    </div>
+
+                    <div class="tab-panel" id="r-list" role="tabpanel">
+                        <div class="code-block" data-lang="json">
+                            <pre><code>// GET /api/products
+{
+  "success": true,
+  "data": [ { "_id": "65af…", "name": "Laptop", "price": 1299 } ]
+}</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                    </div>
+
+                    <div class="tab-panel" id="r-paged" role="tabpanel">
+                        <div class="code-block" data-lang="json">
+                            <pre><code>// GET /api/products?page=2&amp;pageSize=20
+{
+  "success": true,
+  "data": [ /* … */ ],
+  "pagination": {
+    "currentPage": 2,
+    "pageSize": 20,
+    "totalPages": 7,
+    "totalRecords": 132
+  }
+}</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                    </div>
+
+                    <div class="tab-panel" id="r-one" role="tabpanel">
+                        <div class="code-block" data-lang="json">
+                            <pre><code>// GET /api/products/65af…   ·   POST /api/products   ·   PATCH /api/products/65af…
+{
+  "success": true,
+  "data": { "_id": "65af…", "name": "Laptop", "price": 1299 }
+}</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                    </div>
+
+                    <div class="tab-panel" id="r-err" role="tabpanel">
+                        <div class="code-block" data-lang="json">
+                            <pre><code>// DELETE /api/products/65af…
+{ "success": true, "message": "Item successfully deleted." }
+
+// Any failure
+{ "success": false, "error": "Entry not found.", "requestId": "0f2a…" }
+
+// A rejected write, when the failure was per-field
+{
+  "success": false,
+  "error": "Check the submitted values.",
+  "fields": { "price": "must not be negative" },
+  "requestId": "0f2a…"
+}</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                        <p><code>requestId</code> appears on errors that pass through <code>errorHandler</code>. Errors
+                            answered directly by the controller carry <code>success</code> and <code>error</code>
+                            only. <code>fields</code> appears only when there is one — from a
+                            <a href="#validation"><code>ValidationError</code></a>, a Mongoose validation failure or a
+                            duplicate key — and never on a 5xx.</p>
+                    </div>
+                </div>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>const res  = await fetch('/api/products?page=1');
+const body = await res.json();
+
+if (!body.success) throw new Error(body.error);
+body.data;                    // always an array here
+body.pagination.totalPages;   // present because ?page was sent</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+</div>
+</details>
+<details class="advanced" id="http-query">
+<summary>HTTP QUERY in depth</summary>
+<div class="details-body"><p class="section-intro">The same read as <code>GET /</code>, described by a JSON body instead of a
+                    URL — for filters that are too long, too structured, or too sensitive to put in a query string.</p>
+
+                <p><code>QUERY</code> is a real HTTP method
+                    (<a href="https://www.rfc-editor.org/rfc/rfc10008.html" target="_blank"
+                        rel="noopener">RFC 10008</a>), and like
+                    <code>GET</code> it is <strong>safe</strong> and <strong>idempotent</strong>: it never writes
+                    anything. The difference is only where the parameters live.</p>
+
+                <div class="card-grid">
+                    <div class="card">
+                        <div class="card-icon"><i data-lucide="ruler"></i></div>
+                        <h4>URLs run out</h4>
+                        <p>Proxies and servers cap request lines around 4–8&nbsp;KB. Two hundred ids in an
+                            <code>in</code> list is not a URL.</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon"><i data-lucide="eye-off"></i></div>
+                        <h4>URLs get logged</h4>
+                        <p>Query strings land in access logs, proxy logs, browser history and <code>Referer</code>
+                            headers. Bodies do not.</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon"><i data-lucide="braces"></i></div>
+                        <h4>Structure survives</h4>
+                        <p>Two bounds on one field, a multi-key sort, a list of values — all say what they mean,
+                            without encoding tricks.</p>
+                    </div>
+                </div>
+
+                <h3>A request</h3>
+                <div class="code-block" data-lang="http">
+                    <pre><code>QUERY /api/products HTTP/1.1
+Content-Type: application/json
+
+{
+  "filter": {
+    "category": "65af…",
+    "price":    { "gte": 50, "lte": 250 },
+    "tag":      ["sale", "clearance"]
+  },
+  "search": "office chair",
+  "sort":   ["-price", "name"],
+  "page":   1,
+  "pageSize": 20
+}</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>The response is exactly what the equivalent <code>GET</code> would have returned — same envelope,
+                    same <code>pagination</code> block, same <a href="#on-get"><code>onGet</code></a> shaping, same
+                    <code>maxLimit</code> cap. Nothing about the read changes; only the request does.</p>
+
+                <div class="callout callout-plain">
+                    <i data-lucide="lightbulb"></i>
+                    <div>
+                        <p><strong>The body is not a MongoDB query.</strong> Operators are written without
+                            <code>$</code> and looked up in a fixed table, so a body carrying <code>$where</code> or
+                            <code>$function</code> fails that lookup instead of reaching the driver. Field names are
+                            checked against the same allowlists <code>?sort=</code> and <code>?rangeField=</code> use.
+                        </p>
+                    </div>
+                </div>
+
+                <h3>What the body may contain</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Key</th>
+                                <th>Type</th>
+                                <th>Meaning</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>filter</code></td>
+                                <td>object</td>
+                                <td>Field → condition. Every field must be in <code>filterableFields</code> (which
+                                    defaults to <code>query</code>).</td>
+                            </tr>
+                            <tr>
+                                <td><code>search</code></td>
+                                <td>string</td>
+                                <td>Same term, same fields and same escaping as <code>?s=</code>. Capped by
+                                    <code>maxSearchLength</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>sort</code></td>
+                                <td>string · string[]</td>
+                                <td><code>"price"</code> or <code>"-price"</code>. A list sorts on several keys, up to
+                                    five, each checked against <code>sortableFields</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>page</code></td>
+                                <td>integer ≥ 1</td>
+                                <td>Switches on the paginated response. Cannot be combined with <code>limit</code>.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><code>pageSize</code></td>
+                                <td>integer ≥ 1</td>
+                                <td>Records per page, clamped to <code>maxLimit</code>. On its own it implies
+                                    <code>page: 1</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>limit</code></td>
+                                <td>integer ≥ 1</td>
+                                <td>Caps an unpaginated read. Also clamped to <code>maxLimit</code>.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>Every key is optional. An empty body — or no body at all — is a plain list request, still capped at
+                    <code>maxLimit</code>. An <strong>unrecognised key is a 400</strong>, deliberately: a
+                    <code>{"filters": …}</code> typo quietly ignored is a request to return the entire collection.</p>
+
+                <h3>Conditions</h3>
+                <p>A condition is one of three shapes.</p>
+
+                <div class="code-block" data-lang="json">
+                    <pre><code>{
+  "filter": {
+    "category": "65af…",                  // scalar  → equality
+    "tag":      ["sale", "clearance"],    // list    → in
+    "price":    { "gte": 50, "lte": 250 } // object  → operators
+  }
+}</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Operator</th>
+                                <th>Takes</th>
+                                <th>Matches</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>eq</code></td><td>a value</td><td>Equal to it.</td></tr>
+                            <tr><td><code>ne</code></td><td>a value</td><td>Not equal to it.</td></tr>
+                            <tr><td><code>gt</code> · <code>gte</code></td><td>a value</td><td>Greater than, or
+                                    greater than or equal.</td></tr>
+                            <tr><td><code>lt</code> · <code>lte</code></td><td>a value</td><td>Less than, or less than
+                                    or equal.</td></tr>
+                            <tr><td><code>in</code></td><td>a list, 1–100 values</td><td>Any of them.</td></tr>
+                            <tr><td><code>nin</code></td><td>a list, 1–100 values</td><td>None of them.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>Values are strings, numbers, booleans or <code>null</code>. Mongoose casts them against your schema
+                    on the way in, so <code>"gte": "50"</code> on a <code>Number</code> field works exactly as
+                    <code>50</code> does. Anything else — a nested object, an empty condition, an unknown operator
+                    name — is a <strong>400</strong> rather than something to interpret generously.</p>
+
+                <h3>The same read, both ways</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Query string</th>
+                                <th>QUERY body</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>?category=65af…</code></td>
+                                <td><code>{ "filter": { "category": "65af…" } }</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>?tag=sale&amp;tag=new</code></td>
+                                <td><code>{ "filter": { "tag": ["sale", "new"] } }</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>?rangeField=price&amp;range=10-100</code></td>
+                                <td><code>{ "filter": { "price": { "gte": 10, "lte": 100 } } }</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>?compareField=price&amp;compareOperator=gt&amp;compareValue=50</code></td>
+                                <td><code>{ "filter": { "price": { "gt": 50 } } }</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>?s=chair</code></td>
+                                <td><code>{ "search": "chair" }</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>?sort=-price</code></td>
+                                <td><code>{ "sort": "-price" }</code></td>
+                            </tr>
+                            <tr>
+                                <td>— <em>not expressible</em></td>
+                                <td><code>{ "sort": ["-price", "name"] }</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>?page=2&amp;pageSize=20</code></td>
+                                <td><code>{ "page": 2, "pageSize": 20 }</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>One body can also do what no query string can: two bounds and an exclusion on different fields, a
+                    hundred ids, and a multi-key sort, all in one request that no proxy will truncate.</p>
+
+                <h3>Calling it</h3>
+                <div class="tabs">
+                    <div class="tab-list" role="tablist" aria-label="QUERY clients">
+                        <button class="tab-btn" role="tab" aria-selected="true" data-tab="q-fetch">fetch</button>
+                        <button class="tab-btn" role="tab" aria-selected="false" data-tab="q-curl">curl</button>
+                        <button class="tab-btn" role="tab" aria-selected="false" data-tab="q-axios">axios</button>
+                    </div>
+
+                    <div class="tab-panel" id="q-fetch" role="tabpanel">
+                        <div class="code-block" data-lang="javascript">
+                            <pre><code>const res = await fetch('/api/products', {
+  method: 'QUERY',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    filter: { price: { gte: 50, lte: 250 } },
+    sort: '-price',
+    pageSize: 20,
+  }),
+});
+
+const { data, pagination } = await res.json();</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                        <p>Browsers and Node's <code>fetch</code> both send <code>QUERY</code> as written — it is a
+                            valid method token, not a special case.</p>
+                    </div>
+
+                    <div class="tab-panel" id="q-curl" role="tabpanel">
+                        <div class="code-block" data-lang="bash">
+                            <pre><code>curl -X QUERY http://localhost:3000/api/products \
+  -H 'Content-Type: application/json' \
+  -d '{"filter":{"price":{"gte":50}},"sort":"-price","pageSize":20}'</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                        <p>Handy while developing: <code>-X QUERY</code> with <code>-d</code> is all it takes.</p>
+                    </div>
+
+                    <div class="tab-panel" id="q-axios" role="tabpanel">
+                        <div class="code-block" data-lang="javascript">
+                            <pre><code>const { data } = await axios.request({
+  url: '/api/products',
+  method: 'QUERY',
+  data: { filter: { tag: ['sale', 'new'] }, sort: ['-price', 'name'] },
+});</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                        <p>Axios forwards any method string, but it only serialises <code>data</code> for methods it
+                            considers body-bearing — pass the object as <code>data</code> and set the
+                            <code>Content-Type</code> explicitly if your version leaves it off.</p>
+                    </div>
+                </div>
+
+                <h3>Asking whether it's there</h3>
+                <p>A client does not have to guess. <code>OPTIONS</code> on the collection lists the methods, and
+                    RFC 10008's <code>Accept-Query</code> names the format the body must be in — this library sends
+                    it on <code>OPTIONS</code> and on every <code>415</code>:</p>
+
+                <div class="code-block" data-lang="http">
+                    <pre><code>OPTIONS /api/products HTTP/1.1
+
+HTTP/1.1 200 OK
+Allow: GET, HEAD, POST, QUERY
+Accept-Query: application/json</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>If <code>QUERY</code> is missing from <code>Allow</code>, either the route was turned off, the
+                    runtime is too old, or something between the client and the app stripped it.</p>
+
+                <h3>What gets refused</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Request</th>
+                                <th class="center">Status</th>
+                                <th>Why</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>{ "filter": { "secretToken": "x" } }</code></td>
+                                <td class="center">400</td>
+                                <td>Not in <code>filterableFields</code>. Same rule as <code>?rangeField=</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>{ "filter": { "$where": "…" } }</code></td>
+                                <td class="center">400</td>
+                                <td>A <code>$</code>-prefixed or dotted key is never a field name.</td>
+                            </tr>
+                            <tr>
+                                <td><code>{ "filter": { "price": { "$gte": 1 } } }</code></td>
+                                <td class="center">400</td>
+                                <td>Operators are spelled <code>gte</code>, not <code>$gte</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>{ "sort": "createdBy" }</code></td>
+                                <td class="center">400</td>
+                                <td>Not in <code>sortableFields</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>{ "filters": { … } }</code></td>
+                                <td class="center">400</td>
+                                <td>Unknown key. Ignoring it would mean returning everything.</td>
+                            </tr>
+                            <tr>
+                                <td><code>{ "page": "2" }</code></td>
+                                <td class="center">400</td>
+                                <td>JSON has numbers; <code>page</code>, <code>pageSize</code> and <code>limit</code>
+                                    must be positive integers.</td>
+                            </tr>
+                            <tr>
+                                <td>Body sent as <code>text/plain</code></td>
+                                <td class="center">415</td>
+                                <td>A QUERY body must be JSON.</td>
+                            </tr>
+                            <tr>
+                                <td>JSON body, no parser mounted</td>
+                                <td class="center">415</td>
+                                <td>Nothing parsed it. Mount <code>express.json()</code> — the alternative would be
+                                    silently ignoring the filter.</td>
+                            </tr>
+                            <tr>
+                                <td><code>QUERY /api/products/65af…</code></td>
+                                <td class="center">404</td>
+                                <td>QUERY is a collection method. Read one record with <code>GET /:id</code>.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>Before you rely on it</h3>
+                <div class="callout callout-warn">
+                    <i data-lucide="box"></i>
+                    <div>
+                        <p><strong>Node 22.2 or newer.</strong> An older runtime rejects <code>QUERY</code> inside its
+                            HTTP parser, before Express ever sees the request, and its Express router has no matching
+                            verb. The route is then skipped with a single warning rather than breaking the router —
+                            the rest of your API is unaffected. Check at runtime:</p>
+                        <div class="code-block" data-lang="javascript">
+                            <pre><code>import { isQueryMethodSupported } from 'express-controller-sets';
+
+isQueryMethodSupported();   // → true on Node 22.2+ with Express 5</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="callout callout-warn">
+                    <i data-lucide="shield-alert"></i>
+                    <div>
+                        <p><strong>What's in front of your app matters more than your app.</strong> Some proxies,
+                            CDNs, WAFs and API gateways pass only the methods they recognise, and a
+                            <code>QUERY</code> request may never reach you. Test through your real edge before
+                            shipping a client that depends on it, and keep <code>GET</code> as the fallback — both
+                            routes serve the same read.</p>
+                    </div>
+                </div>
+
+                <div class="callout callout-plain">
+                    <i data-lucide="toggle-left"></i>
+                    <div>
+                        <p><strong>Turning it off.</strong> <code>enableQuery: false</code> leaves the route
+                            unmounted, on either router factory. Everything else is unchanged.</p>
+                        <div class="code-block" data-lang="javascript">
+                            <pre><code>createRouter({ model: Product, enableQuery: false });</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="callout callout-danger">
+                    <i data-lucide="lock"></i>
+                    <div>
+                        <p><strong><code>legacyMode</code> does not open this door.</strong> Everywhere else that flag
+                            restores permissive 2.x behaviour. QUERY has no 2.x behaviour to restore, so its
+                            allowlists are enforced unconditionally: a <code>filter</code> or <code>sort</code> naming
+                            a field you never declared is a 400, legacy mode or not. Declare
+                            <code>filterableFields</code> and <code>sortableFields</code>, or pass
+                            <code>enableQuery: false</code>.</p>
+                    </div>
+                </div>
+
+                <div class="callout callout-tip">
+                    <i data-lucide="database-zap"></i>
+                    <div>
+                        <p><strong>Caching.</strong> RFC 10008 makes QUERY responses cacheable, but only for a
+                            cache that keys on the request content — and most deployed caches key on the URL alone,
+                            where every QUERY to a collection looks identical. Don't put a naive shared cache in
+                            front of it. When you need cache keys, keep those reads on <code>GET</code>.</p>
+                    </div>
+                </div>
+</div>
+</details>
+<details class="advanced" id="sorting-paging">
+<summary>Sorting & pagination in depth</summary>
+<div class="details-body"><p class="section-intro">Two knobs the client turns, both bounded by you.</p>
+
+                <h3>Sorting</h3>
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>createRouter({
+  model: Product,
+  orderBy: '-createdAt',                        // your default: newest first
+  sortableFields: ['price', 'name', 'createdAt'],  // what clients may choose
+});
+
+// GET /api/products?sort=price     → cheapest first
+// GET /api/products?sort=-price    → dearest first  (the '-' means descending)
+// GET /api/products?sort=secretKey → 400 Field 'secretKey' is not sortable.</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>Your own <code>orderBy</code> is never checked against the allowlist — it's your decision, not the
+                    client's. Only a client-supplied <code>?sort=</code> is validated. If you omit
+                    <code>sortableFields</code>, it defaults to everything in <code>query</code> plus whatever field
+                    <code>orderBy</code> names.</p>
+
+                <h3>Pagination</h3>
+                <div class="code-block" data-lang="bash">
+                    <pre><code>GET /api/products?page=2&amp;pageSize=20</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>Adding <code>?page=</code> switches the response into paginated form, with a
+                    <code>pagination</code> block alongside the data:</p>
+
+                <div class="code-block" data-lang="json">
+                    <pre><code>{
+  "success": true,
+  "data": [ /* … */ ],
+  "pagination": {
+    "currentPage": 2,
+    "pageSize": 20,
+    "totalPages": 7,
+    "totalRecords": 132
+  }
+}</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Situation</th>
+                                <th>How many documents come back</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>No <code>?page</code></td>
+                                <td>Up to <code>maxLimit</code> — 100 by default. Never the whole collection.</td>
+                            </tr>
+                            <tr>
+                                <td><code>?page=1</code>, no <code>pageSize</code></td>
+                                <td>50 — the default page size.</td>
+                            </tr>
+                            <tr>
+                                <td><code>?page=1&amp;pageSize=20</code></td>
+                                <td>20.</td>
+                            </tr>
+                            <tr>
+                                <td><code>?page=1&amp;pageSize=5000</code></td>
+                                <td>Clamped to <code>maxLimit</code>. A client cannot enlarge its own page.</td>
+                            </tr>
+                            <tr>
+                                <td><code>?page=abc</code> or <code>?page=-3</code></td>
+                                <td>Treated as page 1 rather than erroring.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>Paging past the point where offsets stop working</h3>
+                <p><code>?page=4000</code> does not jump to page 4,000. It asks MongoDB to walk every one of the
+                    199,950 index entries before it, and throw them away. Add the <code>countDocuments</code> that
+                    produces the totals, and both halves of an offset page get slower as the collection grows.</p>
+
+                <p><strong>Keyset pagination</strong> asks a different question — "everything after this record" —
+                    which is one index seek whatever the depth, and needs no count:</p>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>createRouter({ model: Product, pagination: 'cursor', sortableFields: ['price'] });</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <div class="code-block" data-lang="bash">
+                    <pre><code># The first page takes no cursor
+GET /api/products?pageSize=50
+
+# → { "data": [ … ], "pagination": { "pageSize": 50, "hasMore": true, "nextCursor": "eyJpIjoi…" } }
+
+# Follow nextCursor for the next one, and so on
+GET /api/products?pageSize=50&amp;cursor=eyJpIjoi…</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>The same applies to <a href="#http-query">QUERY</a> — send <code>"cursor"</code> in the body.
+                    Both routes run the same retrieval code, so they page identically.</p>
+
+                <h4>Measured on 200,000 documents</h4>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>50 per page</th>
+                                <th class="center">page 1</th>
+                                <th class="center">page 1,000</th>
+                                <th class="center">page 4,000</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>pagination: 'offset'</code></td>
+                                <td class="center">18.7 ms</td>
+                                <td class="center">19.1 ms</td>
+                                <td class="center">47.8 ms</td>
+                            </tr>
+                            <tr>
+                                <td><code>pagination: 'cursor'</code></td>
+                                <td class="center">3.6 ms</td>
+                                <td class="center">0.6 ms</td>
+                                <td class="center"><strong>0.9 ms</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>Most of the offset cost is the count — at this size <code>countDocuments</code> alone is
+                    18.7&nbsp;ms, which is why page 1 costs the same as page 1,000. The skip is what adds the rest by
+                    page 4,000, and that part keeps growing. The cursor column does not.</p>
+
+                <div class="callout callout-tip">
+                    <i data-lucide="key-round"></i>
+                    <div>
+                        <p><strong>Ties are handled for you.</strong> <code>_id</code> is appended to your sort
+                            automatically, because a keyset page needs a total order — sort by a field that repeats,
+                            like <code>status</code> or a date truncated to the day, and without a tiebreaker records
+                            sharing a value are silently skipped or repeated at every page boundary. That is the bug
+                            most hand-rolled cursor pagination ships with.</p>
+                    </div>
+                </div>
+
+                <div class="callout callout-plain">
+                    <i data-lucide="shield"></i>
+                    <div>
+                        <p><strong>A cursor carries an id, not values.</strong> It encodes the anchor record's
+                            <code>_id</code> and the sort it was issued for; the server re-reads that record to learn
+                            where to resume. So a client cannot hand-craft a cursor that range-filters a field you
+                            never made filterable, which a cursor containing raw sort values would allow.</p>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Situation</th>
+                                <th>What happens</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Last page reached</td>
+                                <td><code>hasMore: false</code> and <code>nextCursor: null</code>.</td>
+                            </tr>
+                            <tr>
+                                <td>Cursor reused with a different <code>sort</code></td>
+                                <td><strong>400</strong>. Continuing under another order would skip or repeat
+                                    records.</td>
+                            </tr>
+                            <tr>
+                                <td>The anchor record was deleted</td>
+                                <td><strong>400</strong>, saying so. Restart the scan.</td>
+                            </tr>
+                            <tr>
+                                <td><code>?page=</code> in cursor mode, <code>?cursor=</code> in offset mode</td>
+                                <td><strong>400</strong> either way. Quietly serving the other kind of page would
+                                    corrupt a scan.</td>
+                            </tr>
+                            <tr>
+                                <td>Records inserted mid-scan</td>
+                                <td>No repeats. An insert before the cursor shifts every offset by one — this is the
+                                    bug cursors exist to fix.</td>
+                            </tr>
+                            <tr>
+                                <td>Totals needed</td>
+                                <td>Cursor mode has none by design. Use offset mode, or count separately.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h4>The rest of the cost knobs</h4>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Option</th>
+                                <th>What it is for</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>pagination</code></td>
+                                <td><code>'offset' | 'cursor'</code></td>
+                                <td><code>'offset'</code></td>
+                                <td>Offset paging with totals, or keyset paging — one index seek per page at any
+                                    depth. See <a href="#sorting-paging">Sorting &amp; pagination</a>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>maxRelationMatches</code></td>
+                                <td>number</td>
+                                <td><code>1000</code></td>
+                                <td>Cap on ids a relational search pulls from a referenced collection.</td>
+                            </tr>
+                            <tr>
+                                <td><code>allowDiskUse</code></td>
+                                <td>boolean</td>
+                                <td><code>false</code></td>
+                                <td>Let MongoDB sort on disk. Sorts above 100MB fail without it.</td>
+                            </tr>
+                            <tr>
+                                <td><code>batchSize</code></td>
+                                <td>number</td>
+                                <td><em>driver default</em></td>
+                                <td>Documents per driver round trip on large result sets.</td>
+                            </tr>
+                            <tr>
+                                <td><code>countStrategy</code></td>
+                                <td><code>'estimated'</code> reads collection metadata in O(1) (unfiltered pages
+                                    only); <code>'none'</code> drops the count entirely for <code>hasMore</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>maxTimeMS</code></td>
+                                <td>A server-side ceiling on every query. The only bound on something slow in the
+                                    database rather than in Node.</td>
+                            </tr>
+                            <tr>
+                                <td><code>maxPage</code></td>
+                                <td>Refuses deep offset pages outright. Unnecessary in cursor mode.</td>
+                            </tr>
+                            <tr>
+                                <td><code>maxRelationMatches</code></td>
+                                <td>Caps the ids a relational search pulls from a referenced collection — that
+                                    <code>$in</code> grows with the collection, not with the page. Default 1000.</td>
+                            </tr>
+                            <tr>
+                                <td><code>allowDiskUse</code></td>
+                                <td>Lets MongoDB sort on disk. A sort above 100&nbsp;MB fails outright without it.</td>
+                            </tr>
+                            <tr>
+                                <td><code>batchSize</code></td>
+                                <td>Fewer driver round trips when walking large result sets.</td>
+                            </tr>
+                            <tr>
+                                <td><code>lean</code></td>
+                                <td>Plain objects instead of hydrated documents. Cheaper per record, but skips
+                                    <code>toJSON</code> transforms.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="callout callout-warn">
+                    <i data-lucide="database"></i>
+                    <div>
+                        <p><strong>None of this substitutes for an index.</strong> A keyset page is one index seek
+                            only if the sort is indexed — <code>{ price: 1, _id: 1 }</code> for
+                            <code>?sort=price</code>. Without a matching compound index MongoDB sorts in memory, and
+                            no option here saves it.</p>
+                    </div>
+                </div>
+
+                <div class="callout callout-warn">
+                    <i data-lucide="gauge"></i>
+                    <div>
+                        <p><strong>Upgrading and suddenly seeing only 100 rows?</strong> That's <code>maxLimit</code>
+                            doing its job — in 2.x an unpaginated <code>GET /</code> returned every document in the
+                            collection, which is a memory spike waiting for a big table. Paginate, or raise the cap
+                            deliberately with <code>maxLimit: 500</code>.</p>
+                    </div>
+                </div>
+</div>
+</details>
+<details class="advanced" id="filtering">
+<summary>Filtering in depth</summary>
+<div class="details-body"><p class="section-intro">Three ways to narrow a list, each gated by an allowlist.</p>
+
+                <div class="tabs">
+                    <div class="tab-list" role="tablist" aria-label="Filtering styles">
+                        <button class="tab-btn" role="tab" aria-selected="true" data-tab="f-equality">Equality</button>
+                        <button class="tab-btn" role="tab" aria-selected="false" data-tab="f-range">Range</button>
+                        <button class="tab-btn" role="tab" aria-selected="false" data-tab="f-compare">Compare</button>
+                    </div>
+
+                    <div class="tab-panel" id="f-equality" role="tabpanel">
+                        <p>Every name in <code>query</code> becomes a query-string parameter of the same name.</p>
+                        <div class="code-block" data-lang="javascript">
+                            <pre><code>createRouter({ model: Product, query: ['category', 'isFeatured'] });
+
+// GET /api/products?category=65af…&amp;isFeatured=true
+//   → { category: '65af…', isFeatured: 'true' }
+
+// Repeat a parameter to match any of several values:
+// GET /api/products?category=65af…&amp;category=65b0…
+//   → { category: { $in: ['65af…', '65b0…'] } }</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                        <p>A parameter that isn't in <code>query</code> is ignored entirely — not an error, just no
+                            effect. A parameter whose value arrives as an object (which some query-string parsers
+                            allow, e.g. <code>?price[$ne]=0</code>) is rejected with <strong>400</strong>, because that
+                            shape is how operator injection gets in.</p>
+                    </div>
+
+                    <div class="tab-panel" id="f-range" role="tabpanel">
+                        <p>Two parameters working together: which field, and the bounds.</p>
+                        <div class="code-block" data-lang="bash">
+                            <pre><code># price between 10 and 100 (inclusive)
+GET /api/products?rangeField=price&amp;range=10-100
+
+# 18 and over — omit the upper bound
+GET /api/users?rangeField=age&amp;range=18-
+
+# 100 and under — omit the lower bound
+GET /api/products?rangeField=price&amp;range=-100</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                        <p>The field must appear in <code>filterableFields</code> (which defaults to
+                            <code>query</code>), otherwise the response is <strong>400</strong>. The value is split on
+                            a single <code>-</code>, so negative bounds are not expressible — use
+                            <code>compareField</code> for those.</p>
+                    </div>
+
+                    <div class="tab-panel" id="f-compare" role="tabpanel">
+                        <p>One operator against one value.</p>
+                        <div class="code-block" data-lang="bash">
+                            <pre><code># price &gt; 50
+GET /api/products?compareField=price&amp;compareValue=50&amp;compareOperator=gt
+
+# combine freely with equality filters
+GET /api/users?status=active&amp;compareField=age&amp;compareValue=30&amp;compareOperator=lte</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th><code>compareOperator</code></th>
+                                        <th>Meaning</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td><code>gt</code></td><td>greater than</td></tr>
+                                    <tr><td><code>gte</code></td><td>greater than or equal</td></tr>
+                                    <tr><td><code>lt</code></td><td>less than</td></tr>
+                                    <tr><td><code>lte</code></td><td>less than or equal</td></tr>
+                                    <tr><td><code>ne</code></td><td>not equal</td></tr>
+                                    <tr><td><code>eq</code></td><td>equal — the default when omitted</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p>Values that look numeric are converted to numbers; everything else stays a string. Same
+                            allowlist as ranges: not in <code>filterableFields</code> means <strong>400</strong>.</p>
+                    </div>
+                </div>
+
+                <div class="callout callout-danger">
+                    <i data-lucide="binary"></i>
+                    <div>
+                        <p><strong>Why filterable fields are allowlisted at all.</strong> Suppose your schema has
+                            <code>passwordResetToken</code> and your API never returns it. If a client could write
+                            <code>?compareField=passwordResetToken&amp;compareOperator=gt&amp;compareValue=m</code>,
+                            the <em>number of results</em> answers "does this token sort after m?" — and a few hundred
+                            of those questions reconstruct the token character by character. The data never appears in
+                            a response; it leaks through the result count. Allowlisting the field closes it.</p>
+                    </div>
+                </div>
+</div>
+</details>
+<details class="advanced" id="search">
+<summary>Search in depth</summary>
+<div class="details-body"><p class="section-intro">One parameter, <code>?s=</code> (or <code>?search=</code>), across as many
+                    fields as you list — including fields on related models.</p>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>createRouter({
+  model: Product,
+  search: ['name', 'description', 'category.name'],
+});
+
+// GET /api/products?s=wireless
+//   matches products whose name OR description contains "wireless",
+//   OR whose category's name contains "wireless"</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <h3>How relational search works</h3>
+                <p>A field with a dot is split at the <strong>first</strong> dot. The part before it must be a field on
+                    your schema declared with <code>ref</code>; the rest is the path to search on the referenced model.
+                    The library looks up the matching documents there first, then filters your collection by their IDs
+                    — no aggregation pipeline required.</p>
+
+                <div class="lane">
+                    <span class="lane-label">category.name</span>
+                    <span class="lane-pipe"></span>
+                    <span class="lane-end is-target"><i data-lucide="check-circle-2"></i> searches
+                        <code>name</code> on the Category model</span>
+                </div>
+                <div class="lane">
+                    <span class="lane-label">author.profile.name</span>
+                    <span class="lane-pipe"></span>
+                    <span class="lane-end is-target"><i data-lucide="check-circle-2"></i> searches the nested
+                        <code>profile.name</code> on the Author model</span>
+                </div>
+                <div class="lane">
+                    <span class="lane-label">notARef.name</span>
+                    <span class="lane-pipe"></span>
+                    <span class="lane-end is-bad"><i data-lucide="x-circle"></i> clause dropped — the field has no
+                        <code>ref</code></span>
+                </div>
+
+                <div class="callout callout-plain">
+                    <i data-lucide="help-circle"></i>
+                    <div>
+                        <p><strong>What if no relation matches?</strong> You get <em>zero results</em>, not "the search
+                            term was ignored". Silently dropping an unmatched search term is how a customer's search
+                            for a product nobody sells returns your entire catalogue.</p>
+                    </div>
+                </div>
+
+                <h3>Search terms are treated as text, not patterns</h3>
+                <p>Regex metacharacters in the term are escaped, so <code>?s=c++</code> searches for the literal string
+                    <code>c++</code>. Terms longer than <code>maxSearchLength</code> (128 characters) are rejected with
+                    400.</p>
+
+                <div class="callout callout-danger">
+                    <i data-lucide="siren"></i>
+                    <div>
+                        <p><strong>Why escaping is not optional.</strong> An unescaped search term is a program the
+                            client wrote and your database runs. <code>?s=(a+)+$</code> triggers catastrophic
+                            backtracking <em>inside mongod</em> — one GET request, one pegged database. If you genuinely
+                            need clients to pass patterns, <code>allowRawRegex: true</code> exists — put it behind
+                            authentication and never on a public endpoint.</p>
+                    </div>
+                </div>
+
+                <h3>The single-field shorthand</h3>
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>createRouter({ model: Post, search: 'title' });
+// Still read from ?s= / ?search= — a string just means "one field".</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+</div>
+</details>
+<details class="advanced" id="errors">
+<summary>Errors & status codes in depth</summary>
+<div class="details-body"><p class="section-intro">Every failure comes back in the same shape. Mount the handler once and stop
+                    writing try/catch in route files.</p>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>import { errorHandler } from 'express-controller-sets';
+
+app.use('/api/products', productRouter);
+app.use('/api/users', userRouter);
+
+app.use(errorHandler);   // AFTER all routes — Express requires this order</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <h3>The error response</h3>
+                <div class="code-block" data-lang="json">
+                    <pre><code>{
+  "success": false,
+  "error": "Validation Error: price is required",
+  "requestId": "0f2a5b8c-…"
+}</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p><code>requestId</code> is echoed into your server log alongside the full message and stack. When a
+                    user reports "it said Internal Server Error", that ID takes you straight to the line. A
+                    <code>stack</code> field is added only when <code>NODE_ENV=development</code>.</p>
+
+                <h3>What each status code means</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>When you'll see it</th>
+                                <th>Who should fix it</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>200</code></td>
+                                <td>Successful read, update or delete.</td>
+                                <td>—</td>
+                            </tr>
+                            <tr>
+                                <td><code>201</code></td>
+                                <td>Record created.</td>
+                                <td>—</td>
+                            </tr>
+                            <tr>
+                                <td><code>400</code></td>
+                                <td>Malformed ID, a field that isn't filterable or sortable, an invalid filter value, a
+                                    search term over 128 characters, a body with no writable fields, a schema validation
+                                    failure, a rejected file type, a Multer limit, or an unknown key, operator or
+                                    non-integer page in a <a href="#http-query">QUERY</a> body.</td>
+                                <td>The caller</td>
+                            </tr>
+                            <tr>
+                                <td><code>404</code></td>
+                                <td>No record with that ID — on read, update or delete.</td>
+                                <td>The caller</td>
+                            </tr>
+                            <tr>
+                                <td><code>415</code></td>
+                                <td>A <a href="#http-query">QUERY</a> body that isn't JSON, or one no mounted body
+                                    parser handled.</td>
+                                <td>The caller, or you — the message says which</td>
+                            </tr>
+                            <tr>
+                                <td><code>409</code></td>
+                                <td>A unique index rejected the write. The message names the conflicting fields.</td>
+                                <td>The caller</td>
+                            </tr>
+                            <tr>
+                                <td><code>500</code></td>
+                                <td>Anything unclassified. The client gets <code>"Internal Server Error"</code> and a
+                                    <code>requestId</code>; the details stay in your log.</td>
+                                <td>You</td>
+                            </tr>
+                            <tr>
+                                <td><code>503</code></td>
+                                <td>An upload route was called but S3 environment variables are missing.</td>
+                                <td>You</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="callout callout-danger">
+                    <i data-lucide="eye-off"></i>
+                    <div>
+                        <p><strong>Why 5xx responses are deliberately vague.</strong> Mongoose and the AWS SDK write
+                            connection strings, internal hostnames, bucket names and index definitions into
+                            <code>err.message</code>. Echoing that to the client hands an attacker a map of your
+                            infrastructure. Deliberate 4xx messages — the ones this library authors — are returned in
+                            full, because they were written to be read by a caller.</p>
+                    </div>
+                </div>
+
+                <h3>Duplicate keys are a 409, not a 500</h3>
+                <div class="code-block" data-lang="json">
+                    <pre><code>{ "success": false, "error": "Duplicate value for: email.", "requestId": "…" }</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+                <p>A unique-constraint collision is something the caller can fix by sending a different value, so it is
+                    reported as a conflict rather than a server fault. Your front end can show "that email is already
+                    registered" without parsing message text.</p>
+</div>
 </details>
 </section>

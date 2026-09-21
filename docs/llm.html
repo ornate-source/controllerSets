@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/components.css?v=10a91d487a">
-  <link rel="stylesheet" href="assets/css/shell.css?v=94b1910641">
+  <link rel="stylesheet" href="assets/css/shell.css?v=a1646e50a8">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%236366f1'/%3E%3Ctext x='50' y='68' font-family='monospace' font-size='54' font-weight='700' fill='white' text-anchor='middle'%3E%7B%7D%3C/text%3E%3C/svg%3E">
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
@@ -48,49 +48,31 @@
 
   <div class="layout">
     <aside class="sidenav" id="sidenav" aria-label="Documentation">
-      <nav><div class="nav-group" data-group="get-started">
-          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="rocket"></i><span>Get started</span><i data-lucide="chevron-down" class="chev"></i></button>
-          <ul class="nav-pages"><li><a class="nav-page" href="./"><i data-lucide="home"></i><span class="nav-page-label">Overview</span></a></li>
-<li><a class="nav-page" href="quickstart.html"><i data-lucide="zap"></i><span class="nav-page-label">Quickstart</span></a></li>
-<li><a class="nav-page" href="how-to-use.html"><i data-lucide="map"></i><span class="nav-page-label">How to use</span></a></li></ul>
+      <nav><div class="nav-group" data-group="getting-started">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="rocket"></i><span>Getting started</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="./"><i data-lucide="home"></i><span class="nav-page-label">Overview</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="how-to-use.html"><i data-lucide="play"></i><span class="nav-page-label">How to use</span></a></li></ul>
         </div>
-<div class="nav-group" data-group="crud">
-          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="database"></i><span>CRUD</span><i data-lucide="chevron-down" class="chev"></i></button>
-          <ul class="nav-pages"><li><a class="nav-page" href="endpoints.html"><i data-lucide="network"></i><span class="nav-page-label">Endpoints &amp; responses</span></a></li>
-<li><a class="nav-page" href="filtering.html"><i data-lucide="filter"></i><span class="nav-page-label">Filter, search &amp; paginate</span></a></li>
-<li><a class="nav-page" href="writing.html"><i data-lucide="file-pen"></i><span class="nav-page-label">Create, update &amp; validate</span></a></li></ul>
+<div class="nav-group" data-group="guides">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="book-open"></i><span>Guides</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="router.html"><i data-lucide="route"></i><span class="nav-page-label">Dynamic Router</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="uploads.html"><i data-lucide="upload-cloud"></i><span class="nav-page-label">S3 Upload</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="auth.html"><i data-lucide="key-round"></i><span class="nav-page-label">Auth setup</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="email.html"><i data-lucide="mail"></i><span class="nav-page-label">Email sender</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="env.html"><i data-lucide="file-cog"></i><span class="nav-page-label">.env.example</span></a></li>
+<li class="nav-page-item"><a class="nav-page" href="advanced.html"><i data-lucide="wrench"></i><span class="nav-page-label">Advanced</span></a></li></ul>
         </div>
-<div class="nav-group" data-group="s3-upload">
-          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="upload-cloud"></i><span>S3 Upload</span><i data-lucide="chevron-down" class="chev"></i></button>
-          <ul class="nav-pages"><li><a class="nav-page" href="uploads.html"><i data-lucide="upload"></i><span class="nav-page-label">Upload files</span></a></li>
-<li><a class="nav-page" href="s3.html"><i data-lucide="hard-drive"></i><span class="nav-page-label">S3 setup</span></a></li></ul>
-        </div>
-<div class="nav-group" data-group="dynamic-router">
-          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="route"></i><span>Dynamic Router</span><i data-lucide="chevron-down" class="chev"></i></button>
-          <ul class="nav-pages"><li><a class="nav-page" href="router.html"><i data-lucide="lock"></i><span class="nav-page-label">Router &amp; middlewares</span></a></li>
-<li><a class="nav-page" href="http-query.html"><i data-lucide="file-search"></i><span class="nav-page-label">HTTP QUERY</span></a></li>
-<li><a class="nav-page" href="custom-routes.html"><i data-lucide="puzzle"></i><span class="nav-page-label">Custom routes</span></a></li></ul>
-        </div>
-<div class="nav-group" data-group="auth">
-          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="key-round"></i><span>Auth</span><i data-lucide="chevron-down" class="chev"></i></button>
-          <ul class="nav-pages"><li><a class="nav-page" href="auth.html"><i data-lucide="key-round"></i><span class="nav-page-label">Auth setup</span></a></li>
-<li><a class="nav-page" href="auth-refresh.html"><i data-lucide="refresh-cw"></i><span class="nav-page-label">Refresh tokens</span></a></li>
-<li><a class="nav-page" href="auth-social.html"><i data-lucide="users"></i><span class="nav-page-label">Social sign-in</span></a></li></ul>
-        </div>
-<div class="nav-group nav-single"><a class="nav-page nav-top" href="email.html"><i data-lucide="mail"></i><span class="nav-page-label">Email Sender</span></a></div>
-<div class="nav-group nav-single"><a class="nav-page nav-top" href="env.html"><i data-lucide="file-cog"></i><span class="nav-page-label">.env examples</span></a></div>
-<div class="nav-group" data-group="reference">
-          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="library"></i><span>Reference</span><i data-lucide="chevron-down" class="chev"></i></button>
-          <ul class="nav-pages"><li><a class="nav-page" href="options.html"><i data-lucide="sliders-horizontal"></i><span class="nav-page-label">All options</span></a></li>
-<li><a class="nav-page" href="faq.html"><i data-lucide="messages-square"></i><span class="nav-page-label">FAQ</span></a></li>
-<li><a class="nav-page" href="llm.html" aria-current="page"><i data-lucide="bot"></i><span class="nav-page-label">Use with an LLM</span></a></li></ul>
+<div class="nav-group" data-group="more">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="circle-help"></i><span>More</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li class="nav-page-item"><a class="nav-page" href="faq.html"><i data-lucide="messages-square"></i><span class="nav-page-label">FAQ</span></a></li>
+<li class="nav-page-item is-open"><a class="nav-page" href="llm.html" aria-current="page"><i data-lucide="bot"></i><span class="nav-page-label">Use with an LLM</span></a><ul class="nav-sections"><li><a class="nav-section" href="#why" data-target="why">Why a prompt?</a></li><li><a class="nav-section" href="#why" data-target="why">Why a prompt?</a></li><li><a class="nav-section" href="#prompt" data-target="prompt">The prompt</a></li><li><a class="nav-section" href="#prompt" data-target="prompt">The prompt</a></li><li><a class="nav-section" href="#save-it" data-target="save-it">Save it in your project</a></li><li><a class="nav-section" href="#advanced" data-target="advanced">Advanced</a></li></ul></li></ul>
         </div></nav>
     </aside>
 
     <main class="doc" id="main" tabindex="-1">
       <article class="doc-inner">
         <header class="page-header">
-          <p class="breadcrumb">Reference <i data-lucide="chevron-right"></i> Use with an LLM</p>
+          <p class="breadcrumb">More <i data-lucide="chevron-right"></i> Use with an LLM</p>
           <h1>Use with an LLM</h1>
           <p class="page-summary">One prompt so ChatGPT, Claude or Copilot write correct code for this package.</p>
         </header>
@@ -258,9 +240,9 @@ Every router serves: `GET /` (list), `QUERY /` (list with a JSON body), `POST /`
 ## Query string (GET /)
 
 ```
-?page=2&amp;pageSize=20                 paginate (adds a pagination block)
+?page=2&amp;pageSize=20                 paginate (adds a pagination block); pageSize alone does NOT paginate
 ?s=laptop  or  ?search=laptop       literal, case-insensitive, OR across search fields
-?sort=-price                        must be in sortableFields; '-' = descending
+?sort=-price                        one field, must be in sortableFields; '-' = descending (multi-key: QUERY only)
 ?category=65af…                     equality on a `query` field; repeat for $in
 ?rangeField=price&amp;range=10-100      inclusive; either side optional
 ?compareField=price&amp;compareValue=50&amp;compareOperator=gt   gt|gte|lt|lte|ne|eq
@@ -489,7 +471,16 @@ mail: {
 sms: { sender, templates: { passwordReset: '{{appName}}: {{code}} is your code' } },
 ```
 
-## Custom routes
+## Custom routes (every ControllerSets method)
+
+Methods are pre-bound arrow functions — pass them directly. `get`, `update`, `delete` read
+`req.params.id`, so the route parameter must be named `:id`. They send the response themselves;
+client errors (400/404/409) are answered directly, unexpected errors are thrown to `errorHandler`.
+
+`fileUploadMiddleware(req, res, next, { uploadPath, fields, acl, allowedMimeTypes, maxFileSize,
+maxFiles, imgOptimizations, allowClientImageOptions })` uploads multipart files to S3 on any route
+and puts the URL(s) on `req.body[field]` (plus `req.file(s)[].key` / `.location`).
+
 
 ```js
 import express from 'express';
@@ -587,12 +578,13 @@ could write a field it shouldn't, read another user's data, or reach an unguarde
         <li><strong><code>errorHandler</code> is mounted last</strong> and <code>express.json()</code> first.</li>
         <li><strong>Secrets come from the environment</strong> — <code>token.secret</code> is at least 32
             characters and never in the code.</li>
-        <li><strong>Only real options are used.</strong> Anything not in <a href="options.html">All options</a>
+        <li><strong>Only real options are used.</strong> Anything not in <a href="router.html">All options</a>
             is invented — at best ignored, at worst a false sense of safety.</li>
     </ol>
   </div>
 </details>
 </section>
+
 
         <nav class="pager" aria-label="Previous and next page">
       <a class="prev" href="faq.html"><span class="pager-dir"><i data-lucide="arrow-left"></i> Previous</span><span class="pager-title">FAQ</span></a>

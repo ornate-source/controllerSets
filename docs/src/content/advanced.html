@@ -1,27 +1,153 @@
-<section class="section" id="custom-basics">
-    <h2>Use the handlers yourself</h2>
-<p>Need a <code>PUT</code>, a different path, or extra routes? Use <code>ControllerSets</code> on your own router.</p>
+<section class="section" id="adv-intro">
+<h2>Use every method yourself</h2>
+<p><code>createRouter</code> is a thin layer over <code>ControllerSets</code>. Create the controller yourself and you can put each method on any route, with any middleware, next to your own code.</p>
 <div class="code-block" data-lang="javascript">
-<pre><code>import express from 'express';
-import { ControllerSets } from 'express-controller-sets';
+<pre><code>import { ControllerSets } from 'express-controller-sets';
 
-const products = new ControllerSets({ model: Product, allowedFields: ['name', 'price'] });
-const router = express.Router();
-
-router.get('/', (req, res, next) =&gt; products.getAll(req, res).catch(next));
-router.put('/:id', (req, res, next) =&gt; products.update(req, res).catch(next));
-
-app.use('/api/products', router);</code></pre>
+const products = new ControllerSets({
+  model: Product,                          // same options as createRouter
+  query: ['category'],
+  search: ['name'],
+  allowedFields: ['name', 'price', 'category'],
+});</code></pre>
 </div>
-<p>Handlers: <code>getAll</code>, <code>query</code>, <code>get</code>, <code>create</code>, <code>update</code>, <code>delete</code>.</p>
+<div class="table-container"><table><thead><tr><th>Method</th><th>Usual route</th><th>Reads from the request</th><th>Responds</th></tr></thead><tbody>
+<tr><td><code>getAll</code></td><td>GET /</td><td><code>req.query</code></td><td>200 list (+ pagination)</td></tr>
+<tr><td><code>query</code></td><td>QUERY /</td><td><code>req.body</code> (JSON)</td><td>200 list (+ pagination)</td></tr>
+<tr><td><code>get</code></td><td>GET /:id</td><td><code>req.params.id</code></td><td>200 record · 404</td></tr>
+<tr><td><code>create</code></td><td>POST /</td><td><code>req.body</code></td><td>201 record</td></tr>
+<tr><td><code>update</code></td><td>PATCH /:id</td><td><code>req.params.id</code>, <code>req.body</code></td><td>200 updated record · 404</td></tr>
+<tr><td><code>delete</code></td><td>DELETE /:id</td><td><code>req.params.id</code></td><td>200 message · 404</td></tr>
+</tbody></table></div>
+<div class="callout callout-tip"><i data-lucide="info"></i><div><p>Methods are pre-bound — pass them directly: <code>router.get('/', products.getAll)</code>. Route parameters must be named <code>:id</code>.</p></div></div>
 </section>
 
-<section class="section" id="advanced">
-    <h2>Advanced</h2>
-    <p class="section-intro">Deeper detail — open what you need.</p>
+<section class="section" id="adv-getall">
+<h2>getAll — list</h2>
+<div class="code-block" data-lang="javascript">
+<pre><code>router.get('/', products.getAll);</code></pre>
+</div>
+<p>Reads filters, search, sort and pagination from the query string — everything on <a href="router.html#api-overview">API endpoints</a>. Only fields allowed by <code>query</code>, <code>filterableFields</code> and <code>sortableFields</code> are accepted.</p>
+<div class="code-block" data-lang="bash">
+<pre><code>GET /products?category=chairs&amp;s=oak&amp;sort=-price&amp;page=1&amp;pageSize=20</code></pre>
+</div>
+</section>
+
+<section class="section" id="adv-query">
+<h2>query — list from a JSON body</h2>
+<div class="code-block" data-lang="javascript">
+<pre><code>router.query('/', products.query);      // Node 22.2+ and Express 5</code></pre>
+</div>
+<p>Same result as <code>getAll</code>, but reads <code>{ filter, search, sort, page, pageSize, limit, cursor }</code> from the body. Needs <code>express.json()</code>.</p>
+<div class="code-block" data-lang="http">
+<pre><code>QUERY /products
+Content-Type: application/json
+
+{ "filter": { "price": { "gte": 50 } }, "sort": ["-price"], "page": 1 }</code></pre>
+</div>
+</section>
+
+<section class="section" id="adv-get">
+<h2>get — read one</h2>
+<div class="code-block" data-lang="javascript">
+<pre><code>router.get('/:id', products.get);</code></pre>
+</div>
+<p>Validates the id (<strong>400</strong> if malformed), applies <code>onGet</code>, returns the record or <strong>404</strong>.</p>
+</section>
+
+<section class="section" id="adv-create">
+<h2>create — insert</h2>
+<div class="code-block" data-lang="javascript">
+<pre><code>router.post('/', products.create);</code></pre>
+</div>
+<p>Keeps only <code>allowedFields</code> from <code>req.body</code>, runs <code>validate.create</code>, saves, runs <code>runAfterCreate</code>, responds <strong>201</strong>. A duplicate unique key is a <strong>409</strong>.</p>
+</section>
+
+<section class="section" id="adv-update">
+<h2>update — change fields</h2>
+<div class="code-block" data-lang="javascript">
+<pre><code>router.patch('/:id', products.update);
+router.put('/:id', products.update);       // want PUT? same handler</code></pre>
+</div>
+<p>Applies only the fields sent (<code>$set</code>) after <code>allowedFields</code> and <code>validate.update</code>; responds with the updated record or <strong>404</strong>.</p>
+</section>
+
+<section class="section" id="adv-delete">
+<h2>delete — remove</h2>
+<div class="code-block" data-lang="javascript">
+<pre><code>router.delete('/:id', products.delete);</code></pre>
+</div>
+<div class="code-block" data-lang="json">
+<pre><code>{ "success": true, "message": "Item successfully deleted." }</code></pre>
+</div>
+</section>
+
+<section class="section" id="adv-router">
+<h2>A router by hand</h2>
+<p>All six methods on your own router, with a different guard per route and an extra endpoint:</p>
+<div class="code-block" data-lang="javascript">
+<pre><code>import express from 'express';
+import { ControllerSets, errorHandler } from 'express-controller-sets';
+
+const products = new ControllerSets({
+  model: Product,
+  query: ['category'],
+  search: ['name'],
+  sortableFields: ['price', 'createdAt'],
+  allowedFields: ['name', 'price', 'category'],
+});
+
+const router = express.Router();
+const admin = [auth.requireAuth, auth.requireRole('admin')];
+
+router.get('/', products.getAll);                         // public
+router.query('/', products.query);                        // public (Node 22.2+)
+router.get('/featured', async (req, res) =&gt; {             // your own route — before '/:id'
+  res.json({ success: true, data: await Product.find({ featured: true }).limit(10) });
+});
+router.get('/:id', products.get);                         // public
+router.post('/', ...admin, products.create);              // admin only
+router.patch('/:id', ...admin, products.update);
+router.delete('/:id', ...admin, products.delete);
+
+app.use('/api/products', router);
+app.use(errorHandler);</code></pre>
+</div>
+</section>
+
+<section class="section" id="adv-wrap">
+<h2>Add logic around a method</h2>
+<p>Run your own checks first, then hand over to the method:</p>
+<div class="code-block" data-lang="javascript">
+<pre><code>// Only the owner may change or delete a note
+const ownsNote = async (req, res, next) =&gt; {
+  const note = await Note.exists({ _id: req.params.id, ownerId: req.auth.userId });
+  if (!note) return res.status(404).json({ success: false, error: 'Entry not found.' });
+  next();
+};
+
+router.patch('/:id', auth.requireAuth, ownsNote, notes.update);
+router.delete('/:id', auth.requireAuth, ownsNote, notes.delete);</code></pre>
+</div>
+<p>Methods send the response themselves. To change what a read returns, use <code>onGet</code> (populate / select) or your schema's <code>toJSON</code>.</p>
+</section>
+
+<section class="section" id="adv-errors">
+<h2>Errors</h2>
+<p>Methods answer client mistakes themselves (400, 404, 409) with <code>{ success: false, error }</code>. Unexpected failures (a database outage) are thrown — mount <code>errorHandler</code> last so they become a clean 500.</p>
+<div class="table-container"><table><thead><tr><th>Helper</th><th>What it gives you</th></tr></thead><tbody>
+<tr><td><code>products.config</code></td><td>The resolved, frozen options.</td></tr>
+<tr><td><code>products.getPopulates(req, res)</code></td><td>What <code>onGet</code> resolves to for this request.</td></tr>
+<tr><td><code>products.getPaginatedResults(req, res, filters, sort)</code></td><td>One offset-paginated read of your own filter, sent as a standard paginated response.</td></tr>
+</tbody></table></div>
+</section>
+
+<section class="section" id="adv-more">
+<h2>More detail</h2>
+<p class="section-intro">Reference material.</p>
 <details class="advanced" id="custom">
-  <summary>Custom routes</summary>
-  <div class="details-body"><p class="section-intro">When the six generated endpoints aren't quite the shape you need.</p>
+<summary>How the handlers are put together</summary>
+<div class="details-body"><p class="section-intro">When the six generated endpoints aren't quite the shape you need.</p>
 
                 <h3>Use the handlers on your own router</h3>
                 <p>Every controller method is a plain Express handler, so you can mount them individually — different
@@ -167,12 +293,11 @@ app.post('/api/invoices', requireAuth, upload, (req, res) =&gt; {
 });</code></pre>
                     <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
                 </div>
-  </div>
+</div>
 </details>
-
 <details class="advanced" id="typescript">
-  <summary>TypeScript</summary>
-  <div class="details-body"><p class="section-intro">Type declarations ship with the package. Nothing to install.</p>
+<summary>TypeScript</summary>
+<div class="details-body"><p class="section-intro">Type declarations ship with the package. Nothing to install.</p>
 
                 <div class="code-block" data-lang="typescript">
                     <pre><code>import express from 'express';
@@ -231,6 +356,26 @@ await fetch('/api/products', {
                             allowlist first.</p>
                     </div>
                 </div>
-  </div>
+</div>
+</details>
+<details class="advanced" id="extra-endpoint">
+<summary>Recipe: extra endpoints next to a generated router</summary>
+<div class="details-body"><p>A generated router is an ordinary Express router. Mount your own routes on the same path — before it,
+        so they win.</p>
+    <div class="code-block" data-lang="javascript">
+        <pre><code>const products = express.Router();
+
+products.get('/stats', async (req, res) =&gt; {
+  const [row] = await Product.aggregate([{ $group: { _id: null, avg: { $avg: '$price' }, n: { $sum: 1 } } }]);
+  res.json({ success: true, data: row ?? { avg: 0, n: 0 } });
+});
+
+products.use(createRouter({ model: Product, allowedFields: [] }));
+
+app.use('/api/products', products);    // GET /api/products/stats, plus the six generated routes</code></pre>
+    </div>
+    <p>To reuse the generated behaviour under a different verb or path, call the handlers directly — see
+        <a href="advanced.html">Custom routes</a>.</p>
+</div>
 </details>
 </section>
