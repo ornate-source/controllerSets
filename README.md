@@ -214,16 +214,49 @@ sort automatically, so records sharing a sort value are never skipped or repeate
 boundary. A cursor carries only the anchor record's id — the server re-reads it for the sort
 values, so a client cannot craft one that filters on a field you never exposed.
 
-Measured on 200,000 documents, 50 per page:
+## 📊 Measured performance
 
-| | page 1 | page 1,000 | page 4,000 |
-|---|---|---|---|
-| `pagination: 'offset'` | 18.7 ms | 19.1 ms | 47.8 ms |
-| `pagination: 'cursor'` | 3.6 ms | 0.6 ms | **0.9 ms** |
+100,000 documents, indexed, median of 600 sequential requests over loopback. Run it yourself
+with `npm run bench`.
 
-The count is most of that: at this size `countDocuments` alone is 18.7 ms, which is why an
-offset page costs the same at page 1 as at page 1,000. `countStrategy: 'estimated'` or
-`'none'` removes it if you need totals-free offset paging instead.
+**Listing page 1 — 50 records, filtered and sorted**
+
+| | median | throughput |
+|---|---|---|
+| Hand-written Express + Mongoose *(with totals)* | 5.52 ms | 179/s |
+| **controller-sets** *(with totals)* | **5.45 ms** | 179/s |
+| express-restify-mongoose + `/count` *(with totals)* | 5.72 ms | 173/s |
+| express-restify-mongoose *(no totals)* | 0.64 ms | 1,488/s |
+| **controller-sets**, `countStrategy: 'none'` | 0.55 ms | 1,702/s |
+| **controller-sets**, `pagination: 'cursor'` | **0.55 ms** | 1,712/s |
+
+Two groups, and the line between them is the count, not the library — `countDocuments` over
+100,000 documents is 5 ms of that 5.5 ms. `express-restify-mongoose` returns a bare array and
+keeps its count on a second endpoint, so its fast row and its slow row are the same feature
+measured with and without the part that costs.
+
+**Page 1,000 of the same collection**
+
+| | median | throughput |
+|---|---|---|
+| Hand-written Express + Mongoose | 12.61 ms | 78/s |
+| express-restify-mongoose | 12.07 ms | 82/s |
+| **controller-sets** *(offset)* | 12.73 ms | 78/s |
+| **controller-sets** *(cursor)* | **0.86 ms** | 1,096/s |
+
+Every offset implementation lands in the same place: they all ask MongoDB to walk 49,950 index
+entries and discard them. Keyset pagination is **15× faster here**, and the gap widens with the
+collection. `GET /:id` and `POST /` are within noise across all three (0.27–0.30 ms and
+0.39–0.42 ms).
+
+The library is not faster than the code you would write by hand — it runs the same queries.
+What it gives you is the faster strategy already built.
+
+> [!NOTE]
+> One machine, loopback, in-memory MongoDB, no concurrency. Real deployments add network and
+> disk that dwarf sub-millisecond framework differences, and `express-restify-mongoose` runs
+> on its own Mongoose 8. Treat the two-group split and the depth curve as the findings, not
+> the third decimal.
 
 > [!IMPORTANT]
 > This package generates **public** endpoints. Authentication and authorization are yours to

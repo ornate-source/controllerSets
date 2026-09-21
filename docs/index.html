@@ -20,7 +20,6 @@
 
 <body class="dark">
     <a href="#main-content" class="skip-link">Skip to content</a>
-    <div class="scroll-progress" id="progress"></div>
     <div class="sidebar-overlay" id="overlay"></div>
 
     <header class="mobile-header">
@@ -103,6 +102,8 @@
                 <p class="nav-group-title">Going live</p>
                 <ul>
                     <li><a href="#middlewares"><i data-lucide="lock"></i> Auth &amp; middlewares</a></li>
+                    <li><a href="#performance"><i data-lucide="gauge"></i> Performance <span
+                                class="nav-star">NEW</span></a></li>
                     <li><a href="#security"><i data-lucide="shield-check"></i> Security checklist</a></li>
                     <li><a href="#upgrade"><i data-lucide="git-compare"></i> Upgrading from 2.x</a></li>
                 </ul>
@@ -2667,6 +2668,185 @@ createRouter({
                 </div>
             </section>
 
+            <!-- ====================== PERFORMANCE ====================== -->
+            <section class="section reveal" id="performance">
+                <h2><i data-lucide="gauge"></i> Measured performance</h2>
+                <p class="section-intro">What the library costs you, next to writing the same endpoint by hand and
+                    next to the established alternative.</p>
+
+                <div class="callout callout-plain">
+                    <i data-lucide="flask-conical"></i>
+                    <div>
+                        <p><strong>How these were produced.</strong> 100,000 documents in MongoDB, indexed on the
+                            sort key, Node 24 on one machine, every participant serving the same collection over
+                            loopback. 600 sequential requests after 150 warm-up requests; the median and the 95th
+                            percentile of the full round trip. Loopback removes network latency, which makes the
+                            differences below look larger than they will on your infrastructure — the ordering holds,
+                            the ratios shrink.</p>
+                    </div>
+                </div>
+
+                <h3>Listing page 1 — 50 of 100,000, filtered and sorted</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Participant</th>
+                                <th class="center">Median</th>
+                                <th class="center">p95</th>
+                                <th class="center">Throughput</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Hand-written Express + Mongoose <em>(with totals)</em></td>
+                                <td class="center">5.52 ms</td>
+                                <td class="center">6.68 ms</td>
+                                <td class="center">179/s</td>
+                            </tr>
+                            <tr>
+                                <td><strong>controller-sets</strong> <em>(with totals)</em></td>
+                                <td class="center"><strong>5.45 ms</strong></td>
+                                <td class="center">6.33 ms</td>
+                                <td class="center">179/s</td>
+                            </tr>
+                            <tr>
+                                <td>express-restify-mongoose + <code>/count</code> <em>(with totals)</em></td>
+                                <td class="center">5.72 ms</td>
+                                <td class="center">6.79 ms</td>
+                                <td class="center">173/s</td>
+                            </tr>
+                            <tr>
+                                <td>express-restify-mongoose <em>(no totals)</em></td>
+                                <td class="center">0.64 ms</td>
+                                <td class="center">0.82 ms</td>
+                                <td class="center">1,488/s</td>
+                            </tr>
+                            <tr>
+                                <td><strong>controller-sets</strong>, <code>countStrategy: 'none'</code></td>
+                                <td class="center">0.55 ms</td>
+                                <td class="center">0.79 ms</td>
+                                <td class="center">1,702/s</td>
+                            </tr>
+                            <tr>
+                                <td><strong>controller-sets</strong>, <code>pagination: 'cursor'</code></td>
+                                <td class="center"><strong>0.55 ms</strong></td>
+                                <td class="center">0.73 ms</td>
+                                <td class="center">1,712/s</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>Two groups, and the line between them is the count — not the library. A page with totals costs
+                    about 5.5&nbsp;ms whoever builds it, because <code>countDocuments</code> over 100,000 documents
+                    is 5&nbsp;ms of that. A page without totals costs about 0.6&nbsp;ms the same way. Comparing
+                    across that line is the easy mistake: <code>express-restify-mongoose</code> returns a bare array
+                    and keeps its count on a second endpoint, so its fast row and its slow row are the same feature
+                    measured with and without the thing that costs.</p>
+
+                <h3>Going deep — page 1,000 of the same collection</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Participant</th>
+                                <th class="center">Median</th>
+                                <th class="center">p95</th>
+                                <th class="center">Throughput</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Hand-written Express + Mongoose</td>
+                                <td class="center">12.61 ms</td>
+                                <td class="center">13.70 ms</td>
+                                <td class="center">78/s</td>
+                            </tr>
+                            <tr>
+                                <td>express-restify-mongoose</td>
+                                <td class="center">12.07 ms</td>
+                                <td class="center">12.91 ms</td>
+                                <td class="center">82/s</td>
+                            </tr>
+                            <tr>
+                                <td><strong>controller-sets</strong> <em>(offset)</em></td>
+                                <td class="center">12.73 ms</td>
+                                <td class="center">13.67 ms</td>
+                                <td class="center">78/s</td>
+                            </tr>
+                            <tr>
+                                <td><strong>controller-sets</strong> <em>(cursor)</em></td>
+                                <td class="center"><strong>0.86 ms</strong></td>
+                                <td class="center">1.17 ms</td>
+                                <td class="center">1,096/s</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>Every offset implementation lands in the same place, because they are all asking MongoDB to walk
+                    49,950 index entries and discard them. That cost is the database's, not the framework's, and it
+                    keeps growing with the collection. <a href="#sorting-paging">Keyset pagination</a> asks a
+                    different question, and answers it in the same time at page 1,000 as at page 1 —
+                    <strong>15× faster here</strong>, more as the data grows.</p>
+
+                <h3>The other routes</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Route</th>
+                                <th class="center">Hand-written</th>
+                                <th class="center">controller-sets</th>
+                                <th class="center">express-restify-mongoose</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>GET /:id</code></td>
+                                <td class="center">0.28 ms</td>
+                                <td class="center">0.27 ms</td>
+                                <td class="center">0.30 ms</td>
+                            </tr>
+                            <tr>
+                                <td><code>POST /</code></td>
+                                <td class="center">0.42 ms</td>
+                                <td class="center">0.39 ms</td>
+                                <td class="center">0.42 ms</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>Within noise of each other, which is the point: the allowlists, the field policy and the response
+                    envelope are object operations on a payload that was already parsed. They do not show up next to
+                    a database round trip.</p>
+
+                <div class="callout callout-tip">
+                    <i data-lucide="target"></i>
+                    <div>
+                        <p><strong>What to take from this.</strong> The library is not faster than the code you would
+                            write by hand — it runs the same queries, and it measures like it. What it gives you is
+                            the faster strategy already built: <code>countStrategy</code> and
+                            <code>pagination: 'cursor'</code> are a line of config here, and an afternoon of careful
+                            work by hand.</p>
+                    </div>
+                </div>
+
+                <div class="callout callout-warn">
+                    <i data-lucide="scale"></i>
+                    <div>
+                        <p><strong>Read these honestly.</strong> One machine, loopback, an in-memory MongoDB, and no
+                            concurrency — a real deployment adds network, disk and contention that dwarf a
+                            0.1&nbsp;ms difference between frameworks. <code>express-restify-mongoose</code> runs on
+                            its own Mongoose 8 (it depends on that major), so a little of its column is driver
+                            version rather than library design. Treat the two-group split and the depth curve as the
+                            findings; treat the third decimal as noise.</p>
+                    </div>
+                </div>
+            </section>
+
             <!-- ====================== SECURITY ====================== -->
             <section class="section reveal" id="security">
                 <h2><i data-lucide="shield-check"></i> Before you go live</h2>
@@ -3865,15 +4045,11 @@ app.post('/api/invoices', requireAuth, upload, (req, res) =&gt; {
                 if (buttons.length) select(buttons[0].dataset.tab);
             });
 
-            /* ---------- Scroll progress + back to top ---------- */
-            var progress = document.getElementById('progress');
+            /* ---------- Back to top ---------- */
             var toTop = document.getElementById('back-to-top');
             var ticking = false;
 
             function onScroll() {
-                var max = document.documentElement.scrollHeight - window.innerHeight;
-                var pct = max > 0 ? (window.scrollY / max) * 100 : 0;
-                if (progress) progress.style.width = pct + '%';
                 if (toTop) toTop.classList.toggle('is-visible', window.scrollY > 600);
                 ticking = false;
             }

@@ -5,9 +5,10 @@
 
 :root {
     --sidebar-width: 280px;
-    --max-content: 900px;
+    --max-content: 940px;
     --radius: 14px;
     --radius-sm: 9px;
+    --radius-lg: 18px;
     --ease: cubic-bezier(0.4, 0, 0.2, 1);
     --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     --t-fast: 0.18s var(--ease);
@@ -154,19 +155,6 @@ svg.lucide {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
     border-radius: 4px;
-}
-
-/* ---------- Scroll progress ---------- */
-
-.scroll-progress {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 2px;
-    width: 0;
-    background: linear-gradient(90deg, var(--primary), var(--accent));
-    z-index: 300;
-    transition: width 0.1s linear;
 }
 
 /* ---------- Layout ---------- */
@@ -369,19 +357,28 @@ body.light .moon-icon {
 }
 
 .section {
-    margin-bottom: 76px;
+    margin-bottom: 84px;
     scroll-margin-top: 90px;
+    padding-top: 42px;
+    border-top: 1px solid var(--border);
+}
+
+/* The section straight after the hero opens the page; a rule above it would
+   read as a stray line rather than a divider. */
+.hero+.section {
+    padding-top: 0;
+    border-top: none;
 }
 
 .section h2 {
     display: flex;
     align-items: center;
     gap: 11px;
-    font-size: 1.72rem;
+    font-size: 1.78rem;
     font-weight: 700;
-    letter-spacing: -0.025em;
+    letter-spacing: -0.027em;
     margin-bottom: 10px;
-    line-height: 1.3;
+    line-height: 1.28;
 }
 
 .section h2 svg {
@@ -391,10 +388,10 @@ body.light .moon-icon {
 }
 
 .section h3 {
-    font-size: 1.14rem;
+    font-size: 1.17rem;
     font-weight: 650;
     letter-spacing: -0.015em;
-    margin: 38px 0 12px;
+    margin: 42px 0 12px;
 }
 
 .section h4 {
@@ -624,6 +621,14 @@ body.light .moon-icon {
     color: var(--danger);
 }
 
+/* ---------- Focus ---------- */
+
+:where(a, button, [tabindex]):focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
 /* ---------- Code blocks ---------- */
 
 .code-block {
@@ -638,19 +643,23 @@ body.light .moon-icon {
 .code-block::before {
     content: attr(data-lang);
     position: absolute;
-    top: 9px;
-    left: 15px;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 8px 15px 7px;
     font-family: 'Fira Code', monospace;
     font-size: 0.65rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--text-muted);
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border);
     pointer-events: none;
 }
 
 .code-block pre {
-    padding: 34px 16px 16px;
+    padding: 42px 16px 16px;
     overflow-x: auto;
 }
 
@@ -671,9 +680,10 @@ body.light .moon-icon {
 }
 
 .copy-btn {
+    z-index: 2;
     position: absolute;
-    top: 7px;
-    right: 8px;
+    top: 3px;
+    right: 7px;
     display: inline-flex;
     align-items: center;
     gap: 5px;
@@ -732,6 +742,10 @@ thead {
 }
 
 th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--bg-elevated);
     text-align: left;
     padding: 11px 15px;
     font-weight: 650;
@@ -770,6 +784,11 @@ tbody tr:hover {
 td.center,
 th.center {
     text-align: center;
+}
+
+/* Measurements read as a column, not as prose. */
+td.center {
+    font-variant-numeric: tabular-nums;
 }
 
 .yes {
@@ -819,8 +838,14 @@ th.center {
 .card:hover {
     border-color: var(--border-strong);
     background: var(--card-bg-hover);
-    transform: translateY(-2px);
+    transform: translateY(-3px);
     box-shadow: var(--shadow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .card:hover {
+        transform: none;
+    }
 }
 
 .card:hover::before {
@@ -1598,8 +1623,7 @@ details[open] summary::before {
 
     .sidebar,
     .mobile-header,
-    .copy-btn,
-    .scroll-progress {
+    .copy-btn {
         display: none !important;
     }
 
