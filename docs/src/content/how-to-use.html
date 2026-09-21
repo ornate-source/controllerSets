@@ -1,0 +1,400 @@
+<section class="section" id="building-blocks">
+    <h2>The building blocks</h2>
+<p>A typical app uses four imports. Each step links to its own page.</p>
+<ol class="steps"><li><h4>CRUD — one router per model</h4><div class="code-block" data-lang="javascript">
+<pre><code>app.use('/api/products', createRouter({
+  model: Product,
+  allowedFields: ['name', 'price'],     // what clients may write
+}));</code></pre>
+</div><p><a href="endpoints.html">CRUD →</a></p></li><li><h4>Auth — sign-up, login, and guards</h4><div class="code-block" data-lang="javascript">
+<pre><code>const auth = createAuthRouter({ model: User, token: { secret: process.env.JWT_SECRET } });
+app.use('/api/auth', auth);
+
+// Use its guards on any router
+createRouter({ model: Order, middlewares: [auth.requireAuth], allowedFields: ['note'] });</code></pre>
+</div><p><a href="auth.html">Auth →</a></p></li><li><h4>S3 Upload — files on a router</h4><div class="code-block" data-lang="javascript">
+<pre><code>app.use('/api/documents', createRouterS3upload({
+  model: Document,
+  fields: [{ name: 'file', maxCount: 1 }],
+  allowedFields: ['title', 'file'],
+}));</code></pre>
+</div><p><a href="uploads.html">S3 Upload →</a></p></li><li><h4>Email Sender — reset codes by mail</h4><div class="code-block" data-lang="javascript">
+<pre><code>createAuthRouter({
+  // …
+  mail: { transporter: nodemailer.createTransport(process.env.SMTP_URL), from: 'Acme &lt;no-reply@acme.com&gt;' },
+});</code></pre>
+</div><p><a href="email.html">Email Sender →</a></p></li><li><h4>Configure with .env, and add the error handler last</h4><div class="code-block" data-lang="javascript">
+<pre><code>import 'dotenv/config';            // first line of your app
+// … routers …
+app.use(errorHandler);             // after every router</code></pre>
+</div><p><a href="env.html">.env examples →</a></p></li></ol>
+</section>
+
+<section class="section" id="full-app">
+    <h2>All together</h2>
+<p>A complete <code>app.js</code> with every feature. Delete what you don't need.</p>
+<div class="code-block" data-lang="javascript">
+<pre><code>import 'dotenv/config';
+import express from 'express';
+import mongoose from 'mongoose';
+import nodemailer from 'nodemailer';
+import {
+  createRouter, createRouterS3upload, createAuthRouter, errorHandler,
+} from 'express-controller-sets';
+import { User, Product, Document } from './models.js';
+
+const app = express();
+app.use(express.json());
+
+// Auth: sign-up, login, refresh tokens, password reset by email
+const auth = createAuthRouter({
+  model: User,
+  token: { secret: process.env.JWT_SECRET, expiresIn: '15m' },
+  refresh: { enabled: true },
+  mail: { transporter: nodemailer.createTransport(process.env.SMTP_URL), from: process.env.MAIL_FROM },
+});
+app.use('/api/auth', auth);
+
+// CRUD: anyone reads products, admins change them
+const products = { model: Product, query: ['category'], search: ['name'], orderBy: '-createdAt' };
+app.use('/api/products', createRouter({ ...products, allowedFields: [] }));
+app.use('/api/admin/products', createRouter({
+  ...products,
+  middlewares: [auth.requireAuth, auth.requireRole('admin')],
+  allowedFields: ['name', 'price', 'category'],
+}));
+
+// Uploads: signed-in users attach files
+app.use('/api/documents', createRouterS3upload({
+  model: Document,
+  middlewares: [auth.requireAuth],
+  fields: [{ name: 'file', maxCount: 1 }],
+  allowedFields: ['title', 'file'],
+}));
+
+app.use(errorHandler);
+
+await mongoose.connect(process.env.MONGODB_URI);
+app.listen(process.env.PORT ?? 3000);</code></pre>
+</div>
+</section>
+
+<section class="section" id="common-tasks">
+    <h2>Common tasks</h2>
+    <p>Pick a task — each opens a complete, copy-paste answer below.</p>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>I want to…</th>
+                    <th>Recipe</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Serve a read-only catalogue</td><td><a href="#public-read-only">Public, read-only</a></td></tr>
+                <tr><td>Let anyone read, only admins write</td><td><a href="#public-read-admin-write">Two routers, one model</a></td></tr>
+                <tr><td>Stamp the author from the token</td><td><a href="#owner-from-token">Server-owned fields</a></td></tr>
+                <tr><td>Show each user only their own records</td><td><a href="#only-my-records">Only my records</a></td></tr>
+                <tr><td>Return related documents</td><td><a href="#populate-and-search">Populate &amp; search a ref</a></td></tr>
+                <tr><td>Reject bad input with field errors</td><td><a href="#validate-input">Validate &amp; normalise</a></td></tr>
+                <tr><td>Page through millions of rows</td><td><a href="#large-collections">Large collections</a></td></tr>
+                <tr><td>Accept image uploads</td><td><a href="#image-uploads">Image uploads to S3</a></td></tr>
+                <tr><td>Add sign-up, login and refresh</td><td><a href="#full-auth">Complete auth</a></td></tr>
+                <tr><td>Slow down password guessing</td><td><a href="#rate-limit">Rate-limit sign-in</a></td></tr>
+                <tr><td>Add an endpoint the library doesn't make</td><td><a href="#extra-endpoint">Extra endpoints</a></td></tr>
+                <tr><td>See every environment variable</td><td><a href="env.html">.env examples</a></td></tr>
+            </tbody>
+        </table>
+    </div>
+<details class="advanced" id="public-read-only">
+  <summary>Public, read-only</summary>
+  <div class="details-body"><p>An empty <code>allowedFields</code> means no field is writable, so <code>POST</code> and <code>PATCH</code>
+        are refused with a 400. Add a guard if you also want <code>DELETE</code> gone.</p>
+    <div class="code-block" data-lang="javascript">
+        <pre><code>app.use('/api/articles', createRouter({
+  model: Article,
+  orderBy: '-publishedAt',
+  query: ['category'],
+  search: ['title', 'summary'],
+  allowedFields: [],                         // nothing is writable
+  middlewares: [(req, res, next) =&gt;          // only reads get through
+    ['GET', 'HEAD', 'QUERY'].includes(req.method) ? next() : res.status(405).end()],
+}));</code></pre>
+    </div>
+  </div>
+</details>
+<details class="advanced" id="public-read-admin-write">
+  <summary>Two routers, one model</summary>
+  <div class="details-body"><p>The most common shape: the public reads, staff edit. Each router carries its own allowlists, so the
+        public one can never write — even if a guard is misconfigured.</p>
+    <div class="code-block" data-lang="javascript">
+        <pre><code>const catalogue = {
+  model: Product,
+  orderBy: '-createdAt',
+  query: ['category', 'isFeatured'],
+  search: ['name', 'description'],
+  filterableFields: ['price', 'category'],
+  sortableFields: ['price', 'name', 'createdAt'],
+};
+
+// Anyone: read
+app.use('/api/products', createRouter({ ...catalogue, allowedFields: [] }));
+
+// Staff: read and write
+app.use('/api/admin/products', createRouter({
+  ...catalogue,
+  middlewares: [auth.requireAuth, auth.requireRole('staff', 'admin')],
+  allowedFields: ['name', 'price', 'description', 'category', 'isFeatured'],
+}));</code></pre>
+    </div>
+  </div>
+</details>
+<details class="advanced" id="owner-from-token">
+  <summary>Server-owned fields</summary>
+  <div class="details-body"><p>Fields like <code>author</code>, <code>ownerId</code> or <code>tenantId</code> come from the signed-in
+        user, never from the body. Keep them <strong>out</strong> of <code>allowedFields</code> and set them in
+        <code>validate.create</code> — whatever the client sent for them was already stripped.</p>
+    <div class="code-block" data-lang="javascript">
+        <pre><code>app.use('/api/posts', createRouter({
+  model: Post,
+  middlewares: [auth.requireAuth],
+  allowedFields: ['title', 'body', 'tags'],          // no 'author'
+  validate: {
+    create: (payload, { req }) =&gt; ({ ...payload, author: req.auth.userId }),
+  },
+}));</code></pre>
+    </div>
+  </div>
+</details>
+<details class="advanced" id="only-my-records">
+  <summary>Only my records</summary>
+  <div class="details-body"><p>Three pieces: force the owner into every list, check ownership on every <code>/:id</code>, and stamp
+        the owner on create. Tested end to end — a user cannot list, read, change or delete another user's
+        records, even by sending <code>?ownerId=</code> themselves.</p>
+    <div class="code-block" data-lang="javascript">
+        <pre><code>import express from 'express';
+import mongoose from 'mongoose';
+import { createRouter, HttpError } from 'express-controller-sets';
+
+// 1. Lists: pin ownerId to the caller. Express 5 re-parses req.query on every
+//    read, so assigning to it does nothing — shadow it with a real property.
+const onlyMine = (req, res, next) =&gt; {
+  Object.defineProperty(req, 'query', {
+    value: { ...req.query, ownerId: String(req.auth.userId) },
+    writable: true, configurable: true, enumerable: true,
+  });
+  next();
+};
+
+// 2. Single records: 404 unless the caller owns it (404, not 403 — don't
+//    confirm that someone else's record exists).
+const ownsNote = async (req, res, next) =&gt; {
+  if (!mongoose.isValidObjectId(req.params.id)) return next();   // the controller answers 400
+  const mine = await Note.exists({ _id: req.params.id, ownerId: req.auth.userId });
+  if (!mine) throw new HttpError(404, 'Entry not found.');
+  next();
+};
+
+const notes = express.Router();
+notes.use(auth.requireAuth, onlyMine);
+notes.use('/:id', ownsNote);
+notes.use(createRouter({
+  model: Note,
+  orderBy: '-createdAt',
+  query: ['ownerId'],
+  enableQuery: false,                                  // QUERY filters from the body — keep it off here
+  allowedFields: ['title', 'body'],
+  validate: { create: (p, { req }) =&gt; ({ ...p, ownerId: req.auth.userId }) },   // 3. stamp the owner
+}));
+
+app.use('/api/notes', notes);</code></pre>
+    </div>
+    <div class="callout callout-warn">
+        <i data-lucide="alert-triangle"></i>
+        <div>
+            <p><strong>Don't skip step 2.</strong> The list filter only covers <code>GET /</code>. Without the
+                <code>/:id</code> check, anyone who learns an id can read, edit or delete that record.</p>
+        </div>
+    </div>
+  </div>
+</details>
+<details class="advanced" id="populate-and-search">
+  <summary>Populate &amp; search a ref</summary>
+  <div class="details-body"><p><code>onGet</code> decides, per request, what to populate and select. Search can reach into a referenced
+        model with a dotted path.</p>
+    <div class="code-block" data-lang="javascript">
+        <pre><code>app.use('/api/books', createRouter({
+  model: Book,                                  // author: { type: ObjectId, ref: 'Author' }
+  search: ['title', 'author.name'],             // ?s=tolkien matches the author's name
+  allowedFields: [],
+  onGet: (req) =&gt; ({
+    populates: [{ path: 'author', select: 'name avatar' }],
+    selects: req.query.full ? '' : '-body',     // lists skip the heavy field
+  }),
+}));</code></pre>
+    </div>
+  </div>
+</details>
+<details class="advanced" id="validate-input">
+  <summary>Validate &amp; normalise</summary>
+  <div class="details-body"><p>Throw <code>ValidationError</code> with a field map and the client gets it back as <code>fields</code>.
+        Return an object to replace the payload — that is how you trim, lowercase or derive values.</p>
+    <div class="code-block" data-lang="javascript">
+        <pre><code>import { createRouter, ValidationError } from 'express-controller-sets';
+
+const check = (p) =&gt; {
+  const fields = {};
+  if (p.price !== undefined &amp;&amp; !(p.price &gt;= 0)) fields.price = 'must be zero or more';
+  if (p.sku !== undefined &amp;&amp; !/^[A-Z0-9-]{4,20}$/.test(p.sku)) fields.sku = 'use 4–20 letters, digits or dashes';
+  if (Object.keys(fields).length) throw new ValidationError('Check the submitted values.', fields);
+  return p.name ? { ...p, name: p.name.trim() } : p;
+};
+
+createRouter({
+  model: Product,
+  allowedFields: { create: ['name', 'price', 'sku'], update: ['name', 'price'] },   // sku is set once
+  validate: { create: check, update: check },
+});</code></pre>
+    </div>
+    <div class="code-block" data-lang="json">
+        <pre><code>{ "success": false, "error": "Check the submitted values.",
+  "fields": { "price": "must be zero or more" } }</code></pre>
+    </div>
+  </div>
+</details>
+<details class="advanced" id="large-collections">
+  <summary>Large collections</summary>
+  <div class="details-body"><p>Offset pages get slower the deeper you go, and counting every match costs a full scan. Cursor pagination
+        is one index seek per page at any depth. Index the sort field.</p>
+    <div class="code-block" data-lang="javascript">
+        <pre><code>// Schema: eventSchema.index({ createdAt: -1 });
+
+app.use('/api/events', createRouter({
+  model: Event,
+  orderBy: '-createdAt',
+  pagination: 'cursor',       // follow pagination.nextCursor: ?cursor=…
+  maxTimeMS: 2000,            // a slow query is cut off, not left running
+  allowedFields: [],
+}));</code></pre>
+    </div>
+    <p>If you need page numbers but not totals, keep offset pagination and set
+        <code>countStrategy: 'none'</code> — responses carry <code>hasMore</code> instead of
+        <code>totalPages</code>.</p>
+  </div>
+</details>
+<details class="advanced" id="image-uploads">
+  <summary>Image uploads to S3</summary>
+  <div class="details-body"><p>Install <code>multer</code>, <code>@aws-sdk/client-s3</code> and (for compression) <code>sharp</code>,
+        and set the <a href="s3.html">S3 variables</a>. Clients send <code>multipart/form-data</code> with the
+        file fields named as below; the stored document gets the URLs.</p>
+    <div class="code-block" data-lang="javascript">
+        <pre><code>import { createRouterS3upload } from 'express-controller-sets';
+
+app.use('/api/admin/products', createRouterS3upload({
+  model: Product,
+  middlewares: [auth.requireAuth, auth.requireRole('admin')],
+  path: 'products/',
+  fields: [
+    { name: 'cover', maxCount: 1 },
+    { name: 'gallery', maxCount: 6 },
+  ],
+  imgOptimizations: 'medium',
+  upload: {
+    acl: 'public-read',                                 // product photos are meant to be seen
+    allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+    maxFileSize: 5 * 1024 * 1024,
+  },
+  allowedFields: ['name', 'price', 'cover', 'gallery'],
+}));</code></pre>
+    </div>
+    <div class="code-block" data-lang="bash">
+        <pre><code>curl -X POST localhost:3000/api/admin/products \
+  -H "Authorization: Bearer $TOKEN" \
+  -F name=Chair -F price=120 \
+  -F cover=@cover.jpg -F gallery=@side.jpg -F gallery=@back.jpg</code></pre>
+    </div>
+  </div>
+</details>
+<details class="advanced" id="full-auth">
+  <summary>Complete auth</summary>
+  <div class="details-body"><p>Email and password, short access tokens with rotating refresh tokens, password reset by email, and a
+        welcome mail. Add the fields from <a href="#auth-model">What your model needs</a> to your user
+        schema.</p>
+    <div class="code-block" data-lang="javascript">
+        <pre><code>import nodemailer from 'nodemailer';
+import { createAuthRouter } from 'express-controller-sets';
+
+const transporter = nodemailer.createTransport(process.env.SMTP_URL);
+
+export const auth = createAuthRouter({
+  model: User,
+  identifiers: ['email'],
+  token: { secret: process.env.JWT_SECRET, expiresIn: '15m' },
+  refresh: { enabled: true, rotate: true, expiresIn: '30d' },
+  roles: { list: ['user', 'admin'], default: 'user' },
+  registerFields: ['name'],
+  updateFields: ['name'],
+
+  appName: 'Acme',
+  mail: { transporter, from: 'Acme &lt;no-reply@acme.com&gt;' },
+
+  onRegister: async (user) =&gt; {
+    await transporter.sendMail({
+      from: 'Acme &lt;no-reply@acme.com&gt;', to: user.email,
+      subject: 'Welcome to Acme', text: `Hi ${user.name ?? 'there'}, thanks for signing up.`,
+    });
+  },
+});
+
+app.use('/api/auth', auth);</code></pre>
+    </div>
+    <p>What a client does with it:</p>
+    <div class="code-block" data-lang="bash">
+        <pre><code>POST /api/auth/register      { "email": "ada@example.com", "password": "…", "name": "Ada" }
+POST /api/auth/login         { "identifier": "ada@example.com", "password": "…" }
+→ { "data": { "token": "…", "expiresIn": 900, "refreshToken": "…", "refreshExpiresIn": 2592000, "user": {…} } }
+
+GET  /api/auth/me            Authorization: Bearer &lt;token&gt;
+POST /api/auth/token/refresh { "refreshToken": "…" }       # when the access token expires
+POST /api/auth/logout        { "refreshToken": "…" }</code></pre>
+    </div>
+  </div>
+</details>
+<details class="advanced" id="rate-limit">
+  <summary>Rate-limit sign-in</summary>
+  <div class="details-body"><p>Accounts lock after repeated failures, but that doesn't stop someone trying one password against many
+        accounts. Put a limiter on the routes that get guessed at — it runs before the database is touched.</p>
+    <div class="code-block" data-lang="javascript">
+        <pre><code>import rateLimit from 'express-rate-limit';
+
+const tight = rateLimit({ windowMs: 15 * 60 * 1000, limit: 20 });
+
+createAuthRouter({
+  // …
+  middlewares: { login: [tight], register: [tight], forgotPassword: [tight], resetPassword: [tight] },
+});</code></pre>
+    </div>
+  </div>
+</details>
+<details class="advanced" id="extra-endpoint">
+  <summary>Extra endpoints</summary>
+  <div class="details-body"><p>A generated router is an ordinary Express router. Mount your own routes on the same path — before it,
+        so they win.</p>
+    <div class="code-block" data-lang="javascript">
+        <pre><code>const products = express.Router();
+
+products.get('/stats', async (req, res) =&gt; {
+  const [row] = await Product.aggregate([{ $group: { _id: null, avg: { $avg: '$price' }, n: { $sum: 1 } } }]);
+  res.json({ success: true, data: row ?? { avg: 0, n: 0 } });
+});
+
+products.use(createRouter({ model: Product, allowedFields: [] }));
+
+app.use('/api/products', products);    // GET /api/products/stats, plus the six generated routes</code></pre>
+    </div>
+    <p>To reuse the generated behaviour under a different verb or path, call the handlers directly — see
+        <a href="custom-routes.html">Custom routes</a>.</p>
+  </div>
+</details>
+</section>

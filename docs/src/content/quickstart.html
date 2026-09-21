@@ -1,0 +1,413 @@
+<section class="section" id="one-file">
+    <h2>The whole thing in one file</h2>
+    <p class="section-intro">In a hurry? This is a complete, runnable API. Everything below explains it step by
+        step.</p>
+
+    <div class="code-block" data-lang="bash">
+        <pre><code>mkdir my-api &amp;&amp; cd my-api
+npm init -y &amp;&amp; npm pkg set type=module
+npm install express-controller-sets express mongoose</code></pre>
+    </div>
+
+    <div class="code-block" data-lang="javascript">
+        <pre><code>// server.js — run with: MONGODB_URI=mongodb://localhost:27017/shop node server.js
+import express from 'express';
+import mongoose from 'mongoose';
+import { createRouter, errorHandler } from 'express-controller-sets';
+
+const Product = mongoose.model('Product', new mongoose.Schema({
+  name:  { type: String, required: true },
+  price: { type: Number, required: true, min: 0 },
+  category: String,
+}, { timestamps: true }));
+
+const app = express();
+app.use(express.json());
+
+app.use('/api/products', createRouter({
+  model: Product,
+  orderBy: '-createdAt',                          // newest first
+  query: ['category'],                            // ?category=chairs
+  search: ['name'],                               // ?s=oak
+  allowedFields: ['name', 'price', 'category'],   // what clients may write
+  sortableFields: ['price', 'name', 'createdAt'], // ?sort=-price
+}));
+
+app.use(errorHandler);                            // always last
+
+await mongoose.connect(process.env.MONGODB_URI);
+app.listen(3000, () =&gt; console.log('http://localhost:3000/api/products'));</code></pre>
+    </div>
+
+    <div class="code-block" data-lang="bash">
+        <pre><code>curl -X POST localhost:3000/api/products -H 'Content-Type: application/json' \
+  -d '{"name":"Oak chair","price":120,"category":"chairs"}'
+curl 'localhost:3000/api/products?category=chairs&amp;sort=-price&amp;page=1'</code></pre>
+    </div>
+
+    <div class="callout callout-tip">
+        <i data-lucide="bot"></i>
+        <div>
+            <p><strong>Using ChatGPT, Claude or Copilot?</strong> Give it the <a href="llm.html">LLM prompt</a>
+                first — it will write code against this exact API instead of guessing.</p>
+        </div>
+    </div>
+</section>
+
+<section class="section" id="next">
+    <h2>Next steps</h2>
+<div class="path-grid"><a class="path-card" href="how-to-use.html"><i data-lucide="map"></i><strong>How to use</strong><span>Put CRUD, auth, uploads and email together in one app.</span></a><a class="path-card" href="router.html"><i data-lucide="lock"></i><strong>Protect routes</strong><span>Put writes behind sign-in and roles.</span></a><a class="path-card" href="env.html"><i data-lucide="file-cog"></i><strong>.env examples</strong><span>Every variable, ready to copy.</span></a></div>
+</section>
+
+<section class="section" id="advanced">
+    <h2>Advanced</h2>
+    <p class="section-intro">Deeper detail — open what you need.</p>
+<details class="advanced" id="install">
+  <summary>Install options and requirements</summary>
+  <div class="details-body"><p class="section-intro">One command for CRUD. A second one only if you want uploads.</p>
+
+                <div class="code-block" data-lang="bash">
+                    <pre><code>npm install express-controller-sets mongoose express</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>Uploads need two more packages. They are <strong>optional peers</strong> — the library imports them
+                    lazily, so if you never create an upload router you never pay for them:</p>
+
+                <div class="code-block" data-lang="bash">
+                    <pre><code>npm install multer @aws-sdk/client-s3
+
+# optional: image compression before upload
+npm install sharp</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <div class="card-grid">
+                    <div class="card">
+                        <div class="card-icon"><i data-lucide="box"></i></div>
+                        <h4>Node 18 or newer</h4>
+                        <p>Tested on Node 18, 20 and 22 on every commit.</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon"><i data-lucide="file-code-2"></i></div>
+                        <h4>ESM only</h4>
+                        <p>Use <code>import</code>, and add <code>"type": "module"</code> to your package.json.</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon"><i data-lucide="type"></i></div>
+                        <h4>Types built in</h4>
+                        <p>No <code>@types/…</code> package to install. Autocomplete works immediately.</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon"><i data-lucide="feather"></i></div>
+                        <h4>Nothing loads unused</h4>
+                        <p><code>sharp</code> ships a native binary and the AWS SDK is large. Neither is imported until
+                            an upload actually happens.</p>
+                    </div>
+                </div>
+
+                <div class="callout callout-plain">
+                    <i data-lucide="info"></i>
+                    <div>
+                        <p><strong>Peer dependencies, in plain terms.</strong> Express and Mongoose are <em>yours</em> —
+                            the library uses the same copy your app already has, so there is never a second, mismatched
+                            Mongoose in your <code>node_modules</code>.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="first-api">
+                <h2><i data-lucide="rocket"></i> Your first API, end to end</h2>
+                <p class="section-intro">Four steps from an empty file to six working endpoints.</p>
+
+                <ol class="steps">
+                    <li>
+                        <h4>Define a Mongoose model as you normally would</h4>
+                        <p>Nothing here is special to this library.</p>
+                        <div class="code-block" data-lang="javascript">
+                            <pre><code>// models/Product.js
+import mongoose from 'mongoose';
+
+const productSchema = new mongoose.Schema({
+  name:        { type: String, required: true },
+  price:       { type: Number, required: true },
+  description: String,
+  category:    { type: mongoose.Schema.Types.ObjectId, ref: 'Category' },
+  isFeatured:  { type: Boolean, default: false },
+}, { timestamps: true });
+
+export default mongoose.model('Product', productSchema);</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                    </li>
+                    <li>
+                        <h4>Build a router and state the house rules</h4>
+                        <p>Every option below is an allowlist. Read the comments — they are the whole security model in
+                            miniature.</p>
+                        <div class="code-block" data-lang="javascript">
+                            <pre><code>import express from 'express';
+import { createRouter, errorHandler } from 'express-controller-sets';
+import Product from './models/Product.js';
+
+const app = express();
+app.use(express.json());
+
+const productRouter = createRouter({
+  model: Product,
+
+  orderBy: '-createdAt',                 // default sort: newest first
+
+  // What a client may FILTER on:  /api/products?category=65a…
+  query: ['category', 'isFeatured'],
+
+  // What a client may SEARCH in:  /api/products?s=laptop
+  search: ['name', 'description', 'category.name'],
+
+  // What a client may WRITE. Without this line, every schema field
+  // is writable — including any you never meant to expose.
+  allowedFields: ['name', 'price', 'description', 'category'],
+
+  // What a client may use with ?compareField= / ?rangeField= and ?sort=
+  filterableFields: ['price', 'category'],
+  sortableFields: ['price', 'name', 'createdAt'],
+});
+
+app.use('/api/products', productRouter);
+app.use(errorHandler);                   // must be after your routes
+
+app.listen(3000);</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                    </li>
+                    <li>
+                        <h4>Connect to MongoDB and start the server</h4>
+                        <div class="code-block" data-lang="javascript">
+                            <pre><code>import mongoose from 'mongoose';
+await mongoose.connect(process.env.MONGODB_URI);</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                    </li>
+                    <li>
+                        <h4>Call it</h4>
+                        <div class="code-block" data-lang="bash">
+                            <pre><code>curl localhost:3000/api/products
+curl localhost:3000/api/products?s=laptop&amp;sort=-price&amp;page=1
+curl -X POST localhost:3000/api/products \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Laptop","price":1299}'</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                    </li>
+                </ol>
+
+                <div class="callout callout-tip">
+                    <i data-lucide="check-circle-2"></i>
+                    <div>
+                        <p><strong>If you skipped <code>allowedFields</code>, look at your console.</strong> The library
+                            prints a warning naming the model, once per process. It is not decoration — until you
+                            configure a field policy, a client can write any field your schema defines.</p>
+                    </div>
+                </div>
+            </section>
+
+<section class="section" id="next">
+    <h2>Where next</h2>
+    <div class="path-grid">
+        <a class="path-card" href="router.html"><i data-lucide="lock"></i><strong>Protect it</strong><span>Put writes behind sign-in and roles.</span></a>
+        <a class="path-card" href="filtering.html"><i data-lucide="filter"></i><strong>Filter &amp; search</strong><span>Everything a client can ask for, and what it can't.</span></a>
+        <a class="path-card" href="how-to-use.html"><i data-lucide="chef-hat"></i><strong>Recipes</strong><span>Common tasks, ready to paste.</span></a>
+        <a class="path-card" href="quickstart.html"><i data-lucide="shield-check"></i><strong>Before you go live</strong><span>The checklist.</span></a>
+    </div>
+  </div>
+</details>
+
+<details class="advanced" id="first-api">
+  <summary>Step-by-step walkthrough</summary>
+  <div class="details-body"><p class="section-intro">Four steps from an empty file to six working endpoints.</p>
+
+                <ol class="steps">
+                    <li>
+                        <h4>Define a Mongoose model as you normally would</h4>
+                        <p>Nothing here is special to this library.</p>
+                        <div class="code-block" data-lang="javascript">
+                            <pre><code>// models/Product.js
+import mongoose from 'mongoose';
+
+const productSchema = new mongoose.Schema({
+  name:        { type: String, required: true },
+  price:       { type: Number, required: true },
+  description: String,
+  category:    { type: mongoose.Schema.Types.ObjectId, ref: 'Category' },
+  isFeatured:  { type: Boolean, default: false },
+}, { timestamps: true });
+
+export default mongoose.model('Product', productSchema);</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                    </li>
+                    <li>
+                        <h4>Build a router and state the house rules</h4>
+                        <p>Every option below is an allowlist. Read the comments — they are the whole security model in
+                            miniature.</p>
+                        <div class="code-block" data-lang="javascript">
+                            <pre><code>import express from 'express';
+import { createRouter, errorHandler } from 'express-controller-sets';
+import Product from './models/Product.js';
+
+const app = express();
+app.use(express.json());
+
+const productRouter = createRouter({
+  model: Product,
+
+  orderBy: '-createdAt',                 // default sort: newest first
+
+  // What a client may FILTER on:  /api/products?category=65a…
+  query: ['category', 'isFeatured'],
+
+  // What a client may SEARCH in:  /api/products?s=laptop
+  search: ['name', 'description', 'category.name'],
+
+  // What a client may WRITE. Without this line, every schema field
+  // is writable — including any you never meant to expose.
+  allowedFields: ['name', 'price', 'description', 'category'],
+
+  // What a client may use with ?compareField= / ?rangeField= and ?sort=
+  filterableFields: ['price', 'category'],
+  sortableFields: ['price', 'name', 'createdAt'],
+});
+
+app.use('/api/products', productRouter);
+app.use(errorHandler);                   // must be after your routes
+
+app.listen(3000);</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                    </li>
+                    <li>
+                        <h4>Connect to MongoDB and start the server</h4>
+                        <div class="code-block" data-lang="javascript">
+                            <pre><code>import mongoose from 'mongoose';
+await mongoose.connect(process.env.MONGODB_URI);</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                    </li>
+                    <li>
+                        <h4>Call it</h4>
+                        <div class="code-block" data-lang="bash">
+                            <pre><code>curl localhost:3000/api/products
+curl localhost:3000/api/products?s=laptop&amp;sort=-price&amp;page=1
+curl -X POST localhost:3000/api/products \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Laptop","price":1299}'</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                    </li>
+                </ol>
+
+                <div class="callout callout-tip">
+                    <i data-lucide="check-circle-2"></i>
+                    <div>
+                        <p><strong>If you skipped <code>allowedFields</code>, look at your console.</strong> The library
+                            prints a warning naming the model, once per process. It is not decoration — until you
+                            configure a field policy, a client can write any field your schema defines.</p>
+                    </div>
+                </div>
+            </section>
+
+<section class="section" id="next">
+    <h2>Where next</h2>
+    <div class="path-grid">
+        <a class="path-card" href="router.html"><i data-lucide="lock"></i><strong>Protect it</strong><span>Put writes behind sign-in and roles.</span></a>
+        <a class="path-card" href="filtering.html"><i data-lucide="filter"></i><strong>Filter &amp; search</strong><span>Everything a client can ask for, and what it can't.</span></a>
+        <a class="path-card" href="how-to-use.html"><i data-lucide="chef-hat"></i><strong>Recipes</strong><span>Common tasks, ready to paste.</span></a>
+        <a class="path-card" href="quickstart.html"><i data-lucide="shield-check"></i><strong>Before you go live</strong><span>The checklist.</span></a>
+    </div>
+  </div>
+</details>
+
+<details class="advanced" id="security">
+  <summary>Before you go live</summary>
+  <div class="details-body"><p class="section-intro">Nine checks. None of them takes more than a minute.</p>
+
+                <div class="card-grid">
+                    <div class="card">
+                        <div class="card-icon"><i data-lucide="list-checks"></i></div>
+                        <h4>Set <code>allowedFields</code></h4>
+                        <p>On every router. If the startup console is clean, you've done it.</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon"><i data-lucide="lock"></i></div>
+                        <h4>Add authentication</h4>
+                        <p>Nothing is protected until you supply <code>middlewares</code>.</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon"><i data-lucide="filter"></i></div>
+                        <h4>Keep the allowlists tight</h4>
+                        <p>Only fields you would happily publish belong in <code>filterableFields</code> and
+                            <code>sortableFields</code>.</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon"><i data-lucide="gauge"></i></div>
+                        <h4>Bound the slow reads</h4>
+                        <p>Set <code>maxTimeMS</code>, and <code>maxPage</code> if the collection is large.
+                            <code>?page=9999999</code> is a cheap request that makes the database walk every skipped
+                            index entry; these are what stop it.</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon"><i data-lucide="gauge"></i></div>
+                        <h4>Check <code>maxLimit</code></h4>
+                        <p>100 by default. Raise it only as far as your slowest collection tolerates.</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon"><i data-lucide="regex"></i></div>
+                        <h4>Leave <code>allowRawRegex</code> off</h4>
+                        <p>Unless the endpoint is authenticated and the callers are trusted.</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon"><i data-lucide="alert-circle"></i></div>
+                        <h4>Mount <code>errorHandler</code></h4>
+                        <p>Last, after every route. Without it, stack traces can escape.</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon"><i data-lucide="upload-cloud"></i></div>
+                        <h4>Review upload settings</h4>
+                        <p>ACL, MIME allowlist and size limits — decide each one deliberately.</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon"><i data-lucide="file-x"></i></div>
+                        <h4>Never commit <code>.env</code></h4>
+                        <p>Once a key is in git history, rotating it is the only fix.</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon"><i data-lucide="git-compare"></i></div>
+                        <h4>Don't ship <code>legacyMode</code></h4>
+                        <p>It re-opens every default this release closed. It's a bridge, not a destination.</p>
+                    </div>
+                </div>
+
+                <div class="callout callout-tip">
+                    <i data-lucide="terminal"></i>
+                    <div>
+                        <p><strong>A two-minute self-test.</strong> Against a staging copy, try each of these. Every one
+                            should fail:</p>
+                        <div class="code-block" data-lang="bash" style="margin-top:.6rem">
+                            <pre><code># write a field you never allowlisted
+curl -X POST …/api/users -H 'Content-Type: application/json' \
+     -d '{"name":"x","role":"admin"}'          # role must not persist
+
+# sort by something private
+curl '…/api/users?sort=passwordHash'           # expect 400
+
+# read the whole collection
+curl '…/api/users' | jq '.data | length'       # expect ≤ maxLimit
+
+# upload HTML disguised as an image
+curl -F 'avatar=@evil.html;type=image/png' …   # expect 400</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                    </div>
+                </div>
+  </div>
+</details>
+</section>

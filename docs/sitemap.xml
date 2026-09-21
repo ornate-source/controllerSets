@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://ornate-source.github.io/controllerSets/</loc></url>
+  <url><loc>https://ornate-source.github.io/controllerSets/quickstart.html</loc></url>
+  <url><loc>https://ornate-source.github.io/controllerSets/how-to-use.html</loc></url>
+  <url><loc>https://ornate-source.github.io/controllerSets/endpoints.html</loc></url>
+  <url><loc>https://ornate-source.github.io/controllerSets/filtering.html</loc></url>
+  <url><loc>https://ornate-source.github.io/controllerSets/writing.html</loc></url>
+  <url><loc>https://ornate-source.github.io/controllerSets/uploads.html</loc></url>
+  <url><loc>https://ornate-source.github.io/controllerSets/s3.html</loc></url>
+  <url><loc>https://ornate-source.github.io/controllerSets/router.html</loc></url>
+  <url><loc>https://ornate-source.github.io/controllerSets/http-query.html</loc></url>
+  <url><loc>https://ornate-source.github.io/controllerSets/custom-routes.html</loc></url>
+  <url><loc>https://ornate-source.github.io/controllerSets/auth.html</loc></url>
+  <url><loc>https://ornate-source.github.io/controllerSets/auth-refresh.html</loc></url>
+  <url><loc>https://ornate-source.github.io/controllerSets/auth-social.html</loc></url>
+  <url><loc>https://ornate-source.github.io/controllerSets/email.html</loc></url>
+  <url><loc>https://ornate-source.github.io/controllerSets/env.html</loc></url>
+  <url><loc>https://ornate-source.github.io/controllerSets/options.html</loc></url>
+  <url><loc>https://ornate-source.github.io/controllerSets/faq.html</loc></url>
+  <url><loc>https://ornate-source.github.io/controllerSets/llm.html</loc></url>
+</urlset>

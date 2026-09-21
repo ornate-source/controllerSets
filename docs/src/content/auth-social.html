@@ -1,0 +1,87 @@
+<section class="section" id="social-basics">
+    <h2>Sign in with Google, Apple, Facebook or GitHub</h2>
+<div class="code-block" data-lang="javascript">
+<pre><code>createAuthRouter({
+  model: User,                                       // add googleId: String to the schema
+  token: { secret: process.env.JWT_SECRET },
+  social: { google: { clientId: process.env.GOOGLE_CLIENT_ID } },
+});</code></pre>
+</div>
+<div class="code-block" data-lang="bash">
+<pre><code>POST /api/auth/social/google   { "idToken": "…" }   → same response as login</code></pre>
+</div>
+<p>The token is verified with the provider — never trusted as sent.</p>
+</section>
+
+<section class="section" id="advanced">
+    <h2>Advanced</h2>
+    <p class="section-intro">Deeper detail — open what you need.</p>
+<details class="advanced" id="social">
+  <summary>Providers, and adding your own</summary>
+  <div class="details-body"><p>Each provider is verified <em>with the provider</em>. A profile the client sends is a claim about
+                    who someone is, and none of these take one on trust.</p>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Provider</th>
+                                <th>Send</th>
+                                <th>How it is checked</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Google</td>
+                                <td><code>{ idToken }</code></td>
+                                <td>RS256 signature against Google's published keys, then issuer and audience.</td>
+                            </tr>
+                            <tr>
+                                <td>Apple</td>
+                                <td><code>{ idToken, name? }</code></td>
+                                <td>The same, against Apple's keys. Apple sends a name only on first authorization,
+                                    so the client forwards it.</td>
+                            </tr>
+                            <tr>
+                                <td>Facebook</td>
+                                <td><code>{ accessToken }</code></td>
+                                <td><code>debug_token</code> confirms the token was minted for <em>your</em> app,
+                                    then the profile is read.</td>
+                            </tr>
+                            <tr>
+                                <td>GitHub</td>
+                                <td><code>{ accessToken }</code> or <code>{ code }</code></td>
+                                <td>A code is exchanged server-side, so the client never holds the secret. The
+                                    verified primary email is fetched separately.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>A provider only exists once you have configured it — an unconfigured one is a
+                    <strong>404</strong>, not an open door. Sign-in matches on the provider's account id first, and
+                    falls back to a <em>verified</em> email so a social login links to the account that already
+                    registered by password.</p>
+
+                <div class="callout callout-plain">
+                    <i data-lucide="plug"></i>
+                    <div>
+                        <p><strong>Any other provider.</strong> A provider is one function. Supply
+                            <code>verify</code> and it replaces the built-in entirely:</p>
+                        <div class="code-block" data-lang="javascript">
+                            <pre><code>social: {
+  discord: {
+    idField: 'discordId',
+    verify: async ({ accessToken }) =&gt; {
+      const profile = await fetchDiscordUser(accessToken);
+      return { id: profile.id, email: profile.verified ? profile.email : null };
+    },
+  },
+}</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                    </div>
+                </div>
+  </div>
+</details>
+</section>

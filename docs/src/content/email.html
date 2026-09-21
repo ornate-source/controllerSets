@@ -1,0 +1,274 @@
+<section class="section" id="email-basics">
+    <h2>Send reset codes by email</h2>
+<p>Give the auth router a transporter. Password-reset codes are then emailed automatically.</p>
+<div class="code-block" data-lang="javascript">
+<pre><code>import nodemailer from 'nodemailer';
+
+createAuthRouter({
+  model: User,
+  token: { secret: process.env.JWT_SECRET },
+  appName: 'Acme',
+  mail: {
+    transporter: nodemailer.createTransport(process.env.SMTP_URL),
+    from: 'Acme &lt;no-reply@acme.com&gt;',
+  },
+});</code></pre>
+</div>
+<p>Or set <code>SMTP_URL</code> and <code>MAIL_FROM</code> in <code>.env</code> and leave <code>mail</code> out — see <a href="env.html#env-email">.env examples</a>.</p>
+<div class="code-block" data-lang="bash">
+<pre><code>POST /api/auth/password/forgot   { "identifier": "ada@example.com" }
+POST /api/auth/password/reset    { "identifier": "ada@example.com", "code": "402913", "newPassword": "…" }</code></pre>
+</div>
+</section>
+
+<section class="section" id="email-options">
+    <h2>Common options</h2>
+<div class="table-container"><table><thead><tr><th>Option</th><th>What it does</th></tr></thead><tbody>
+<tr><td><code>mail.transporter</code></td><td>A nodemailer transporter (or anything with <code>sendMail</code>).</td></tr>
+<tr><td><code>mail.from</code></td><td>Sender address. Or <code>MAIL_FROM</code>.</td></tr>
+<tr><td><code>mail.sender</code></td><td>Your own send function — Resend, SES, a queue. Replaces the transporter.</td></tr>
+<tr><td><code>mail.templates</code></td><td>Your own subject, text and HTML.</td></tr>
+<tr><td><code>sms.sender</code></td><td>Turns on SMS codes — Twilio, Vonage, SNS…</td></tr>
+<tr><td><code>sms.templates</code></td><td>Your own SMS text.</td></tr>
+</tbody></table></div>
+</section>
+
+<section class="section" id="senders">
+    <h2>Swap the sender</h2>
+    <p>A sender is one function. Give <code>mail.sender</code> and the transporter is not used; give
+        <code>sms.sender</code> and SMS becomes available.</p>
+
+    <div class="code-block" data-lang="javascript">
+        <pre><code>import { Resend } from 'resend';
+import twilio from 'twilio';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+const sms = twilio(process.env.TWILIO_SID, process.env.TWILIO_TOKEN);
+
+createAuthRouter({
+  model: User,
+  identifiers: ['email', 'phone'],
+  token: { secret: process.env.JWT_SECRET },
+
+  mail: {
+    sender: async ({ to, subject, text, html }) =&gt;
+      resend.emails.send({ from: 'Acme &lt;no-reply@acme.com&gt;', to, subject, text, html }),
+  },
+  sms: {
+    sender: async ({ to, text }) =&gt;
+      sms.messages.create({ to, from: process.env.TWILIO_FROM, body: text }),
+  },
+});</code></pre>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr><th>Sender</th><th>Receives</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>mail.sender</code></td><td><code>{ to, subject, text, html, user, code, purpose, req }</code></td></tr>
+                <tr><td><code>sms.sender</code></td><td><code>{ to, text, user, code, purpose, req }</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+    <p><code>user</code> is the public user — no password or other secrets. A sender that throws makes the
+        request a <strong>503</strong> "Could not send the code", and the error is logged.</p>
+</section>
+
+<section class="section" id="templates">
+    <h2>Custom templates</h2>
+    <p>A template is a string with placeholders, or a function that builds the message. Anything you don't
+        override keeps the built-in template.</p>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr><th>Placeholder</th><th>Value</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>{{code}}</code></td><td>The one-time code</td></tr>
+                <tr><td><code>{{minutes}}</code></td><td>Minutes until it expires</td></tr>
+                <tr><td><code>{{appName}}</code></td><td><code>appName</code> option or <code>APP_NAME</code></td></tr>
+                <tr><td><code>{{user.name}}</code>, <code>{{user.email}}</code>, …</td><td>Any public field of the user</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="tabs">
+        <div class="tab-list" role="tablist">
+            <button class="tab-btn" type="button" data-tab="tpl-strings" role="tab">Strings</button>
+            <button class="tab-btn" type="button" data-tab="tpl-functions" role="tab">Functions</button>
+        </div>
+        <div class="tab-panel" id="tpl-strings" role="tabpanel">
+            <div class="code-block" data-lang="javascript">
+                <pre><code>mail: {
+  transporter,
+  from: 'Acme &lt;no-reply@acme.com&gt;',
+  templates: {
+    passwordReset: {
+      subject: 'Reset your {{appName}} password',
+      text: 'Hi {{user.name}}, your code is {{code}}. It expires in {{minutes}} minutes.',
+      html: '&lt;p&gt;Hi {{user.name}},&lt;/p&gt;&lt;p&gt;Your code is &lt;b&gt;{{code}}&lt;/b&gt;.&lt;/p&gt;',
+    },
+  },
+},
+sms: {
+  sender,
+  templates: { passwordReset: '{{appName}}: {{code}} is your reset code ({{minutes}} min).' },
+},</code></pre>
+            </div>
+        </div>
+        <div class="tab-panel" id="tpl-functions" role="tabpanel">
+            <div class="code-block" data-lang="javascript">
+                <pre><code>import { render } from '@react-email/render';
+import ResetEmail from './emails/ResetEmail.js';
+
+mail: {
+  transporter,
+  from: 'Acme &lt;no-reply@acme.com&gt;',
+  templates: {
+    // Receives { code, minutes, appName, user, purpose }; may be async.
+    passwordReset: async ({ code, minutes, user }) =&gt; ({
+      subject: `Your code: ${code}`,
+      html: await render(ResetEmail({ name: user.name, code, minutes })),
+    }),
+  },
+},
+sms: {
+  sender,
+  templates: { passwordReset: ({ code }) =&gt; `Your Acme code is ${code}` },
+},</code></pre>
+            </div>
+        </div>
+    </div>
+
+    <p>Placeholder values are HTML-escaped inside <code>html</code>, so a user who names themselves
+        <code>&lt;script&gt;</code> cannot inject markup into your email. A mail template must produce a
+        <code>subject</code> and at least one of <code>text</code> or <code>html</code>. The defaults are exported
+        as <code>DEFAULT_TEMPLATES</code> if you want to start from them.</p>
+</section>
+
+<section class="section" id="advanced">
+    <h2>Advanced</h2>
+    <p class="section-intro">Deeper detail — open what you need.</p>
+<details class="advanced" id="password-reset">
+  <summary>How password reset works</summary>
+  <div class="details-body"><p>Three calls. The library generates the code, stores it safely and sends it through the channel you
+        configured; your app only decides <em>how</em> mail and SMS leave the building.</p>
+
+    <div class="code-block" data-lang="bash">
+        <pre><code># 1. Ask for a code. The answer is the same whether or not the account exists.
+POST /auth/password/forgot  { "identifier": "ada@example.com", "channel": "email" }
+→ { "success": true, "message": "If that account exists, a code has been sent." }
+
+# 2. The code arrives by email (or SMS), rendered from your template.
+
+# 3. Spend it.
+POST /auth/password/reset   { "identifier": "ada@example.com",
+                              "code": "402913", "newPassword": "…" }</code></pre>
+    </div>
+
+    <p>The code is stored as an HMAC under your token secret, never in the clear; it is bound to its purpose,
+        expires (10 minutes by default), and is counted — five wrong guesses and it is dead. A successful reset
+        also signs out every refresh-token session.</p>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr><th>What you configure</th><th>What happens</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>mail.transporter</code> or <code>SMTP_*</code></td><td>Codes go by email through nodemailer (or anything with <code>sendMail</code>).</td></tr>
+                <tr><td><code>mail.sender</code></td><td>Your function sends the email — Resend, SES, Postmark, a queue.</td></tr>
+                <tr><td><code>sms.sender</code></td><td>Codes can go by SMS. There is no default SMS provider.</td></tr>
+                <tr><td>Nothing</td><td>Codes are never generated, and a warning is logged.</td></tr>
+            </tbody>
+        </table>
+    </div>
+  </div>
+</details>
+
+<details class="advanced" id="mail">
+  <summary>Transporter details</summary>
+  <div class="details-body"><p>The default mail sender uses a <strong>transporter</strong> — a nodemailer transporter, or any object
+        with <code>sendMail({ from, to, subject, text, html })</code>. Pass one in, or let the library build it
+        from the environment.</p>
+
+    <div class="tabs">
+        <div class="tab-list" role="tablist">
+            <button class="tab-btn" type="button" data-tab="mail-code" role="tab">Pass a transporter</button>
+            <button class="tab-btn" type="button" data-tab="mail-env" role="tab">From .env</button>
+        </div>
+        <div class="tab-panel" id="mail-code" role="tabpanel">
+            <div class="code-block" data-lang="javascript">
+                <pre><code>import nodemailer from 'nodemailer';
+
+createAuthRouter({
+  model: User,
+  token: { secret: process.env.JWT_SECRET },
+  appName: 'Acme',
+  mail: {
+    transporter: nodemailer.createTransport({
+      host: 'smtp.example.com', port: 587,
+      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    }),
+    from: 'Acme &lt;no-reply@acme.com&gt;',
+  },
+});</code></pre>
+            </div>
+        </div>
+        <div class="tab-panel" id="mail-env" role="tabpanel">
+            <div class="code-block" data-lang="bash">
+                <pre><code>npm install nodemailer
+
+# .env — SMTP_URL, or the parts
+SMTP_URL=smtps://apikey:secret@smtp.example.com
+# SMTP_HOST=smtp.example.com
+# SMTP_PORT=587            # 465 implies SMTP_SECURE=true
+# SMTP_SECURE=false
+# SMTP_USER=apikey
+# SMTP_PASS=secret
+MAIL_FROM="Acme &lt;no-reply@acme.com&gt;"
+APP_NAME=Acme</code></pre>
+            </div>
+            <p>With those set and no <code>mail</code> option at all, email just works. nodemailer is loaded on
+                first send, so apps that never mail anything don't need it installed.</p>
+        </div>
+    </div>
+
+    <div class="callout callout-plain">
+        <i data-lucide="shield-check"></i>
+        <div>
+            <p><strong>Checked at startup.</strong> A transporter without <code>sendMail</code>, or no
+                <code>from</code> address, stops the app from starting — instead of surfacing as a failed email on
+                the first real password reset.</p>
+        </div>
+    </div>
+  </div>
+</details>
+
+<details class="advanced" id="channels">
+  <summary>Email or SMS: choosing a channel</summary>
+  <div class="details-body"><p>The client may send <code>"channel": "email"</code> or <code>"sms"</code>; without it, email is used when
+        configured, otherwise SMS.</p>
+    <ul>
+        <li><strong>A channel you haven't configured is a 400</strong> — decided before the account is looked up,
+            so the answer is the same for every account.</li>
+        <li><strong>No address on file</strong> (a user without a phone asking for SMS) gets the same "sent"
+            response as everyone else; the miss is logged, not revealed.</li>
+        <li>The recipient is read from <code>email</code> and <code>phone</code>; change it with
+            <code>mail.toField</code> / <code>sms.toField</code>.</li>
+    </ul>
+
+    <div class="callout callout-plain">
+        <i data-lucide="history"></i>
+        <div>
+            <p><strong>Upgrading from <code>otp.deliver</code>?</strong> It still works and overrides everything on
+                this page. Move to <code>mail</code> / <code>sms</code> when convenient — you get templates and
+                startup checks for free.</p>
+        </div>
+    </div>
+  </div>
+</details>
+</section>

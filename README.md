@@ -7,7 +7,17 @@ An advanced, unified toolkit for Express.js that accelerates API development by 
 [![Express Version](https://img.shields.io/badge/Express-5%2B-black)](https://expressjs.com)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](https://opensource.org/licenses/MIT)
 
-**[Full Documentation & Live Demo](https://ornate-source.github.io/controllerSets/)**
+**[Documentation](https://ornate-source.github.io/controllerSets/)** ·
+**[Quickstart](https://ornate-source.github.io/controllerSets/quickstart.html)** ·
+**[How to use](https://ornate-source.github.io/controllerSets/how-to-use.html)** ·
+**[.env examples](https://ornate-source.github.io/controllerSets/env.html)** ·
+**[LLM prompt](https://ornate-source.github.io/controllerSets/llm.html)**
+
+> **Using ChatGPT, Claude, Cursor or Copilot?** Give it
+> [`llms-full.txt`](https://ornate-source.github.io/controllerSets/llms-full.txt) — a complete
+> guide to this package written for language models, so they write code against the real API
+> instead of guessing. It also ships in the package at
+> `node_modules/express-controller-sets/docs/llms-full.txt`.
 
 Designed to help you build APIs faster by automating repetitive controller logic and middleware configuration while maintaining type safety and flexibility.
 
@@ -527,3 +537,11 @@ const userSchema = new mongoose.Schema({
 ---
 
 Released under the [MIT License](LICENSE). © 2024-present Sabbir Mahmud
+
+---
+
+### Working on the docs
+
+The site in `docs/` is generated. Edit `docs/src/content/<page>.html` (and `docs/src/site.mjs` for
+the navigation, `docs/src/llm/prompt.md` for the LLM guide), then run `npm run docs`. The build
+fails on any link to a page or anchor that does not exist.

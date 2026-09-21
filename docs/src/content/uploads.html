@@ -1,0 +1,391 @@
+<section class="section" id="upload-basics">
+    <h2>Upload files with a record</h2>
+<div class="code-block" data-lang="bash">
+<pre><code>npm install multer @aws-sdk/client-s3     # add sharp for image compression</code></pre>
+</div>
+<div class="code-block" data-lang="javascript">
+<pre><code>import { createRouterS3upload } from 'express-controller-sets';
+
+app.use('/api/products', createRouterS3upload({
+  model: Product,
+  path: 'products/',                          // folder in the bucket
+  fields: [
+    { name: 'cover', maxCount: 1 },
+    { name: 'gallery', maxCount: 6 },
+  ],
+  allowedFields: ['name', 'cover', 'gallery'],
+}));</code></pre>
+</div>
+<div class="code-block" data-lang="bash">
+<pre><code>curl -X POST localhost:3000/api/products \
+  -F name=Chair -F cover=@cover.jpg -F gallery=@side.jpg -F gallery=@back.jpg</code></pre>
+</div>
+<p>The saved record holds the file URLs. You get all six CRUD routes too. Set the <a href="s3.html">S3 variables</a> first.</p>
+</section>
+
+<section class="section" id="upload-options-short">
+    <h2>Common options</h2>
+<div class="table-container"><table><thead><tr><th>Option</th><th>Default</th><th>What it does</th></tr></thead><tbody>
+<tr><td><code>path</code></td><td><code>'files/'</code></td><td>Folder inside the bucket.</td></tr>
+<tr><td><code>fields</code></td><td><code>[{ name: 'file', maxCount: 1 }]</code></td><td>Form fields that carry files.</td></tr>
+<tr><td><code>imgOptimizations</code></td><td>off</td><td><code>'low'</code>, <code>'medium'</code> or <code>'high'</code> compression (needs sharp).</td></tr>
+<tr><td><code>upload.acl</code></td><td><code>'private'</code></td><td><code>'public-read'</code> makes URLs open in a browser.</td></tr>
+<tr><td><code>upload.allowedMimeTypes</code></td><td>images + PDF</td><td>Checked from the file bytes, not the client.</td></tr>
+<tr><td><code>upload.maxFileSize</code></td><td>10 MB</td><td>Per file.</td></tr>
+</tbody></table></div>
+</section>
+
+<section class="section" id="advanced">
+    <h2>Advanced</h2>
+    <p class="section-intro">Deeper detail — open what you need.</p>
+<details class="advanced" id="uploads">
+  <summary>How uploads work</summary>
+  <div class="details-body"><p class="section-intro">Swap one function name and <code>POST</code>/<code>PATCH</code> start
+                    accepting files.</p>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>import { createRouterS3upload } from 'express-controller-sets';
+
+const userRouter = createRouterS3upload({
+  model: User,
+  allowedFields: ['name', 'email', 'avatar'],   // 'avatar' must be writable!
+
+  path: 'avatars/',                             // key prefix inside the bucket
+  fields: [{ name: 'avatar', maxCount: 1 }],    // the multipart field name
+  imgOptimizations: 'medium',                   // optional compression
+});
+
+app.use('/api/users', userRouter);</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>From the browser, send <code>multipart/form-data</code> — regular fields and the file together:</p>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>const form = new FormData();
+form.append('name', 'Ayesha');
+form.append('avatar', fileInput.files[0]);
+
+await fetch('/api/users', { method: 'POST', body: form });
+// Don't set Content-Type yourself — the browser adds the multipart boundary.</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <h3>What happens to the file</h3>
+                <ol class="steps">
+                    <li>
+                        <h4>Received into memory</h4>
+                        <p>Multer buffers it — no temp files on disk. Size and count limits apply here.</p>
+                    </li>
+                    <li>
+                        <h4>The bytes are identified</h4>
+                        <p>The library reads the file's own signature. The <code>Content-Type</code> the client sent is
+                            ignored: it is a claim, and the bytes are the fact. An unrecognised file is rejected with
+                            400.</p>
+                    </li>
+                    <li>
+                        <h4>Checked against the allowlist</h4>
+                        <p>Only the detected type is compared to <code>allowedMimeTypes</code>. Renaming
+                            <code>payload.html</code> to <code>photo.png</code> changes nothing.</p>
+                    </li>
+                    <li>
+                        <h4>Optionally compressed</h4>
+                        <p>JPEG, PNG and WebP are re-encoded if <code>imgOptimizations</code> is set. See <a
+                                href="#images">Image optimization</a>.</p>
+                    </li>
+                    <li>
+                        <h4>Uploaded with a safe key and headers</h4>
+                        <p>Stored as <code>&lt;path&gt;/&lt;timestamp&gt;-&lt;random&gt;.&lt;ext&gt;</code>, with the
+                            extension and <code>Content-Type</code> derived from the final bytes, an ACL of
+                            <code>private</code>, and <code>Content-Disposition: attachment</code> for anything not on
+                            the inline-safe list.</p>
+                    </li>
+                    <li>
+                        <h4>The URL replaces the file in <code>req.body</code></h4>
+                        <p>The CRUD controller then saves it like any other field — which is why the field must appear
+                            in <code>allowedFields</code>.</p>
+                    </li>
+                </ol>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>// After the middleware, before the controller:
+req.body.avatar === 'https://your-endpoint/bucket/avatars/1721736000000-482913746.jpg'
+
+// Prefer an object? Set formatToUrlObject on the field:
+fields: [{ name: 'avatar', maxCount: 1, formatToUrlObject: true }]
+req.body.avatar === { url: 'https://…' }
+
+// maxCount &gt; 1 gives you an array:
+fields: [{ name: 'gallery', maxCount: 5 }]
+req.body.gallery === ['https://…', 'https://…']</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <div class="callout callout-danger">
+                    <i data-lucide="shield-x"></i>
+                    <div>
+                        <p><strong>Why the client's <code>Content-Type</code> is never trusted.</strong> If an attacker
+                            uploads an HTML file labelled <code>image/png</code> and you store it with that label and a
+                            public ACL, the browser renders it — as a page on <em>your</em> bucket's origin, with
+                            whatever scripts it contains. That is stored cross-site scripting, delivered by your own
+                            upload form. Sniffing the bytes, forcing <code>attachment</code> on anything executable and
+                            defaulting to a private ACL each close a different half of that door.</p>
+                    </div>
+                </div>
+
+                <h3>Which types are accepted, inline, or refused</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th class="center">Allowed by default</th>
+                                <th class="center">Served inline</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>JPEG, PNG, WebP</td>
+                                <td class="center yes">✔</td>
+                                <td class="center yes">✔</td>
+                                <td>Also the only formats that can be compressed.</td>
+                            </tr>
+                            <tr>
+                                <td>GIF, AVIF</td>
+                                <td class="center yes">✔</td>
+                                <td class="center yes">✔</td>
+                                <td>Stored untouched — never transcoded.</td>
+                            </tr>
+                            <tr>
+                                <td>PDF</td>
+                                <td class="center yes">✔</td>
+                                <td class="center no">✘</td>
+                                <td>Downloaded rather than rendered.</td>
+                            </tr>
+                            <tr>
+                                <td>HTML, SVG, XML, JavaScript</td>
+                                <td class="center no">✘</td>
+                                <td class="center no">✘</td>
+                                <td>Active content. Even if you allowlist it, it is always
+                                    <code>attachment</code>.</td>
+                            </tr>
+                            <tr>
+                                <td>MP4, HEIC, ZIP, MP3</td>
+                                <td class="center no">✘</td>
+                                <td class="center no">✘</td>
+                                <td>Recognised, but you must allowlist them explicitly.</td>
+                            </tr>
+                            <tr>
+                                <td>Anything unrecognised</td>
+                                <td class="center no">✘</td>
+                                <td class="center no">✘</td>
+                                <td>400. "Unknown" is not treated as "probably fine".</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+  </div>
+</details>
+
+<details class="advanced" id="upload-options">
+  <summary>Upload options</summary>
+  <div class="details-body"><p class="section-intro">Everything about files lives in three top-level keys plus the
+                    <code>upload</code> object.</p>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>createRouterS3upload({
+  model: Document,
+
+  path: 'documents/',                                  // key prefix
+  fields: [
+    { name: 'file',  maxCount: 1 },
+    { name: 'pages', maxCount: 10, formatToUrlObject: true },
+  ],
+  imgOptimizations: 'high',
+
+  upload: {
+    acl: 'public-read',                                // opt in deliberately
+    allowedMimeTypes: ['image/jpeg', 'image/png', 'application/pdf'],
+    maxFileSize: 5 * 1024 * 1024,                      // 5 MB per file
+    maxFiles: 5,
+    allowClientImageOptions: false,
+  },
+});</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Option</th>
+                                <th>Default</th>
+                                <th>What it controls</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>path</code></td>
+                                <td><code>'files/'</code></td>
+                                <td>Key prefix inside the bucket. Normalised so it cannot escape upwards with
+                                    <code>../</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>fields</code></td>
+                                <td><code>[{ name: 'file', maxCount: 1 }]</code></td>
+                                <td>Which multipart fields carry files, how many each accepts, and whether the saved
+                                    value is a string or <code>{ url }</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>imgOptimizations</code></td>
+                                <td><em>off</em></td>
+                                <td><code>'low'</code>, <code>'medium'</code> (or <code>'med'</code>) or
+                                    <code>'high'</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>upload.acl</code></td>
+                                <td><code>'private'</code></td>
+                                <td>S3 object ACL. <code>'public-read'</code> makes the returned URL work in a browser
+                                    — and works for everyone else too.</td>
+                            </tr>
+                            <tr>
+                                <td><code>upload.allowedMimeTypes</code></td>
+                                <td>JPEG, PNG, GIF, WebP, AVIF, PDF</td>
+                                <td>Compared against the <em>detected</em> type, never the client's header.</td>
+                            </tr>
+                            <tr>
+                                <td><code>upload.maxFileSize</code></td>
+                                <td>10 MB</td>
+                                <td>Per file, in bytes. Exceeding it is a 400 from Multer.</td>
+                            </tr>
+                            <tr>
+                                <td><code>upload.maxFiles</code></td>
+                                <td>10</td>
+                                <td>Total files per request.</td>
+                            </tr>
+                            <tr>
+                                <td><code>upload.allowClientImageOptions</code></td>
+                                <td><code>false</code></td>
+                                <td>Whether a client may pick the compression level. See the warning below.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="callout callout-warn">
+                    <i data-lucide="key-round"></i>
+                    <div>
+                        <p><strong>Private files aren't reachable from a browser.</strong> With the default ACL, the
+                            URL in your database returns 403 to the public. That is intended — serve those objects
+                            through a presigned URL or a CDN with origin access. Each uploaded file also carries
+                            <code>file.key</code> alongside <code>file.location</code>, which is what a presigner
+                            needs.</p>
+                    </div>
+                </div>
+
+                <div class="callout callout-plain">
+                    <i data-lucide="folder-tree"></i>
+                    <div>
+                        <p><strong>Filenames are not preserved.</strong> Every object is stored as
+                            <code>&lt;timestamp&gt;-&lt;random&gt;</code> plus an extension derived from its bytes. A
+                            user-supplied name is untrusted input in a path, and two users uploading
+                            <code>photo.jpg</code> must not collide. Keep the original name in a database column if you
+                            need to show it.</p>
+                    </div>
+                </div>
+  </div>
+</details>
+
+<details class="advanced" id="images">
+  <summary>Image optimization</summary>
+  <div class="details-body"><p class="section-intro">Shrink images on the way to S3, without picking quality numbers yourself.</p>
+
+                <p>Set a level and the library re-encodes the image toward a target size, binary-searching encoder
+                    quality (bounded between 25 and 95, at most seven attempts) until it lands in range. You get
+                    predictable output sizes instead of a fixed quality that ruins some photos and barely touches
+                    others.</p>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Level</th>
+                                <th>Target result</th>
+                                <th>Good for</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>'low'</code></td>
+                                <td>About 75–80% of the original size</td>
+                                <td>Photography, product shots — barely visible change.</td>
+                            </tr>
+                            <tr>
+                                <td><code>'medium'</code> / <code>'med'</code></td>
+                                <td>About 60–65%</td>
+                                <td>The usual choice for user avatars and content images.</td>
+                            </tr>
+                            <tr>
+                                <td><code>'high'</code></td>
+                                <td>Under 1 MB: about 40–45%. Over 1 MB: a size target that scales from ~400–450 KB at
+                                    1 MB to ~600–700 KB at 5 MB.</td>
+                                <td>Phone camera uploads, where originals are many megabytes.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>// On a router
+createRouterS3upload({ model: Post, imgOptimizations: 'high' });
+
+// Or directly, on a buffer you already have
+import { compressImage } from 'express-controller-sets';
+const smaller = await compressImage(buffer, 'image/jpeg', 'medium');</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <h3>What is and isn't touched</h3>
+                <div class="lane">
+                    <span class="lane-label">JPEG · PNG · WebP</span>
+                    <span class="lane-pipe"></span>
+                    <span class="lane-end is-target"><i data-lucide="check-circle-2"></i> re-encoded in the same
+                        format</span>
+                </div>
+                <div class="lane">
+                    <span class="lane-label">GIF · AVIF · PDF</span>
+                    <span class="lane-pipe"></span>
+                    <span class="lane-end"><i data-lucide="minus-circle"></i> uploaded exactly as received</span>
+                </div>
+                <div class="lane">
+                    <span class="lane-label">sharp missing or failing</span>
+                    <span class="lane-pipe"></span>
+                    <span class="lane-end"><i data-lucide="minus-circle"></i> warning logged, original uploaded</span>
+                </div>
+
+                <div class="callout callout-warn">
+                    <i data-lucide="file-warning"></i>
+                    <div>
+                        <p><strong>Why GIFs are left alone.</strong> An earlier version pushed every image through the
+                            JPEG encoder. A GIF came out as JPEG bytes stored under a <code>.gif</code> key with
+                            <code>Content-Type: image/gif</code> — animation gone, file corrupt, and nothing in the
+                            logs. Formats that cannot be re-encoded in place are now passed straight through, and the
+                            stored extension is re-derived from whatever bytes actually get uploaded.</p>
+                    </div>
+                </div>
+
+                <div class="callout callout-danger">
+                    <i data-lucide="cpu"></i>
+                    <div>
+                        <p><strong><code>allowClientImageOptions</code> is off for a reason.</strong> The level drives
+                            up to seven sequential re-encodes of a multi-megabyte buffer. Let clients choose it and any
+                            upload endpoint becomes CPU amplification: a handful of requests asking for
+                            <code>high</code> can saturate your server. If you turn it on, the accepted values are
+                            still allowlisted — read from <code>?imgOptimizations=</code>, the body, or the
+                            <code>x-img-optimizations</code> header.</p>
+                    </div>
+                </div>
+  </div>
+</details>
+</section>

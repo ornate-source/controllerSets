@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Use with an LLM · express-controller-sets</title>
+  <meta name="description" content="One prompt so ChatGPT, Claude or Copilot write correct code for this package.">
+  <link rel="canonical" href="https://ornate-source.github.io/controllerSets/llm.html">
+  <meta property="og:title" content="Use with an LLM · express-controller-sets">
+  <meta property="og:description" content="One prompt so ChatGPT, Claude or Copilot write correct code for this package.">
+  <meta property="og:type" content="website">
+  <link rel="alternate" type="text/plain" title="LLM guide" href="llms-full.txt">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/components.css?v=10a91d487a">
+  <link rel="stylesheet" href="assets/css/shell.css?v=94b1910641">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%236366f1'/%3E%3Ctext x='50' y='68' font-family='monospace' font-size='54' font-weight='700' fill='white' text-anchor='middle'%3E%7B%7D%3C/text%3E%3C/svg%3E">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/http.min.js" defer></script>
+  <script src="assets/search-index.js" defer></script>
+  <script src="assets/js/docs.js?v=901f93388a" defer></script>
+</head>
+<body class="dark" data-page="llm">
+  <script>try{var t=localStorage.getItem('controllersets-theme');document.body.className=t||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark')}catch(e){}</script>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <header class="topbar">
+    <button class="icon-btn menu-btn" type="button" id="menu-open" aria-label="Open navigation"><i data-lucide="menu"></i></button>
+    <a class="brand" href="./" aria-label="controller-sets home">
+      <span class="brand-mark" aria-hidden="true">{}</span>
+      <span class="brand-name">controller-sets</span>
+      <span class="brand-version">v3.2.0</span>
+    </a>
+    <button class="search-trigger" type="button" id="search-open" aria-label="Search the docs">
+      <i data-lucide="search"></i><span>Search docs…</span><kbd>⌘K</kbd>
+    </button>
+    <nav class="topbar-links" aria-label="External">
+      <a class="topbar-link is-accent hide-sm" href="llm.html"><i data-lucide="sparkles"></i><span class="label">LLM prompt</span></a>
+      <a class="topbar-link hide-sm" href="https://github.com/ornate-source/controllerSets" target="_blank" rel="noopener"><svg class="gh-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span class="label">GitHub</span></a>
+      <a class="topbar-link hide-sm" href="https://www.npmjs.com/package/express-controller-sets" target="_blank" rel="noopener"><i data-lucide="package"></i><span class="label">npm</span></a>
+      <button class="icon-btn" type="button" id="theme-toggle" aria-label="Toggle colour theme"><i data-lucide="sun" class="sun-icon"></i><i data-lucide="moon" class="moon-icon"></i></button>
+    </nav>
+  </header>
+
+  <div class="nav-overlay" id="nav-overlay"></div>
+
+  <div class="layout">
+    <aside class="sidenav" id="sidenav" aria-label="Documentation">
+      <nav><div class="nav-group" data-group="get-started">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="rocket"></i><span>Get started</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li><a class="nav-page" href="./"><i data-lucide="home"></i><span class="nav-page-label">Overview</span></a></li>
+<li><a class="nav-page" href="quickstart.html"><i data-lucide="zap"></i><span class="nav-page-label">Quickstart</span></a></li>
+<li><a class="nav-page" href="how-to-use.html"><i data-lucide="map"></i><span class="nav-page-label">How to use</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="crud">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="database"></i><span>CRUD</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li><a class="nav-page" href="endpoints.html"><i data-lucide="network"></i><span class="nav-page-label">Endpoints &amp; responses</span></a></li>
+<li><a class="nav-page" href="filtering.html"><i data-lucide="filter"></i><span class="nav-page-label">Filter, search &amp; paginate</span></a></li>
+<li><a class="nav-page" href="writing.html"><i data-lucide="file-pen"></i><span class="nav-page-label">Create, update &amp; validate</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="s3-upload">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="upload-cloud"></i><span>S3 Upload</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li><a class="nav-page" href="uploads.html"><i data-lucide="upload"></i><span class="nav-page-label">Upload files</span></a></li>
+<li><a class="nav-page" href="s3.html"><i data-lucide="hard-drive"></i><span class="nav-page-label">S3 setup</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="dynamic-router">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="route"></i><span>Dynamic Router</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li><a class="nav-page" href="router.html"><i data-lucide="lock"></i><span class="nav-page-label">Router &amp; middlewares</span></a></li>
+<li><a class="nav-page" href="http-query.html"><i data-lucide="file-search"></i><span class="nav-page-label">HTTP QUERY</span></a></li>
+<li><a class="nav-page" href="custom-routes.html"><i data-lucide="puzzle"></i><span class="nav-page-label">Custom routes</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="auth">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="key-round"></i><span>Auth</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li><a class="nav-page" href="auth.html"><i data-lucide="key-round"></i><span class="nav-page-label">Auth setup</span></a></li>
+<li><a class="nav-page" href="auth-refresh.html"><i data-lucide="refresh-cw"></i><span class="nav-page-label">Refresh tokens</span></a></li>
+<li><a class="nav-page" href="auth-social.html"><i data-lucide="users"></i><span class="nav-page-label">Social sign-in</span></a></li></ul>
+        </div>
+<div class="nav-group nav-single"><a class="nav-page nav-top" href="email.html"><i data-lucide="mail"></i><span class="nav-page-label">Email Sender</span></a></div>
+<div class="nav-group nav-single"><a class="nav-page nav-top" href="env.html"><i data-lucide="file-cog"></i><span class="nav-page-label">.env examples</span></a></div>
+<div class="nav-group" data-group="reference">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="library"></i><span>Reference</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li><a class="nav-page" href="options.html"><i data-lucide="sliders-horizontal"></i><span class="nav-page-label">All options</span></a></li>
+<li><a class="nav-page" href="faq.html"><i data-lucide="messages-square"></i><span class="nav-page-label">FAQ</span></a></li>
+<li><a class="nav-page" href="llm.html" aria-current="page"><i data-lucide="bot"></i><span class="nav-page-label">Use with an LLM</span></a></li></ul>
+        </div></nav>
+    </aside>
+
+    <main class="doc" id="main" tabindex="-1">
+      <article class="doc-inner">
+        <header class="page-header">
+          <p class="breadcrumb">Reference <i data-lucide="chevron-right"></i> Use with an LLM</p>
+          <h1>Use with an LLM</h1>
+          <p class="page-summary">One prompt so ChatGPT, Claude or Copilot write correct code for this package.</p>
+        </header>
+        <section class="section" id="why">
+    <h2>Why a prompt?<a class="anchor" href="#why" aria-label="Link to this section">#</a></h2>
+    <p>Language models know an older, smaller version of this library — or guess at one. Paste the prompt
+        below at the start of a conversation (or add it to your editor's rules file) and the model writes code
+        against the real API: correct option names, the security defaults, the auth bodies, and the mistakes to
+        avoid.</p>
+
+    <div class="card-grid">
+        <div class="card">
+            <div class="card-icon"><i data-lucide="clipboard-copy"></i></div>
+            <h4>Chat assistants</h4>
+            <p>ChatGPT, Claude, Gemini: paste the prompt as your first message, then ask for what you need.</p>
+        </div>
+        <div class="card">
+            <div class="card-icon"><i data-lucide="file-code-2"></i></div>
+            <h4>Coding agents &amp; editors</h4>
+            <p>Save it as <code>AGENTS.md</code>, <code>CLAUDE.md</code>, <code>.cursor/rules/controller-sets.md</code>
+                or <code>.github/copilot-instructions.md</code>.</p>
+        </div>
+        <div class="card">
+            <div class="card-icon"><i data-lucide="globe"></i></div>
+            <h4>Tools that read the web</h4>
+            <p>Point them at <a href="llms.txt">llms.txt</a> (an index) or
+                <a href="llms-full.txt">llms-full.txt</a> (everything, one file).</p>
+        </div>
+    </div>
+</section>
+
+<section class="section" id="prompt">
+    <h2>The prompt<a class="anchor" href="#prompt" aria-label="Link to this section">#</a></h2>
+    <p class="section-intro">Everything a model needs, in one copyable block. Same text as
+        <a href="llms-full.txt">llms-full.txt</a>.</p>
+
+    <div class="code-block" data-lang="markdown">
+        <pre><code class="language-markdown"># express-controller-sets — guide for AI coding assistants
+
+You are writing code that uses **express-controller-sets** (v3.2), a library that turns a Mongoose
+model into a complete, secure REST API, and adds a full authentication API against the user's own
+user model. Follow this guide exactly. When the guide and your prior knowledge disagree, the guide
+wins. Do not invent options, exports or endpoints that are not listed here.
+
+Docs: https://ornate-source.github.io/controllerSets/
+
+## Environment
+
+- ES modules only (`import`, `&quot;type&quot;: &quot;module&quot;`). From CommonJS use `await import('express-controller-sets')`.
+- Node 18+ (the HTTP `QUERY` route needs Node 22.2+; on older Node it is skipped with one warning).
+- Peer dependencies the app installs: `express` 5, `mongoose` 9.
+- Optional peers, only when used: `multer` + `@aws-sdk/client-s3` (uploads), `sharp` (image compression), `nodemailer` (the default mail sender built from `SMTP_*`).
+- The library never calls `dotenv`. The app loads env first: `import 'dotenv/config'` as the first import, or `node --env-file=.env`.
+- TypeScript types ship with the package.
+
+```bash
+npm install express-controller-sets express mongoose
+```
+
+## Exports
+
+```js
+import {
+  createRouter,          // CRUD router for one model
+  createRouterS3upload,  // CRUD router + multipart S3 uploads
+  ControllerSets,        // the handlers, for custom routers
+  createAuthRouter,      // authentication API
+  errorHandler,          // JSON error middleware — mount LAST
+  HttpError,             // throw new HttpError(status, safeMessage)
+  ValidationError,       // throw new ValidationError(message, { field: 'msg' }, status = 400)
+  identifier,            // identifier('field', normalizeFn) for auth
+  isQueryMethodSupported,
+  escapeRegex, compressImage, fileUploadMiddleware,
+  requireAuth, requireRole, buildAuthConfig,
+  hashPassword, verifyPassword, signToken, verifyToken,
+  BUILT_IN_PROVIDERS, DEFAULT_TEMPLATES, AUTH_ROUTES,
+} from 'express-controller-sets';
+```
+
+## The minimal correct app
+
+```js
+import 'dotenv/config';
+import express from 'express';
+import mongoose from 'mongoose';
+import { createRouter, errorHandler } from 'express-controller-sets';
+import Product from './models/Product.js';
+
+const app = express();
+app.use(express.json());                        // required: bodies are read from req.body
+
+app.use('/api/products', createRouter({
+  model: Product,
+  orderBy: '-createdAt',                        // default sort
+  query: ['category', 'isFeatured'],            // ?category=… equality filters
+  search: ['name', 'description'],              // ?s=term or ?search=term
+  allowedFields: ['name', 'price', 'description', 'category', 'isFeatured'], // writable fields
+  filterableFields: ['price', 'category'],      // usable in range/compare filters and QUERY filter
+  sortableFields: ['price', 'name', 'createdAt'],
+}));
+
+app.use(errorHandler);                          // always after every router
+
+await mongoose.connect(process.env.MONGODB_URI);
+app.listen(3000);
+```
+
+Every router serves: `GET /` (list), `QUERY /` (list with a JSON body), `POST /` (create),
+`GET /:id`, `PATCH /:id` (partial update with `$set`), `DELETE /:id`. There is no `PUT`.
+
+## Security rules — always apply
+
+1. **Always set `allowedFields`** (or `blockedFields`). Without it every schema field — `role`, `isAdmin`, `ownerId` — is client-writable, and the library logs a warning.
+2. **Every generated endpoint is public** until `middlewares` guards it. Guards apply to all six routes of that router.
+3. When reads are public and writes are not, use **two routers on the same model**: a public one with `allowedFields: []`, and a guarded admin one.
+4. Filters, range/compare fields and sort fields are allowlists (`query`, `filterableFields`, `sortableFields`). A field not listed is a `400`, never silently used.
+5. Server-owned values (`ownerId`, `tenantId`, `createdBy`) are set in `validate.create`, never accepted from the client — keep them out of `allowedFields`.
+6. Per-user record scoping is not built in. For lists, shadow `req.query` in a middleware (Express 5's `req.query` is a re-parsing getter — assigning to it or its properties does nothing):
+
+   ```js
+   const onlyMine = (req, res, next) =&gt; {
+     Object.defineProperty(req, 'query', {
+       value: { ...req.query, ownerId: String(req.auth.userId) },
+       writable: true, configurable: true, enumerable: true,
+     });
+     next();
+   };
+   createRouter({ model: Note, middlewares: [auth.requireAuth, onlyMine],
+                  query: ['ownerId'], enableQuery: false, /* … */ });
+   ```
+
+   `GET/PATCH/DELETE /:id` address one record directly — add a middleware that loads it and checks its owner, or keep those verbs on an admin-only router.
+7. Never set `legacyMode: true` or `allowRawRegex: true` on endpoints reachable by untrusted clients.
+8. Mount `errorHandler` last. Throw `HttpError` for client-safe messages; other errors become a generic 500 without leaking internals.
+
+## Router options
+
+| Option | Default | Meaning |
+|---|---|---|
+| `model` | required | Mongoose model |
+| `orderBy` | none (unsorted) | Default sort, e.g. `'-createdAt'` |
+| `query` | `[]` | Query-string equality filters; default for filterable/sortable |
+| `search` | none | Field(s) for `?s=` / `?search=`; `'category.name'` searches a ref |
+| `allowedFields` | all fields | Writable fields; `['a']` or `{ create: [...], update: [...] }` |
+| `blockedFields` | none | Never writable; applied after `allowedFields` |
+| `filterableFields` | `query` | Fields for `rangeField` / `compareField` and QUERY `filter` |
+| `sortableFields` | `query` + `orderBy` field | Fields for `?sort=` and QUERY `sort` |
+| `validate` | none | `fn(payload, ctx)` or `{ create, update }`; see below |
+| `onGet` | none | `(req, res) =&gt; ({ populates, selects })` for GET routes |
+| `runAfterCreate` | none | `async (doc) =&gt; {}` after POST; failures logged unless `strictAfterCreate` |
+| `middlewares` | `[]` | Express middleware run before every route of the router |
+| `enableQuery` | `true` | Mount the `QUERY /` route |
+| `pagination` | `'offset'` | `'cursor'` for keyset pagination on large collections |
+| `countStrategy` | `'exact'` | `'estimated'` or `'none'` (returns `hasMore` instead of totals) |
+| `maxLimit` | `100` | Hard cap on returned documents |
+| `defaultPageSize` | `50` | Page size when `?page=` has no `pageSize` |
+| `maxPage` | off | Refuse deeper offset pages with 400 |
+| `maxTimeMS` | off | MongoDB per-query time limit |
+| `maxSearchLength` | `128` | Longest accepted search term |
+| `maxRelationMatches` | `1000` | Cap on ids a relational search pulls |
+| `lean` | `false` | Plain objects (skips schema `toJSON`) |
+| `allowDiskUse`, `batchSize` | off | Driver passthroughs |
+| `logger` | console | `{ warn, error, debug? }` |
+
+## Query string (GET /)
+
+```
+?page=2&amp;pageSize=20                 paginate (adds a pagination block)
+?s=laptop  or  ?search=laptop       literal, case-insensitive, OR across search fields
+?sort=-price                        must be in sortableFields; '-' = descending
+?category=65af…                     equality on a `query` field; repeat for $in
+?rangeField=price&amp;range=10-100      inclusive; either side optional
+?compareField=price&amp;compareValue=50&amp;compareOperator=gt   gt|gte|lt|lte|ne|eq
+?cursor=…                           cursor mode only (then ?page= is refused)
+```
+
+Filters combine with AND; search is an OR group ANDed with the rest.
+
+## HTTP QUERY (body-based read)
+
+```http
+QUERY /api/products
+Content-Type: application/json
+
+{ &quot;filter&quot;: { &quot;category&quot;: &quot;chairs&quot;, &quot;price&quot;: { &quot;gte&quot;: 50, &quot;lte&quot;: 250 }, &quot;tags&quot;: [&quot;a&quot;, &quot;b&quot;] },
+  &quot;search&quot;: &quot;oak&quot;, &quot;sort&quot;: [&quot;-price&quot;, &quot;name&quot;], &quot;page&quot;: 1, &quot;pageSize&quot;: 20 }
+```
+
+Operators: `eq ne gt gte lt lte in nin` — written **without `<section class="section" id="why">
+    <h2>Why a prompt?<a class="anchor" href="#why" aria-label="Link to this section">#</a></h2>
+    <p>Language models know an older, smaller version of this library — or guess at one. Paste the prompt
+        below at the start of a conversation (or add it to your editor's rules file) and the model writes code
+        against the real API: correct option names, the security defaults, the auth bodies, and the mistakes to
+        avoid.</p>
+
+    <div class="card-grid">
+        <div class="card">
+            <div class="card-icon"><i data-lucide="clipboard-copy"></i></div>
+            <h4>Chat assistants</h4>
+            <p>ChatGPT, Claude, Gemini: paste the prompt as your first message, then ask for what you need.</p>
+        </div>
+        <div class="card">
+            <div class="card-icon"><i data-lucide="file-code-2"></i></div>
+            <h4>Coding agents &amp; editors</h4>
+            <p>Save it as <code>AGENTS.md</code>, <code>CLAUDE.md</code>, <code>.cursor/rules/controller-sets.md</code>
+                or <code>.github/copilot-instructions.md</code>.</p>
+        </div>
+        <div class="card">
+            <div class="card-icon"><i data-lucide="globe"></i></div>
+            <h4>Tools that read the web</h4>
+            <p>Point them at <a href="llms.txt">llms.txt</a> (an index) or
+                <a href="llms-full.txt">llms-full.txt</a> (everything, one file).</p>
+        </div>
+    </div>
+</section>
+
+<section class="section" id="prompt">
+    <h2>The prompt<a class="anchor" href="#prompt" aria-label="Link to this section">#</a></h2>
+    <p class="section-intro">Everything a model needs, in one copyable block. Same text as
+        <a href="llms-full.txt">llms-full.txt</a>.</p>
+
+    <div class="code-block" data-lang="markdown">
+        <pre><code class="language-markdown">**. Filter fields must be in
+`filterableFields`, sort fields in `sortableFields`; unknown keys are a 400. Response equals the
+matching `GET`. Keys: `filter`, `search`, `sort`, `page`, `pageSize`, `limit`, `cursor`.
+
+## Responses
+
+```jsonc
+{ &quot;success&quot;: true, &quot;data&quot;: [ … ] }                                          // list
+{ &quot;success&quot;: true, &quot;data&quot;: [ … ], &quot;pagination&quot;: { &quot;currentPage&quot;: 2, &quot;pageSize&quot;: 20, &quot;totalPages&quot;: 7, &quot;totalRecords&quot;: 132 } }
+{ &quot;success&quot;: true, &quot;data&quot;: [ … ], &quot;pagination&quot;: { &quot;pageSize&quot;: 50, &quot;hasMore&quot;: true, &quot;nextCursor&quot;: &quot;…&quot; } } // cursor
+{ &quot;success&quot;: true, &quot;data&quot;: { … } }                                          // get / create / update
+{ &quot;success&quot;: true, &quot;message&quot;: &quot;Item successfully deleted.&quot; }                // delete
+{ &quot;success&quot;: false, &quot;error&quot;: &quot;Entry not found.&quot; }                          // any error
+{ &quot;success&quot;: false, &quot;error&quot;: &quot;Check the submitted values.&quot;, &quot;fields&quot;: { &quot;price&quot;: &quot;must not be negative&quot; } }
+```
+
+Status codes: 400 bad input, 401 unauthenticated, 403 forbidden, 404 not found, 409 duplicate key,
+413 JSON body over the `express.json()` limit, 503 misconfigured dependency (e.g. S3 env missing), 500 unexpected.
+
+## Validation and hooks
+
+```js
+import { createRouter, ValidationError } from 'express-controller-sets';
+
+createRouter({
+  model: Product,
+  allowedFields: ['name', 'price'],
+  validate: {
+    create: (payload, { req }) =&gt; {
+      if (payload.price &lt; 0) throw new ValidationError('Check the submitted values.', { price: 'must not be negative' });
+      return { ...payload, ownerId: req.auth.userId };   // returning an object replaces the payload
+    },
+    update: (payload, { id }) =&gt; { /* return nothing to accept as-is */ },
+  },
+  onGet: (req) =&gt; ({ populates: [{ path: 'category', select: 'name' }], selects: '-internalNotes' }),
+  runAfterCreate: async (doc) =&gt; { await notify(doc); },
+});
+```
+
+`validate` receives the payload after the field policy and before Mongoose validators; a
+schema-`required` field may still be missing there.
+
+## Uploads (S3-compatible)
+
+```js
+import { createRouterS3upload } from 'express-controller-sets';
+
+app.use('/api/documents', createRouterS3upload({
+  model: Document,
+  path: 'documents/',                                  // key prefix
+  fields: [{ name: 'file', maxCount: 1 }, { name: 'pages', maxCount: 10, formatToUrlObject: true }],
+  imgOptimizations: 'medium',                          // 'low' | 'medium' | 'high' (needs sharp)
+  upload: { acl: 'private', allowedMimeTypes: ['image/jpeg', 'image/png', 'application/pdf'],
+            maxFileSize: 5 * 1024 * 1024, maxFiles: 5 },
+  allowedFields: ['title', 'file', 'pages'],
+}));
+```
+
+Clients send `multipart/form-data`; the file field names must match `fields`. Env:
+`S3_ENDPOINT`, `S3_SPACES_KEY`, `S3_SPACES_SECRET`, `S3_BUCKET_NAME`, optional `S3_REGION`.
+Uploads are private by default; types are checked by content sniffing.
+
+## Authentication
+
+```js
+import { createAuthRouter, createRouter } from 'express-controller-sets';
+
+const auth = createAuthRouter({
+  model: User,
+  identifiers: ['email', 'phone'],                     // sign in with either
+  token: { secret: process.env.JWT_SECRET, expiresIn: '15m' },   // secret ≥ 32 chars, from env
+  roles: { list: ['user', 'staff', 'admin'], default: 'user', admin: ['admin'] },
+  registerFields: ['name'],                            // extra fields a registrant may set
+  updateFields: ['name'],                              // fields a user may change on themselves
+  refresh: { enabled: true, rotate: true, expiresIn: '30d' },
+  appName: 'Acme',
+  mail: { transporter: nodemailer.createTransport(process.env.SMTP_URL), from: 'Acme &lt;no-reply@acme.com&gt;' },
+  sms: { sender: async ({ to, text }) =&gt; twilio.messages.create({ to, from: process.env.TWILIO_FROM, body: text }) },
+  social: { google: { clientId: process.env.GOOGLE_CLIENT_ID } },
+});
+
+app.use('/api/auth', auth);
+app.use('/api/notes', createRouter({ model: Note, middlewares: [auth.requireAuth], allowedFields: ['title', 'body'] }));
+app.use('/api/admin/users-report', createRouter({ model: Report, middlewares: [auth.requireAuth, auth.requireRole('admin')], allowedFields: [] }));
+```
+
+After `auth.requireAuth`, `req.auth = { userId, role, claims }`. Clients send
+`Authorization: Bearer &lt;token&gt;`. Always use `auth.requireAuth` / `auth.requireRole(...)` from the
+router instance — they share its configuration.
+
+### User schema the app must define
+
+The library defines no schema. Defaults (rename any via `fields: { … }`):
+
+```js
+const userSchema = new mongoose.Schema({
+  email: { type: String, unique: true, sparse: true },
+  phone: { type: String, unique: true, sparse: true },
+  name: String,
+  password: { type: String, select: false },
+  role: { type: String, default: 'user' },
+  googleId: String, appleId: String, facebookId: String, githubId: String,
+  otpHash: { type: String, select: false },
+  otpPurpose: { type: String, select: false },
+  otpExpiresAt: { type: Date, select: false },
+  otpAttempts: { type: Number, default: 0, select: false },
+  failedLoginAttempts: { type: Number, default: 0, select: false },
+  lockedUntil: { type: Date, select: false },
+  passwordChangedAt: Date,
+  refreshTokens: {                                    // only if refresh tokens are enabled
+    type: [{ id: String, hash: String, previousHash: String, rotatedAt: Date,
+             createdAt: Date, lastUsedAt: Date, expiresAt: Date, userAgent: String }],
+    select: false,
+  },
+}, { timestamps: true });
+```
+
+### Auth endpoints and bodies
+
+| Method &amp; path | Body | Access |
+|---|---|---|
+| `POST /register` | `{ email?, phone?, password, ...registerFields }` | public |
+| `POST /login` | `{ identifier, password }` | public |
+| `POST /social/:provider` | google/apple `{ idToken }`, facebook `{ accessToken }`, github `{ accessToken }` or `{ code }` | public |
+| `POST /password/forgot` | `{ identifier, channel?: 'email' \| 'sms' }` | public |
+| `POST /password/reset` | `{ identifier, code, newPassword }` | public |
+| `POST /password/change` | `{ currentPassword, newPassword }` | signed in |
+| `POST /token/refresh` | `{ refreshToken }` | public (refresh enabled) |
+| `POST /logout` | `{ refreshToken }` | public (refresh enabled) |
+| `POST /logout/all` | — | signed in (refresh enabled) |
+| `GET /me` | — | signed in |
+| `GET /users`, `GET /users/:id` | — | admin / signed in |
+| `PATCH /users/:id` | `updateFields` only | self or admin |
+| `PATCH /users/:id/roles` | `{ role }` or `{ roles: [] }` | admin |
+
+Sign-in responses: `{ success: true, data: { token, expiresIn, user, refreshToken?, refreshExpiresIn? } }`.
+
+Rename or remove routes with `routes: { register: '/signup', social: false }`; add per-route
+middleware with `middlewares: { all: [cors()], login: [rateLimiter] }`. `auth.urls` lists what was
+mounted.
+
+### Refresh tokens
+
+Off by default. Enable with `refresh: { enabled: true }` or `AUTH_REFRESH_ENABLED=true`. Rotation
+with `refresh.rotate` or `AUTH_REFRESH_ROTATE=true|false` (default true). Lifetime with
+`refresh.expiresIn` or `AUTH_REFRESH_EXPIRES_IN` (default `30d`). Code options override env.
+Other options: `graceSeconds` (10), `revokeAllOnReuse` (true), `maxSessions` (5). Requires the
+`refreshTokens` schema field. Replaying a rotated-away token revokes the user's sessions; password
+change/reset revokes all refresh tokens.
+
+Client pattern: keep the access token short-lived (`15m`); on a 401, call `POST /token/refresh`
+once with the stored refresh token, store the returned `refreshToken` (it changes when rotating),
+retry the request; if refresh fails, sign the user out.
+
+### Sending one-time codes (mail and SMS)
+
+- Mail default sender = a nodemailer-style transporter: `mail: { transporter, from }`, or env
+  `SMTP_URL` / `SMTP_HOST` `SMTP_PORT` `SMTP_SECURE` `SMTP_USER` `SMTP_PASS` + `MAIL_FROM`
+  (install `nodemailer`).
+- Swap mail sender: `mail.sender: async ({ to, subject, text, html, user, code, purpose, req }) =&gt; {}`.
+- SMS has no default: `sms.sender: async ({ to, text, user, code, purpose, req }) =&gt; {}`.
+- Templates per purpose (`passwordReset`): mail `{ subject, text?, html? }` strings, or a function
+  returning them; SMS a string or a function returning one. Placeholders: `{{code}}`,
+  `{{minutes}}`, `{{appName}}`, `{{user.&lt;field&gt;}}` (HTML-escaped in `html`).
+- Recipient fields: `mail.toField` (default `email`), `sms.toField` (default `phone`).
+- Legacy `otp.deliver({ user, code, channel, req })` overrides all of the above.
+
+```js
+mail: {
+  transporter, from: 'Acme &lt;no-reply@acme.com&gt;',
+  templates: { passwordReset: { subject: 'Reset your {{appName}} password',
+                                html: '&lt;p&gt;Hi {{user.name}}, your code is &lt;b&gt;{{code}}&lt;/b&gt; ({{minutes}} min).&lt;/p&gt;' } },
+},
+sms: { sender, templates: { passwordReset: '{{appName}}: {{code}} is your code' } },
+```
+
+## Custom routes
+
+```js
+import express from 'express';
+import { ControllerSets } from 'express-controller-sets';
+
+const products = new ControllerSets({ model: Product, allowedFields: ['name', 'price'] });
+const router = express.Router();
+router.get('/', (req, res, next) =&gt; products.getAll(req, res).catch(next));
+router.get('/:id', (req, res, next) =&gt; products.get(req, res).catch(next));
+router.put('/:id', (req, res, next) =&gt; products.update(req, res).catch(next));
+```
+
+Methods: `getAll`, `query`, `get`, `create`, `update`, `delete`.
+
+## Common mistakes to avoid
+
+- Forgetting `app.use(express.json())` → &quot;Request body contains no writable fields.&quot;
+- Mounting `errorHandler` before routers.
+- Omitting `allowedFields` → every field writable.
+- `?sort=name` when `name` is not in `sortableFields` → 400.
+- Writing `$gte` in a QUERY filter → use `gte`.
+- Expecting more than `maxLimit` (100) rows without paginating.
+- Hard-coding `token.secret`; it must come from env and be ≥ 32 characters.
+- Mutating `req.query` on Express 5 — use `Object.defineProperty` as shown above.
+- Using `auth.requireAuth()` with parentheses — it is already a middleware: `auth.requireAuth`.
+- Enabling refresh tokens without adding `refreshTokens` to the user schema (startup error).</code></pre>
+    </div>
+</section>
+
+<section class="section" id="save-it">
+    <h2>Save it in your project<a class="anchor" href="#save-it" aria-label="Link to this section">#</a></h2>
+    <p>One command drops the latest version where your tools look for it:</p>
+
+    <div class="code-block" data-lang="bash">
+        <pre><code class="language-bash"># Claude Code / Codex / most agents
+curl -fsSL https://ornate-source.github.io/controllerSets/llms-full.txt -o AGENTS.md
+
+# Cursor
+mkdir -p .cursor/rules &amp;&amp; curl -fsSL https://ornate-source.github.io/controllerSets/llms-full.txt \
+  -o .cursor/rules/controller-sets.md
+
+# GitHub Copilot
+mkdir -p .github &amp;&amp; curl -fsSL https://ornate-source.github.io/controllerSets/llms-full.txt \
+  -o .github/copilot-instructions.md</code></pre>
+    </div>
+
+    <div class="callout callout-tip">
+        <i data-lucide="lightbulb"></i>
+        <div>
+            <p><strong>Already have a rules file?</strong> Append instead of overwriting: replace <code>-o FILE</code>
+                with <code>&gt;&gt; FILE</code>.</p>
+        </div>
+    </div>
+</section>
+
+<section class="section" id="advanced">
+    <h2>Advanced<a class="anchor" href="#advanced" aria-label="Link to this section">#</a></h2>
+    <p class="section-intro">Deeper detail — open what you need.</p>
+<details class="advanced" id="ask">
+  <summary>Prompts that work well</summary>
+  <div class="details-body"><p>After the guide, ask in plain language. Say what the data is, who may read it and who may change it —
+        the model turns that into allowlists and guards.</p>
+
+    <div class="code-block" data-lang="text">
+        <pre><code class="language-text">Build an Express API for a blog with express-controller-sets:
+- Post { title, body, tags[], author (ref User), published }
+- Anyone can list and read published posts, search title and body, filter by tag, newest first
+- Only signed-in users can create posts; author is set from the token, never the body
+- Only admins can delete
+- Email + password auth with refresh tokens (rotation on), password reset by email via SMTP
+Give me the models, app.js and a .env.example.</code></pre>
+    </div>
+
+    <div class="code-block" data-lang="text">
+        <pre><code class="language-text">Add S3 image uploads to my Product router: one "cover" image and up to 6 "gallery" images,
+JPEG/PNG/WebP only, 5 MB each, compressed at "medium". Keep writes admin-only.</code></pre>
+    </div>
+
+    <div class="code-block" data-lang="text">
+        <pre><code class="language-text">Review this file against the express-controller-sets guide. List every place where a client
+could write a field it shouldn't, read another user's data, or reach an unguarded route.</code></pre>
+    </div>
+  </div>
+</details>
+
+<details class="advanced" id="verify">
+  <summary>Check what it wrote</summary>
+  <div class="details-body"><p>Models are fluent, not infallible. Before running generated code, check these five things — they are
+        where mistakes cost the most:</p>
+    <ol class="steps">
+        <li><strong>Every router has <code>allowedFields</code></strong> (or <code>blockedFields</code>) — and
+            it does not include server-owned fields like <code>role</code> or <code>ownerId</code>.</li>
+        <li><strong>Every write route has a guard</strong> in <code>middlewares</code>, or is on a router with
+            <code>allowedFields: []</code>.</li>
+        <li><strong><code>errorHandler</code> is mounted last</strong> and <code>express.json()</code> first.</li>
+        <li><strong>Secrets come from the environment</strong> — <code>token.secret</code> is at least 32
+            characters and never in the code.</li>
+        <li><strong>Only real options are used.</strong> Anything not in <a href="options.html">All options</a>
+            is invented — at best ignored, at worst a false sense of safety.</li>
+    </ol>
+  </div>
+</details>
+</section>
+
+        <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" href="faq.html"><span class="pager-dir"><i data-lucide="arrow-left"></i> Previous</span><span class="pager-title">FAQ</span></a>
+      
+    </nav>
+        <footer class="doc-footer">
+          <span>express-controller-sets v3.2.0 · MIT licensed · © 2024–present Sabbir Mahmud</span>
+          <a href="https://github.com/ornate-source/controllerSets/edit/main/docs/src/content/llm.html" target="_blank" rel="noopener"><i data-lucide="pencil"></i> Edit this page</a>
+        </footer>
+      </article>
+    </main>
+
+  </div>
+
+  <dialog class="search-dialog" id="search-dialog" aria-label="Search">
+    <div class="search-field"><i data-lucide="search"></i><input id="search-input" type="search" placeholder="Search the docs…" autocomplete="off" spellcheck="false" aria-controls="search-results"><kbd>Esc</kbd></div>
+    <ul class="search-results" id="search-results" role="listbox"></ul>
+    <div class="search-foot"><span><kbd>↑</kbd> <kbd>↓</kbd> to move</span><span><kbd>↵</kbd> to open</span></div>
+  </dialog>
+
+  <button id="back-to-top" class="back-to-top" type="button" aria-label="Back to top"><i data-lucide="arrow-up"></i></button>
+</body>
+</html>

@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Filter, search &amp; paginate · express-controller-sets</title>
+  <meta name="description" content="Let clients find records — only by the fields you allow.">
+  <link rel="canonical" href="https://ornate-source.github.io/controllerSets/filtering.html">
+  <meta property="og:title" content="Filter, search &amp; paginate · express-controller-sets">
+  <meta property="og:description" content="Let clients find records — only by the fields you allow.">
+  <meta property="og:type" content="website">
+  <link rel="alternate" type="text/plain" title="LLM guide" href="llms-full.txt">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/components.css?v=10a91d487a">
+  <link rel="stylesheet" href="assets/css/shell.css?v=94b1910641">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%236366f1'/%3E%3Ctext x='50' y='68' font-family='monospace' font-size='54' font-weight='700' fill='white' text-anchor='middle'%3E%7B%7D%3C/text%3E%3C/svg%3E">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/http.min.js" defer></script>
+  <script src="assets/search-index.js" defer></script>
+  <script src="assets/js/docs.js?v=901f93388a" defer></script>
+</head>
+<body class="dark" data-page="filtering">
+  <script>try{var t=localStorage.getItem('controllersets-theme');document.body.className=t||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark')}catch(e){}</script>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <header class="topbar">
+    <button class="icon-btn menu-btn" type="button" id="menu-open" aria-label="Open navigation"><i data-lucide="menu"></i></button>
+    <a class="brand" href="./" aria-label="controller-sets home">
+      <span class="brand-mark" aria-hidden="true">{}</span>
+      <span class="brand-name">controller-sets</span>
+      <span class="brand-version">v3.2.0</span>
+    </a>
+    <button class="search-trigger" type="button" id="search-open" aria-label="Search the docs">
+      <i data-lucide="search"></i><span>Search docs…</span><kbd>⌘K</kbd>
+    </button>
+    <nav class="topbar-links" aria-label="External">
+      <a class="topbar-link is-accent hide-sm" href="llm.html"><i data-lucide="sparkles"></i><span class="label">LLM prompt</span></a>
+      <a class="topbar-link hide-sm" href="https://github.com/ornate-source/controllerSets" target="_blank" rel="noopener"><svg class="gh-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span class="label">GitHub</span></a>
+      <a class="topbar-link hide-sm" href="https://www.npmjs.com/package/express-controller-sets" target="_blank" rel="noopener"><i data-lucide="package"></i><span class="label">npm</span></a>
+      <button class="icon-btn" type="button" id="theme-toggle" aria-label="Toggle colour theme"><i data-lucide="sun" class="sun-icon"></i><i data-lucide="moon" class="moon-icon"></i></button>
+    </nav>
+  </header>
+
+  <div class="nav-overlay" id="nav-overlay"></div>
+
+  <div class="layout">
+    <aside class="sidenav" id="sidenav" aria-label="Documentation">
+      <nav><div class="nav-group" data-group="get-started">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="rocket"></i><span>Get started</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li><a class="nav-page" href="./"><i data-lucide="home"></i><span class="nav-page-label">Overview</span></a></li>
+<li><a class="nav-page" href="quickstart.html"><i data-lucide="zap"></i><span class="nav-page-label">Quickstart</span></a></li>
+<li><a class="nav-page" href="how-to-use.html"><i data-lucide="map"></i><span class="nav-page-label">How to use</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="crud">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="database"></i><span>CRUD</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li><a class="nav-page" href="endpoints.html"><i data-lucide="network"></i><span class="nav-page-label">Endpoints &amp; responses</span></a></li>
+<li><a class="nav-page" href="filtering.html" aria-current="page"><i data-lucide="filter"></i><span class="nav-page-label">Filter, search &amp; paginate</span></a></li>
+<li><a class="nav-page" href="writing.html"><i data-lucide="file-pen"></i><span class="nav-page-label">Create, update &amp; validate</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="s3-upload">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="upload-cloud"></i><span>S3 Upload</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li><a class="nav-page" href="uploads.html"><i data-lucide="upload"></i><span class="nav-page-label">Upload files</span></a></li>
+<li><a class="nav-page" href="s3.html"><i data-lucide="hard-drive"></i><span class="nav-page-label">S3 setup</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="dynamic-router">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="route"></i><span>Dynamic Router</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li><a class="nav-page" href="router.html"><i data-lucide="lock"></i><span class="nav-page-label">Router &amp; middlewares</span></a></li>
+<li><a class="nav-page" href="http-query.html"><i data-lucide="file-search"></i><span class="nav-page-label">HTTP QUERY</span></a></li>
+<li><a class="nav-page" href="custom-routes.html"><i data-lucide="puzzle"></i><span class="nav-page-label">Custom routes</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="auth">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="key-round"></i><span>Auth</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li><a class="nav-page" href="auth.html"><i data-lucide="key-round"></i><span class="nav-page-label">Auth setup</span></a></li>
+<li><a class="nav-page" href="auth-refresh.html"><i data-lucide="refresh-cw"></i><span class="nav-page-label">Refresh tokens</span></a></li>
+<li><a class="nav-page" href="auth-social.html"><i data-lucide="users"></i><span class="nav-page-label">Social sign-in</span></a></li></ul>
+        </div>
+<div class="nav-group nav-single"><a class="nav-page nav-top" href="email.html"><i data-lucide="mail"></i><span class="nav-page-label">Email Sender</span></a></div>
+<div class="nav-group nav-single"><a class="nav-page nav-top" href="env.html"><i data-lucide="file-cog"></i><span class="nav-page-label">.env examples</span></a></div>
+<div class="nav-group" data-group="reference">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="library"></i><span>Reference</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li><a class="nav-page" href="options.html"><i data-lucide="sliders-horizontal"></i><span class="nav-page-label">All options</span></a></li>
+<li><a class="nav-page" href="faq.html"><i data-lucide="messages-square"></i><span class="nav-page-label">FAQ</span></a></li>
+<li><a class="nav-page" href="llm.html"><i data-lucide="bot"></i><span class="nav-page-label">Use with an LLM</span></a></li></ul>
+        </div></nav>
+    </aside>
+
+    <main class="doc" id="main" tabindex="-1">
+      <article class="doc-inner">
+        <header class="page-header">
+          <p class="breadcrumb">CRUD <i data-lucide="chevron-right"></i> Filter, search &amp; paginate</p>
+          <h1>Filter, search &amp; paginate</h1>
+          <p class="page-summary">Let clients find records — only by the fields you allow.</p>
+        </header>
+        <section class="section" id="filter-basics">
+    <h2>Let clients find things<a class="anchor" href="#filter-basics" aria-label="Link to this section">#</a></h2>
+<div class="code-block" data-lang="javascript">
+<pre><code class="language-javascript">createRouter({
+  model: Product,
+  query: ['category'],                 // ?category=chairs
+  search: ['name', 'description'],     // ?s=oak
+  filterableFields: ['price'],         // ?rangeField=price&range=50-200
+  sortableFields: ['price', 'name'],   // ?sort=-price
+  allowedFields: ['name', 'price', 'category', 'description'],
+});</code></pre>
+</div>
+<div class="code-block" data-lang="bash">
+<pre><code class="language-bash">GET /api/products?category=chairs&s=oak&sort=-price&page=2&pageSize=20</code></pre>
+</div>
+<p>Only fields you list can be filtered or sorted — anything else is a <strong>400</strong>.</p>
+</section>
+
+<section class="section" id="filter-params">
+    <h2>Query parameters<a class="anchor" href="#filter-params" aria-label="Link to this section">#</a></h2>
+<div class="table-container"><table><thead><tr><th>Parameter</th><th>Example</th><th>Meaning</th></tr></thead><tbody>
+<tr><td>a <code>query</code> field</td><td><code>?category=chairs</code></td><td>Equals. Repeat for "any of".</td></tr>
+<tr><td><code>s</code> / <code>search</code></td><td><code>?s=oak</code></td><td>Text search across <code>search</code> fields.</td></tr>
+<tr><td><code>sort</code></td><td><code>?sort=-price</code></td><td><code>-</code> for descending.</td></tr>
+<tr><td><code>page</code>, <code>pageSize</code></td><td><code>?page=2&amp;pageSize=20</code></td><td>Paginate. Adds totals.</td></tr>
+<tr><td><code>rangeField</code> + <code>range</code></td><td><code>?rangeField=price&amp;range=50-200</code></td><td>Between two values.</td></tr>
+<tr><td><code>compareField</code> + <code>compareValue</code></td><td><code>?compareField=price&amp;compareValue=50&amp;compareOperator=gt</code></td><td>Greater than, less than…</td></tr>
+</tbody></table></div>
+</section>
+
+<section class="section" id="filter-big">
+    <h2>Big collections<a class="anchor" href="#filter-big" aria-label="Link to this section">#</a></h2>
+<p>Deep pages get slow. Switch to cursor pagination — every page is equally fast:</p>
+<div class="code-block" data-lang="javascript">
+<pre><code class="language-javascript">createRouter({ model: Event, orderBy: '-createdAt', pagination: 'cursor', allowedFields: [] });</code></pre>
+</div>
+<p>Then follow <code>pagination.nextCursor</code> with <code>?cursor=…</code>.</p>
+</section>
+
+<section class="section" id="advanced">
+    <h2>Advanced<a class="anchor" href="#advanced" aria-label="Link to this section">#</a></h2>
+    <p class="section-intro">Deeper detail — open what you need.</p>
+<details class="advanced" id="filtering">
+  <summary>Filtering</summary>
+  <div class="details-body"><p class="section-intro">Three ways to narrow a list, each gated by an allowlist.</p>
+
+                <div class="tabs">
+                    <div class="tab-list" role="tablist" aria-label="Filtering styles">
+                        <button class="tab-btn" role="tab" aria-selected="true" data-tab="f-equality">Equality</button>
+                        <button class="tab-btn" role="tab" aria-selected="false" data-tab="f-range">Range</button>
+                        <button class="tab-btn" role="tab" aria-selected="false" data-tab="f-compare">Compare</button>
+                    </div>
+
+                    <div class="tab-panel" id="f-equality" role="tabpanel">
+                        <p>Every name in <code>query</code> becomes a query-string parameter of the same name.</p>
+                        <div class="code-block" data-lang="javascript">
+                            <pre><code class="language-javascript">createRouter({ model: Product, query: ['category', 'isFeatured'] });
+
+// GET /api/products?category=65af…&amp;isFeatured=true
+//   → { category: '65af…', isFeatured: 'true' }
+
+// Repeat a parameter to match any of several values:
+// GET /api/products?category=65af…&amp;category=65b0…
+//   → { category: { $in: ['65af…', '65b0…'] } }</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                        <p>A parameter that isn't in <code>query</code> is ignored entirely — not an error, just no
+                            effect. A parameter whose value arrives as an object (which some query-string parsers
+                            allow, e.g. <code>?price[$ne]=0</code>) is rejected with <strong>400</strong>, because that
+                            shape is how operator injection gets in.</p>
+                    </div>
+
+                    <div class="tab-panel" id="f-range" role="tabpanel">
+                        <p>Two parameters working together: which field, and the bounds.</p>
+                        <div class="code-block" data-lang="bash">
+                            <pre><code class="language-bash"># price between 10 and 100 (inclusive)
+GET /api/products?rangeField=price&amp;range=10-100
+
+# 18 and over — omit the upper bound
+GET /api/users?rangeField=age&amp;range=18-
+
+# 100 and under — omit the lower bound
+GET /api/products?rangeField=price&amp;range=-100</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                        <p>The field must appear in <code>filterableFields</code> (which defaults to
+                            <code>query</code>), otherwise the response is <strong>400</strong>. The value is split on
+                            a single <code>-</code>, so negative bounds are not expressible — use
+                            <code>compareField</code> for those.</p>
+                    </div>
+
+                    <div class="tab-panel" id="f-compare" role="tabpanel">
+                        <p>One operator against one value.</p>
+                        <div class="code-block" data-lang="bash">
+                            <pre><code class="language-bash"># price &gt; 50
+GET /api/products?compareField=price&amp;compareValue=50&amp;compareOperator=gt
+
+# combine freely with equality filters
+GET /api/users?status=active&amp;compareField=age&amp;compareValue=30&amp;compareOperator=lte</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th><code>compareOperator</code></th>
+                                        <th>Meaning</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td><code>gt</code></td><td>greater than</td></tr>
+                                    <tr><td><code>gte</code></td><td>greater than or equal</td></tr>
+                                    <tr><td><code>lt</code></td><td>less than</td></tr>
+                                    <tr><td><code>lte</code></td><td>less than or equal</td></tr>
+                                    <tr><td><code>ne</code></td><td>not equal</td></tr>
+                                    <tr><td><code>eq</code></td><td>equal — the default when omitted</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p>Values that look numeric are converted to numbers; everything else stays a string. Same
+                            allowlist as ranges: not in <code>filterableFields</code> means <strong>400</strong>.</p>
+                    </div>
+                </div>
+
+                <div class="callout callout-danger">
+                    <i data-lucide="binary"></i>
+                    <div>
+                        <p><strong>Why filterable fields are allowlisted at all.</strong> Suppose your schema has
+                            <code>passwordResetToken</code> and your API never returns it. If a client could write
+                            <code>?compareField=passwordResetToken&amp;compareOperator=gt&amp;compareValue=m</code>,
+                            the <em>number of results</em> answers "does this token sort after m?" — and a few hundred
+                            of those questions reconstruct the token character by character. The data never appears in
+                            a response; it leaks through the result count. Allowlisting the field closes it.</p>
+                    </div>
+                </div>
+  </div>
+</details>
+
+<details class="advanced" id="search">
+  <summary>Search</summary>
+  <div class="details-body"><p class="section-intro">One parameter, <code>?s=</code> (or <code>?search=</code>), across as many
+                    fields as you list — including fields on related models.</p>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code class="language-javascript">createRouter({
+  model: Product,
+  search: ['name', 'description', 'category.name'],
+});
+
+// GET /api/products?s=wireless
+//   matches products whose name OR description contains "wireless",
+//   OR whose category's name contains "wireless"</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <h3 id="how-relational-search-works">How relational search works<a class="anchor" href="#how-relational-search-works" aria-label="Link to this section">#</a></h3>
+                <p>A field with a dot is split at the <strong>first</strong> dot. The part before it must be a field on
+                    your schema declared with <code>ref</code>; the rest is the path to search on the referenced model.
+                    The library looks up the matching documents there first, then filters your collection by their IDs
+                    — no aggregation pipeline required.</p>
+
+                <div class="lane">
+                    <span class="lane-label">category.name</span>
+                    <span class="lane-pipe"></span>
+                    <span class="lane-end is-target"><i data-lucide="check-circle-2"></i> searches
+                        <code>name</code> on the Category model</span>
+                </div>
+                <div class="lane">
+                    <span class="lane-label">author.profile.name</span>
+                    <span class="lane-pipe"></span>
+                    <span class="lane-end is-target"><i data-lucide="check-circle-2"></i> searches the nested
+                        <code>profile.name</code> on the Author model</span>
+                </div>
+                <div class="lane">
+                    <span class="lane-label">notARef.name</span>
+                    <span class="lane-pipe"></span>
+                    <span class="lane-end is-bad"><i data-lucide="x-circle"></i> clause dropped — the field has no
+                        <code>ref</code></span>
+                </div>
+
+                <div class="callout callout-plain">
+                    <i data-lucide="help-circle"></i>
+                    <div>
+                        <p><strong>What if no relation matches?</strong> You get <em>zero results</em>, not "the search
+                            term was ignored". Silently dropping an unmatched search term is how a customer's search
+                            for a product nobody sells returns your entire catalogue.</p>
+                    </div>
+                </div>
+
+                <h3 id="search-terms-are-treated-as-text-not-patterns">Search terms are treated as text, not patterns<a class="anchor" href="#search-terms-are-treated-as-text-not-patterns" aria-label="Link to this section">#</a></h3>
+                <p>Regex metacharacters in the term are escaped, so <code>?s=c++</code> searches for the literal string
+                    <code>c++</code>. Terms longer than <code>maxSearchLength</code> (128 characters) are rejected with
+                    400.</p>
+
+                <div class="callout callout-danger">
+                    <i data-lucide="siren"></i>
+                    <div>
+                        <p><strong>Why escaping is not optional.</strong> An unescaped search term is a program the
+                            client wrote and your database runs. <code>?s=(a+)+$</code> triggers catastrophic
+                            backtracking <em>inside mongod</em> — one GET request, one pegged database. If you genuinely
+                            need clients to pass patterns, <code>allowRawRegex: true</code> exists — put it behind
+                            authentication and never on a public endpoint.</p>
+                    </div>
+                </div>
+
+                <h3 id="the-single-field-shorthand">The single-field shorthand<a class="anchor" href="#the-single-field-shorthand" aria-label="Link to this section">#</a></h3>
+                <div class="code-block" data-lang="javascript">
+                    <pre><code class="language-javascript">createRouter({ model: Post, search: 'title' });
+// Still read from ?s= / ?search= — a string just means "one field".</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+  </div>
+</details>
+
+<details class="advanced" id="sorting-paging">
+  <summary>Sorting &amp; pagination</summary>
+  <div class="details-body"><p class="section-intro">Two knobs the client turns, both bounded by you.</p>
+
+                <h3 id="sorting">Sorting<a class="anchor" href="#sorting" aria-label="Link to this section">#</a></h3>
+                <div class="code-block" data-lang="javascript">
+                    <pre><code class="language-javascript">createRouter({
+  model: Product,
+  orderBy: '-createdAt',                        // your default: newest first
+  sortableFields: ['price', 'name', 'createdAt'],  // what clients may choose
+});
+
+// GET /api/products?sort=price     → cheapest first
+// GET /api/products?sort=-price    → dearest first  (the '-' means descending)
+// GET /api/products?sort=secretKey → 400 Field 'secretKey' is not sortable.</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>Your own <code>orderBy</code> is never checked against the allowlist — it's your decision, not the
+                    client's. Only a client-supplied <code>?sort=</code> is validated. If you omit
+                    <code>sortableFields</code>, it defaults to everything in <code>query</code> plus whatever field
+                    <code>orderBy</code> names.</p>
+
+                <h3 id="pagination">Pagination<a class="anchor" href="#pagination" aria-label="Link to this section">#</a></h3>
+                <div class="code-block" data-lang="bash">
+                    <pre><code class="language-bash">GET /api/products?page=2&amp;pageSize=20</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>Adding <code>?page=</code> switches the response into paginated form, with a
+                    <code>pagination</code> block alongside the data:</p>
+
+                <div class="code-block" data-lang="json">
+                    <pre><code class="language-json">{
+  "success": true,
+  "data": [ /* … */ ],
+  "pagination": {
+    "currentPage": 2,
+    "pageSize": 20,
+    "totalPages": 7,
+    "totalRecords": 132
+  }
+}</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Situation</th>
+                                <th>How many documents come back</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>No <code>?page</code></td>
+                                <td>Up to <code>maxLimit</code> — 100 by default. Never the whole collection.</td>
+                            </tr>
+                            <tr>
+                                <td><code>?page=1</code>, no <code>pageSize</code></td>
+                                <td>50 — the default page size.</td>
+                            </tr>
+                            <tr>
+                                <td><code>?page=1&amp;pageSize=20</code></td>
+                                <td>20.</td>
+                            </tr>
+                            <tr>
+                                <td><code>?page=1&amp;pageSize=5000</code></td>
+                                <td>Clamped to <code>maxLimit</code>. A client cannot enlarge its own page.</td>
+                            </tr>
+                            <tr>
+                                <td><code>?page=abc</code> or <code>?page=-3</code></td>
+                                <td>Treated as page 1 rather than erroring.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3 id="paging-past-the-point-where-offsets-stop-working">Paging past the point where offsets stop working<a class="anchor" href="#paging-past-the-point-where-offsets-stop-working" aria-label="Link to this section">#</a></h3>
+                <p><code>?page=4000</code> does not jump to page 4,000. It asks MongoDB to walk every one of the
+                    199,950 index entries before it, and throw them away. Add the <code>countDocuments</code> that
+                    produces the totals, and both halves of an offset page get slower as the collection grows.</p>
+
+                <p><strong>Keyset pagination</strong> asks a different question — "everything after this record" —
+                    which is one index seek whatever the depth, and needs no count:</p>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code class="language-javascript">createRouter({ model: Product, pagination: 'cursor', sortableFields: ['price'] });</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <div class="code-block" data-lang="bash">
+                    <pre><code class="language-bash"># The first page takes no cursor
+GET /api/products?pageSize=50
+
+# → { "data": [ … ], "pagination": { "pageSize": 50, "hasMore": true, "nextCursor": "eyJpIjoi…" } }
+
+# Follow nextCursor for the next one, and so on
+GET /api/products?pageSize=50&amp;cursor=eyJpIjoi…</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>The same applies to <a href="http-query.html#http-query">QUERY</a> — send <code>"cursor"</code> in the body.
+                    Both routes run the same retrieval code, so they page identically.</p>
+
+                <h4>Measured on 200,000 documents</h4>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>50 per page</th>
+                                <th class="center">page 1</th>
+                                <th class="center">page 1,000</th>
+                                <th class="center">page 4,000</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>pagination: 'offset'</code></td>
+                                <td class="center">18.7 ms</td>
+                                <td class="center">19.1 ms</td>
+                                <td class="center">47.8 ms</td>
+                            </tr>
+                            <tr>
+                                <td><code>pagination: 'cursor'</code></td>
+                                <td class="center">3.6 ms</td>
+                                <td class="center">0.6 ms</td>
+                                <td class="center"><strong>0.9 ms</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>Most of the offset cost is the count — at this size <code>countDocuments</code> alone is
+                    18.7&nbsp;ms, which is why page 1 costs the same as page 1,000. The skip is what adds the rest by
+                    page 4,000, and that part keeps growing. The cursor column does not.</p>
+
+                <div class="callout callout-tip">
+                    <i data-lucide="key-round"></i>
+                    <div>
+                        <p><strong>Ties are handled for you.</strong> <code>_id</code> is appended to your sort
+                            automatically, because a keyset page needs a total order — sort by a field that repeats,
+                            like <code>status</code> or a date truncated to the day, and without a tiebreaker records
+                            sharing a value are silently skipped or repeated at every page boundary. That is the bug
+                            most hand-rolled cursor pagination ships with.</p>
+                    </div>
+                </div>
+
+                <div class="callout callout-plain">
+                    <i data-lucide="shield"></i>
+                    <div>
+                        <p><strong>A cursor carries an id, not values.</strong> It encodes the anchor record's
+                            <code>_id</code> and the sort it was issued for; the server re-reads that record to learn
+                            where to resume. So a client cannot hand-craft a cursor that range-filters a field you
+                            never made filterable, which a cursor containing raw sort values would allow.</p>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Situation</th>
+                                <th>What happens</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Last page reached</td>
+                                <td><code>hasMore: false</code> and <code>nextCursor: null</code>.</td>
+                            </tr>
+                            <tr>
+                                <td>Cursor reused with a different <code>sort</code></td>
+                                <td><strong>400</strong>. Continuing under another order would skip or repeat
+                                    records.</td>
+                            </tr>
+                            <tr>
+                                <td>The anchor record was deleted</td>
+                                <td><strong>400</strong>, saying so. Restart the scan.</td>
+                            </tr>
+                            <tr>
+                                <td><code>?page=</code> in cursor mode, <code>?cursor=</code> in offset mode</td>
+                                <td><strong>400</strong> either way. Quietly serving the other kind of page would
+                                    corrupt a scan.</td>
+                            </tr>
+                            <tr>
+                                <td>Records inserted mid-scan</td>
+                                <td>No repeats. An insert before the cursor shifts every offset by one — this is the
+                                    bug cursors exist to fix.</td>
+                            </tr>
+                            <tr>
+                                <td>Totals needed</td>
+                                <td>Cursor mode has none by design. Use offset mode, or count separately.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h4>The rest of the cost knobs</h4>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Option</th>
+                                <th>What it is for</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>pagination</code></td>
+                                <td><code>'offset' | 'cursor'</code></td>
+                                <td><code>'offset'</code></td>
+                                <td>Offset paging with totals, or keyset paging — one index seek per page at any
+                                    depth. See <a href="#sorting-paging">Sorting &amp; pagination</a>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>maxRelationMatches</code></td>
+                                <td>number</td>
+                                <td><code>1000</code></td>
+                                <td>Cap on ids a relational search pulls from a referenced collection.</td>
+                            </tr>
+                            <tr>
+                                <td><code>allowDiskUse</code></td>
+                                <td>boolean</td>
+                                <td><code>false</code></td>
+                                <td>Let MongoDB sort on disk. Sorts above 100MB fail without it.</td>
+                            </tr>
+                            <tr>
+                                <td><code>batchSize</code></td>
+                                <td>number</td>
+                                <td><em>driver default</em></td>
+                                <td>Documents per driver round trip on large result sets.</td>
+                            </tr>
+                            <tr>
+                                <td><code>countStrategy</code></td>
+                                <td><code>'estimated'</code> reads collection metadata in O(1) (unfiltered pages
+                                    only); <code>'none'</code> drops the count entirely for <code>hasMore</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>maxTimeMS</code></td>
+                                <td>A server-side ceiling on every query. The only bound on something slow in the
+                                    database rather than in Node.</td>
+                            </tr>
+                            <tr>
+                                <td><code>maxPage</code></td>
+                                <td>Refuses deep offset pages outright. Unnecessary in cursor mode.</td>
+                            </tr>
+                            <tr>
+                                <td><code>maxRelationMatches</code></td>
+                                <td>Caps the ids a relational search pulls from a referenced collection — that
+                                    <code>$in</code> grows with the collection, not with the page. Default 1000.</td>
+                            </tr>
+                            <tr>
+                                <td><code>allowDiskUse</code></td>
+                                <td>Lets MongoDB sort on disk. A sort above 100&nbsp;MB fails outright without it.</td>
+                            </tr>
+                            <tr>
+                                <td><code>batchSize</code></td>
+                                <td>Fewer driver round trips when walking large result sets.</td>
+                            </tr>
+                            <tr>
+                                <td><code>lean</code></td>
+                                <td>Plain objects instead of hydrated documents. Cheaper per record, but skips
+                                    <code>toJSON</code> transforms.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="callout callout-warn">
+                    <i data-lucide="database"></i>
+                    <div>
+                        <p><strong>None of this substitutes for an index.</strong> A keyset page is one index seek
+                            only if the sort is indexed — <code>{ price: 1, _id: 1 }</code> for
+                            <code>?sort=price</code>. Without a matching compound index MongoDB sorts in memory, and
+                            no option here saves it.</p>
+                    </div>
+                </div>
+
+                <div class="callout callout-warn">
+                    <i data-lucide="gauge"></i>
+                    <div>
+                        <p><strong>Upgrading and suddenly seeing only 100 rows?</strong> That's <code>maxLimit</code>
+                            doing its job — in 2.x an unpaginated <code>GET /</code> returned every document in the
+                            collection, which is a memory spike waiting for a big table. Paginate, or raise the cap
+                            deliberately with <code>maxLimit: 500</code>.</p>
+                    </div>
+                </div>
+  </div>
+</details>
+
+<details class="advanced" id="query-reference">
+  <summary>Every query parameter</summary>
+  <div class="details-body"><p class="section-intro">Everything <code>GET /</code> understands. For the body form of the same
+                    read, see <a href="http-query.html#http-query">HTTP QUERY</a>.</p>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Example</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>page</code></td>
+                                <td><code>?page=2</code></td>
+                                <td>Switches on the <code>pagination</code> block. Starts at 1; junk values become 1.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><code>pageSize</code></td>
+                                <td><code>?pageSize=20</code></td>
+                                <td>Default 50, clamped to <code>maxLimit</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>s</code> / <code>search</code></td>
+                                <td><code>?s=laptop</code></td>
+                                <td>Case-insensitive, matched literally, across the <code>search</code> fields. Max 128
+                                    characters.</td>
+                            </tr>
+                            <tr>
+                                <td><code>sort</code></td>
+                                <td><code>?sort=-price</code></td>
+                                <td>Must be in <code>sortableFields</code>, else 400. <code>-</code> means descending.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>any field named in <code>query</code></td>
+                                <td><code>?category=65af…</code></td>
+                                <td>Equality filter. Repeat the parameter for an <code>$in</code> match.</td>
+                            </tr>
+                            <tr>
+                                <td><code>rangeField</code> + <code>range</code></td>
+                                <td><code>?rangeField=price&amp;range=10-100</code></td>
+                                <td>Inclusive bounds; either side may be omitted. Field must be in
+                                    <code>filterableFields</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>compareField</code> + <code>compareValue</code></td>
+                                <td><code>?compareField=price&amp;compareValue=50</code></td>
+                                <td>Field must be in <code>filterableFields</code>. Numeric-looking values become
+                                    numbers.</td>
+                            </tr>
+                            <tr>
+                                <td><code>compareOperator</code></td>
+                                <td><code>?compareOperator=gt</code></td>
+                                <td><code>gt</code>, <code>gte</code>, <code>lt</code>, <code>lte</code>,
+                                    <code>ne</code>, <code>eq</code>. Defaults to <code>eq</code>.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>In <a href="#sorting-paging">cursor mode</a> two more apply: <code>?cursor=</code> continues a
+                    scan from a previous response's <code>nextCursor</code>, and <code>?page=</code> is refused.</p>
+
+                <h3 id="putting-several-together">Putting several together<a class="anchor" href="#putting-several-together" aria-label="Link to this section">#</a></h3>
+                <div class="code-block" data-lang="bash">
+                    <pre><code class="language-bash"># featured laptops between 500 and 1500, cheapest first, second page of 20
+GET /api/products
+      ?isFeatured=true
+      &amp;s=laptop
+      &amp;rangeField=price&amp;range=500-1500
+      &amp;sort=price
+      &amp;page=2&amp;pageSize=20</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+                <p>Filters combine with AND. The search term is the one exception: it becomes an OR across your
+                    <code>search</code> fields, and that whole group is ANDed with everything else.</p>
+
+                <p>The same request as a <a href="http-query.html#http-query">QUERY</a> body — identical result, nothing in the URL:
+                </p>
+                <div class="code-block" data-lang="json">
+                    <pre><code class="language-json">{
+  "filter": { "isFeatured": true, "price": { "gte": 500, "lte": 1500 } },
+  "search": "laptop",
+  "sort": "price",
+  "page": 2,
+  "pageSize": 20
+}</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+  </div>
+</details>
+
+<details class="advanced" id="performance">
+  <summary>Measured performance</summary>
+  <div class="details-body"><p class="section-intro">What the library costs you, next to writing the same endpoint by hand and
+        next to the established alternative.</p>
+
+    <div class="callout callout-plain">
+        <i data-lucide="flask-conical"></i>
+        <div>
+            <p><strong>How these were produced.</strong> 100,000 documents in MongoDB, indexed on the
+                sort key, Node 24 on one machine, every participant serving the same collection over
+                loopback. 600 sequential requests after 150 warm-up requests; the median and the 95th
+                percentile of the full round trip. Loopback removes network latency, which makes the
+                differences below look larger than they will on your infrastructure — the ordering holds,
+                the ratios shrink.</p>
+        </div>
+    </div>
+
+    <h3 id="listing-page-1-50-of-100-000-filtered-and-sorted">Listing page 1 — 50 of 100,000, filtered and sorted<a class="anchor" href="#listing-page-1-50-of-100-000-filtered-and-sorted" aria-label="Link to this section">#</a></h3>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Participant</th>
+                    <th class="center">Median</th>
+                    <th class="center">p95</th>
+                    <th class="center">Throughput</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Hand-written Express + Mongoose <em>(with totals)</em></td>
+                    <td class="center">5.52 ms</td>
+                    <td class="center">6.68 ms</td>
+                    <td class="center">179/s</td>
+                </tr>
+                <tr>
+                    <td><strong>controller-sets</strong> <em>(with totals)</em></td>
+                    <td class="center"><strong>5.45 ms</strong></td>
+                    <td class="center">6.33 ms</td>
+                    <td class="center">179/s</td>
+                </tr>
+                <tr>
+                    <td>express-restify-mongoose + <code>/count</code> <em>(with totals)</em></td>
+                    <td class="center">5.72 ms</td>
+                    <td class="center">6.79 ms</td>
+                    <td class="center">173/s</td>
+                </tr>
+                <tr>
+                    <td>express-restify-mongoose <em>(no totals)</em></td>
+                    <td class="center">0.64 ms</td>
+                    <td class="center">0.82 ms</td>
+                    <td class="center">1,488/s</td>
+                </tr>
+                <tr>
+                    <td><strong>controller-sets</strong>, <code>countStrategy: 'none'</code></td>
+                    <td class="center">0.55 ms</td>
+                    <td class="center">0.79 ms</td>
+                    <td class="center">1,702/s</td>
+                </tr>
+                <tr>
+                    <td><strong>controller-sets</strong>, <code>pagination: 'cursor'</code></td>
+                    <td class="center"><strong>0.55 ms</strong></td>
+                    <td class="center">0.73 ms</td>
+                    <td class="center">1,712/s</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <p>Two groups, and the line between them is the count — not the library. A page with totals costs
+        about 5.5&nbsp;ms whoever builds it, because <code>countDocuments</code> over 100,000 documents
+        is 5&nbsp;ms of that. A page without totals costs about 0.6&nbsp;ms the same way. Comparing
+        across that line is the easy mistake: <code>express-restify-mongoose</code> returns a bare array
+        and keeps its count on a second endpoint, so its fast row and its slow row are the same feature
+        measured with and without the thing that costs.</p>
+
+    <h3 id="going-deep-page-1-000-of-the-same-collection">Going deep — page 1,000 of the same collection<a class="anchor" href="#going-deep-page-1-000-of-the-same-collection" aria-label="Link to this section">#</a></h3>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Participant</th>
+                    <th class="center">Median</th>
+                    <th class="center">p95</th>
+                    <th class="center">Throughput</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Hand-written Express + Mongoose</td>
+                    <td class="center">12.61 ms</td>
+                    <td class="center">13.70 ms</td>
+                    <td class="center">78/s</td>
+                </tr>
+                <tr>
+                    <td>express-restify-mongoose</td>
+                    <td class="center">12.07 ms</td>
+                    <td class="center">12.91 ms</td>
+                    <td class="center">82/s</td>
+                </tr>
+                <tr>
+                    <td><strong>controller-sets</strong> <em>(offset)</em></td>
+                    <td class="center">12.73 ms</td>
+                    <td class="center">13.67 ms</td>
+                    <td class="center">78/s</td>
+                </tr>
+                <tr>
+                    <td><strong>controller-sets</strong> <em>(cursor)</em></td>
+                    <td class="center"><strong>0.86 ms</strong></td>
+                    <td class="center">1.17 ms</td>
+                    <td class="center">1,096/s</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <p>Every offset implementation lands in the same place, because they are all asking MongoDB to walk
+        49,950 index entries and discard them. That cost is the database's, not the framework's, and it
+        keeps growing with the collection. <a href="#sorting-paging">Keyset pagination</a> asks a
+        different question, and answers it in the same time at page 1,000 as at page 1 —
+        <strong>15× faster here</strong>, more as the data grows.</p>
+
+    <h3 id="the-other-routes">The other routes<a class="anchor" href="#the-other-routes" aria-label="Link to this section">#</a></h3>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Route</th>
+                    <th class="center">Hand-written</th>
+                    <th class="center">controller-sets</th>
+                    <th class="center">express-restify-mongoose</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>GET /:id</code></td>
+                    <td class="center">0.28 ms</td>
+                    <td class="center">0.27 ms</td>
+                    <td class="center">0.30 ms</td>
+                </tr>
+                <tr>
+                    <td><code>POST /</code></td>
+                    <td class="center">0.42 ms</td>
+                    <td class="center">0.39 ms</td>
+                    <td class="center">0.42 ms</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <p>Within noise of each other, which is the point: the allowlists, the field policy and the response
+        envelope are object operations on a payload that was already parsed. They do not show up next to
+        a database round trip.</p>
+
+    <div class="callout callout-tip">
+        <i data-lucide="target"></i>
+        <div>
+            <p><strong>What to take from this.</strong> The library is not faster than the code you would
+                write by hand — it runs the same queries, and it measures like it. What it gives you is
+                the faster strategy already built: <code>countStrategy</code> and
+                <code>pagination: 'cursor'</code> are a line of config here, and an afternoon of careful
+                work by hand.</p>
+        </div>
+    </div>
+
+    <div class="callout callout-warn">
+        <i data-lucide="scale"></i>
+        <div>
+            <p><strong>Read these honestly.</strong> One machine, loopback, an in-memory MongoDB, and no
+                concurrency — a real deployment adds network, disk and contention that dwarf a
+                0.1&nbsp;ms difference between frameworks. <code>express-restify-mongoose</code> runs on
+                its own Mongoose 8 (it depends on that major), so a little of its column is driver
+                version rather than library design. Treat the two-group split and the depth curve as the
+                findings; treat the third decimal as noise.</p>
+        </div>
+    </div>
+  </div>
+</details>
+</section>
+
+        <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" href="endpoints.html"><span class="pager-dir"><i data-lucide="arrow-left"></i> Previous</span><span class="pager-title">Endpoints &amp; responses</span></a>
+      <a class="next" href="writing.html"><span class="pager-dir">Next <i data-lucide="arrow-right"></i></span><span class="pager-title">Create, update &amp; validate</span></a>
+    </nav>
+        <footer class="doc-footer">
+          <span>express-controller-sets v3.2.0 · MIT licensed · © 2024–present Sabbir Mahmud</span>
+          <a href="https://github.com/ornate-source/controllerSets/edit/main/docs/src/content/filtering.html" target="_blank" rel="noopener"><i data-lucide="pencil"></i> Edit this page</a>
+        </footer>
+      </article>
+    </main>
+
+  </div>
+
+  <dialog class="search-dialog" id="search-dialog" aria-label="Search">
+    <div class="search-field"><i data-lucide="search"></i><input id="search-input" type="search" placeholder="Search the docs…" autocomplete="off" spellcheck="false" aria-controls="search-results"><kbd>Esc</kbd></div>
+    <ul class="search-results" id="search-results" role="listbox"></ul>
+    <div class="search-foot"><span><kbd>↑</kbd> <kbd>↓</kbd> to move</span><span><kbd>↵</kbd> to open</span></div>
+  </dialog>
+
+  <button id="back-to-top" class="back-to-top" type="button" aria-label="Back to top"><i data-lucide="arrow-up"></i></button>
+</body>
+</html>

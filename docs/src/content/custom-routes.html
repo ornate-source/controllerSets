@@ -1,0 +1,236 @@
+<section class="section" id="custom-basics">
+    <h2>Use the handlers yourself</h2>
+<p>Need a <code>PUT</code>, a different path, or extra routes? Use <code>ControllerSets</code> on your own router.</p>
+<div class="code-block" data-lang="javascript">
+<pre><code>import express from 'express';
+import { ControllerSets } from 'express-controller-sets';
+
+const products = new ControllerSets({ model: Product, allowedFields: ['name', 'price'] });
+const router = express.Router();
+
+router.get('/', (req, res, next) =&gt; products.getAll(req, res).catch(next));
+router.put('/:id', (req, res, next) =&gt; products.update(req, res).catch(next));
+
+app.use('/api/products', router);</code></pre>
+</div>
+<p>Handlers: <code>getAll</code>, <code>query</code>, <code>get</code>, <code>create</code>, <code>update</code>, <code>delete</code>.</p>
+</section>
+
+<section class="section" id="advanced">
+    <h2>Advanced</h2>
+    <p class="section-intro">Deeper detail — open what you need.</p>
+<details class="advanced" id="custom">
+  <summary>Custom routes</summary>
+  <div class="details-body"><p class="section-intro">When the six generated endpoints aren't quite the shape you need.</p>
+
+                <h3>Use the handlers on your own router</h3>
+                <p>Every controller method is a plain Express handler, so you can mount them individually — different
+                    middleware per verb, extra routes alongside, whatever you like.</p>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>import express from 'express';
+import { ControllerSets } from 'express-controller-sets';
+import Product from './models/Product.js';
+
+const controller = new ControllerSets({
+  model: Product,
+  query: ['category'],
+  allowedFields: ['name', 'price'],
+});
+
+const router = express.Router();
+
+router.get('/',      controller.getAll);                    // public
+router.query('/',    controller.query);                     // public, body-borne read
+router.get('/:id',   controller.get);                       // public
+router.post('/',     requireAuth, controller.create);       // staff only
+router.patch('/:id', requireAuth, controller.update);
+router.delete('/:id', requireAuth, requireAdmin, controller.delete);
+
+// …and add whatever the generated set doesn't cover
+router.get('/:id/related', myOwnHandler);
+
+export default router;</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <div class="callout callout-plain">
+                    <i data-lucide="file-search"></i>
+                    <div>
+                        <p><code>router.query()</code> only exists on runtimes that know the method. Wiring handlers
+                            yourself means guarding it yourself:</p>
+                        <div class="code-block" data-lang="javascript">
+                            <pre><code>import { isQueryMethodSupported } from 'express-controller-sets';
+
+if (isQueryMethodSupported()) router.query('/', controller.query);</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                    </div>
+                </div>
+
+                <h3>How the handlers are put together</h3>
+                <p>Each handler is a short composition of the same four steps, and every step lives in its own module
+                    under <code>src/core/</code>. Reach for them when you are writing an endpoint this library does
+                    not generate — a rule enforced in one of these applies to anything built on it.</p>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Module</th>
+                                <th>Responsibility</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>core/config.js</code></td>
+                                <td>Options in, one frozen config out. Every default is resolved once, here.</td>
+                            </tr>
+                            <tr>
+                                <td><code>core/index.js</code></td>
+                                <td>The barrel everything outside <code>core/</code> imports from — one import
+                                    instead of nine. Modules inside <code>core/</code> import each other directly,
+                                    so the graph stays acyclic.</td>
+                            </tr>
+                            <tr>
+                                <td><code>core/getAll.js</code> · <code>query.js</code> ·
+                                    <code>get.js</code> · <code>create.js</code> ·
+                                    <code>update.js</code> · <code>delete.js</code></td>
+                                <td>One module per route. The class itself is just the six methods.</td>
+                            </tr>
+                            <tr>
+                                <td><code>core/list.js</code></td>
+                                <td>The retrieval <code>getAll</code> and <code>query</code> share — offset pages,
+                                    keyset pages and plain lists.</td>
+                            </tr>
+                            <tr>
+                                <td><code>core/cursor.js</code></td>
+                                <td>Keyset tokens: the tiebreaker, the seek filter, and encoding.</td>
+                            </tr>
+                            <tr>
+                                <td><code>core/readParams.js</code></td>
+                                <td>Request → filters, sort, page window. Pure: no database, no response, no
+                                    <code>this</code>. Shared by <code>GET</code> and <code>QUERY</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>core/search.js</code></td>
+                                <td>Search terms, escaped, including across referenced models.</td>
+                            </tr>
+                            <tr>
+                                <td><code>core/write.js</code></td>
+                                <td>Body → payload: the field policy, then your <a href="#validation">validator</a>.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><code>core/dataAccess.js</code></td>
+                                <td>Every Mongoose call, with <code>maxLimit</code>, <code>maxTimeMS</code>,
+                                    <code>lean</code> and <code>onGet</code> already applied.</td>
+                            </tr>
+                            <tr>
+                                <td><code>core/respond.js</code></td>
+                                <td>The response envelope, so no endpoint can invent a fifth shape.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>The split is why <code>GET /</code> and <code>QUERY /</code> cannot drift apart: they differ only
+                    in which <code>readParams</code> function turns the request into parameters, and agree on
+                    everything after that.</p>
+
+                <h3>Add routes to a generated router</h3>
+                <p>A generated router is an ordinary Express router. Mount your own routes on the same path — declare
+                    the more specific ones first so they aren't captured by <code>/:id</code>.</p>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>const extras = express.Router();
+extras.get('/featured', listFeatured);      // would otherwise hit /:id
+
+app.use('/api/products', extras);
+app.use('/api/products', createRouter({ model: Product }));</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <h3>Uploads without CRUD</h3>
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>import { fileUploadMiddleware } from 'express-controller-sets';
+
+const upload = (req, res, next) =&gt; fileUploadMiddleware(req, res, next, {
+  uploadPath: 'invoices/',
+  fields: [{ name: 'invoice', maxCount: 1 }],
+  allowedMimeTypes: ['application/pdf'],
+  maxFileSize: 2 * 1024 * 1024,
+});
+
+app.post('/api/invoices', requireAuth, upload, (req, res) =&gt; {
+  res.json({ url: req.body.invoice });   // already uploaded and validated
+});</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+  </div>
+</details>
+
+<details class="advanced" id="typescript">
+  <summary>TypeScript</summary>
+  <div class="details-body"><p class="section-intro">Type declarations ship with the package. Nothing to install.</p>
+
+                <div class="code-block" data-lang="typescript">
+                    <pre><code>import express from 'express';
+import { createRouter, errorHandler, type RouterOptions } from 'express-controller-sets';
+import Product, { type IProduct } from './models/Product.js';
+
+const options: RouterOptions&lt;IProduct&gt; = {
+  model: Product,
+  orderBy: '-createdAt',
+  query: ['category'],
+  allowedFields: ['name', 'price'],
+  onGet: async (req, res) =&gt; ({ populates: 'category', selects: 'name price' }),
+};
+
+const app = express();
+app.use('/api/products', createRouter(options));
+app.use(errorHandler);</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>Exported types you'll reach for: <code>ControllerOptions</code>, <code>RouterOptions</code>,
+                    <code>RouterS3Options</code>, <code>UploadOptions</code>, <code>UploadField</code>,
+                    <code>OnGetFn</code>, <code>OnGetResult</code>, <code>FieldPolicy</code>,
+                    <code>ImageOptimizationLevel</code> and <code>Logger</code> — plus
+                    <code>QueryRequestBody</code>, <code>FilterCondition</code>, <code>FilterOperators</code> and
+                    <code>FilterScalar</code> for the <a href="#http-query">QUERY</a> body, and
+                    <code>ValidateFn</code>, <code>ValidateContext</code>, <code>ValidatePolicy</code>,
+                    <code>WriteOperation</code>, <code>CountStrategy</code> and <code>Pagination</code> for
+                    <a href="#validation">validation</a> and paging.</p>
+
+                <p>Typing the body on the client side keeps a filter honest before it is ever sent:</p>
+
+                <div class="code-block" data-lang="typescript">
+                    <pre><code>import type { QueryRequestBody } from 'express-controller-sets';
+
+const body: QueryRequestBody = {
+  filter: { price: { gte: 50, lte: 250 }, tag: ['sale'] },
+  sort: ['-price', 'name'],
+  pageSize: 20,
+};
+
+await fetch('/api/products', {
+  method: 'QUERY',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(body),
+});</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <div class="callout callout-warn">
+                    <i data-lucide="alert-triangle"></i>
+                    <div>
+                        <p><strong>Types don't validate field names.</strong> <code>allowedFields</code> is
+                            <code>string[]</code>, so a typo — <code>'pirce'</code> — compiles happily and silently
+                            drops the real field at runtime. If a field refuses to save, check the spelling in your
+                            allowlist first.</p>
+                    </div>
+                </div>
+  </div>
+</details>
+</section>

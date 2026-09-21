@@ -1,0 +1,64 @@
+<section class="section" id="s3-basics">
+    <h2>Connect a bucket</h2>
+<p>Five variables. Any S3-compatible storage works.</p>
+<div class="code-block" data-lang="bash">
+<pre><code>S3_ENDPOINT=https://s3.us-east-1.amazonaws.com
+S3_SPACES_KEY=your-access-key
+S3_SPACES_SECRET=your-secret-key
+S3_BUCKET_NAME=your-bucket
+S3_REGION=us-east-1                 # optional</code></pre>
+</div>
+<div class="table-container"><table><thead><tr><th>Provider</th><th><code>S3_ENDPOINT</code></th><th><code>S3_REGION</code></th></tr></thead><tbody>
+<tr><td>AWS S3</td><td><code>https://s3.&lt;region&gt;.amazonaws.com</code></td><td>your region</td></tr>
+<tr><td>DigitalOcean Spaces</td><td><code>https://&lt;region&gt;.digitaloceanspaces.com</code></td><td><code>us-east-1</code></td></tr>
+<tr><td>Cloudflare R2</td><td><code>https://&lt;account-id&gt;.r2.cloudflarestorage.com</code></td><td><code>auto</code></td></tr>
+<tr><td>MinIO (local)</td><td><code>http://localhost:9000</code></td><td><code>us-east-1</code></td></tr>
+</tbody></table></div>
+<p>Full files for each provider: <a href="env.html#env-s3">.env examples</a>.</p>
+</section>
+
+<section class="section" id="advanced">
+    <h2>Advanced</h2>
+    <p class="section-intro">Deeper detail — open what you need.</p>
+<details class="advanced" id="s3-env">
+  <summary>S3 environment</summary>
+  <div class="details-body"><p class="section-intro">Five variables. Only needed if you use an upload router.</p>
+
+                <div class="code-block" data-lang="bash">
+                    <pre><code>S3_ENDPOINT=https://nyc3.digitaloceanspaces.com   # required
+S3_SPACES_KEY=your-access-key                     # required
+S3_SPACES_SECRET=your-secret-key                  # required
+S3_BUCKET_NAME=your-bucket                        # required
+S3_REGION=us-east-1                               # optional, defaults to us-east-1</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>The variable names carry "SPACES" because the client is configured with path-style addressing, which
+                    works with DigitalOcean Spaces, MinIO, Cloudflare R2 and Amazon S3 alike. Any S3-compatible
+                    endpoint will do.</p>
+
+                <div class="callout callout-warn">
+                    <i data-lucide="file-cog"></i>
+                    <div>
+                        <p><strong>This library does not call <code>dotenv.config()</code>.</strong> Loading
+                            environment is your application's decision, not a side effect a dependency imposes. Load it
+                            yourself before you start handling requests:</p>
+                        <div class="code-block" data-lang="javascript" style="margin-top:.6rem">
+                            <pre><code>import 'dotenv/config';   // first import in your entry file</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="callout callout-tip">
+                    <i data-lucide="refresh-cw"></i>
+                    <div>
+                        <p><strong>Configuration is read per request, not at import.</strong> An app that loads its
+                            environment after importing the package still works — no permanent 503 caused by a snapshot
+                            taken a moment too early. Missing variables produce a 503 and a server log naming exactly
+                            which ones are absent.</p>
+                    </div>
+                </div>
+  </div>
+</details>
+</section>

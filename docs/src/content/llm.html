@@ -1,0 +1,112 @@
+<section class="section" id="why">
+    <h2>Why a prompt?</h2>
+    <p>Language models know an older, smaller version of this library — or guess at one. Paste the prompt
+        below at the start of a conversation (or add it to your editor's rules file) and the model writes code
+        against the real API: correct option names, the security defaults, the auth bodies, and the mistakes to
+        avoid.</p>
+
+    <div class="card-grid">
+        <div class="card">
+            <div class="card-icon"><i data-lucide="clipboard-copy"></i></div>
+            <h4>Chat assistants</h4>
+            <p>ChatGPT, Claude, Gemini: paste the prompt as your first message, then ask for what you need.</p>
+        </div>
+        <div class="card">
+            <div class="card-icon"><i data-lucide="file-code-2"></i></div>
+            <h4>Coding agents &amp; editors</h4>
+            <p>Save it as <code>AGENTS.md</code>, <code>CLAUDE.md</code>, <code>.cursor/rules/controller-sets.md</code>
+                or <code>.github/copilot-instructions.md</code>.</p>
+        </div>
+        <div class="card">
+            <div class="card-icon"><i data-lucide="globe"></i></div>
+            <h4>Tools that read the web</h4>
+            <p>Point them at <a href="llms.txt">llms.txt</a> (an index) or
+                <a href="llms-full.txt">llms-full.txt</a> (everything, one file).</p>
+        </div>
+    </div>
+</section>
+
+<section class="section" id="prompt">
+    <h2>The prompt</h2>
+    <p class="section-intro">Everything a model needs, in one copyable block. Same text as
+        <a href="llms-full.txt">llms-full.txt</a>.</p>
+
+    <div class="code-block" data-lang="markdown">
+        <pre><code>{{LLM_PROMPT}}</code></pre>
+    </div>
+</section>
+
+<section class="section" id="save-it">
+    <h2>Save it in your project</h2>
+    <p>One command drops the latest version where your tools look for it:</p>
+
+    <div class="code-block" data-lang="bash">
+        <pre><code># Claude Code / Codex / most agents
+curl -fsSL https://ornate-source.github.io/controllerSets/llms-full.txt -o AGENTS.md
+
+# Cursor
+mkdir -p .cursor/rules &amp;&amp; curl -fsSL https://ornate-source.github.io/controllerSets/llms-full.txt \
+  -o .cursor/rules/controller-sets.md
+
+# GitHub Copilot
+mkdir -p .github &amp;&amp; curl -fsSL https://ornate-source.github.io/controllerSets/llms-full.txt \
+  -o .github/copilot-instructions.md</code></pre>
+    </div>
+
+    <div class="callout callout-tip">
+        <i data-lucide="lightbulb"></i>
+        <div>
+            <p><strong>Already have a rules file?</strong> Append instead of overwriting: replace <code>-o FILE</code>
+                with <code>&gt;&gt; FILE</code>.</p>
+        </div>
+    </div>
+</section>
+
+<section class="section" id="advanced">
+    <h2>Advanced</h2>
+    <p class="section-intro">Deeper detail — open what you need.</p>
+<details class="advanced" id="ask">
+  <summary>Prompts that work well</summary>
+  <div class="details-body"><p>After the guide, ask in plain language. Say what the data is, who may read it and who may change it —
+        the model turns that into allowlists and guards.</p>
+
+    <div class="code-block" data-lang="text">
+        <pre><code>Build an Express API for a blog with express-controller-sets:
+- Post { title, body, tags[], author (ref User), published }
+- Anyone can list and read published posts, search title and body, filter by tag, newest first
+- Only signed-in users can create posts; author is set from the token, never the body
+- Only admins can delete
+- Email + password auth with refresh tokens (rotation on), password reset by email via SMTP
+Give me the models, app.js and a .env.example.</code></pre>
+    </div>
+
+    <div class="code-block" data-lang="text">
+        <pre><code>Add S3 image uploads to my Product router: one "cover" image and up to 6 "gallery" images,
+JPEG/PNG/WebP only, 5 MB each, compressed at "medium". Keep writes admin-only.</code></pre>
+    </div>
+
+    <div class="code-block" data-lang="text">
+        <pre><code>Review this file against the express-controller-sets guide. List every place where a client
+could write a field it shouldn't, read another user's data, or reach an unguarded route.</code></pre>
+    </div>
+  </div>
+</details>
+
+<details class="advanced" id="verify">
+  <summary>Check what it wrote</summary>
+  <div class="details-body"><p>Models are fluent, not infallible. Before running generated code, check these five things — they are
+        where mistakes cost the most:</p>
+    <ol class="steps">
+        <li><strong>Every router has <code>allowedFields</code></strong> (or <code>blockedFields</code>) — and
+            it does not include server-owned fields like <code>role</code> or <code>ownerId</code>.</li>
+        <li><strong>Every write route has a guard</strong> in <code>middlewares</code>, or is on a router with
+            <code>allowedFields: []</code>.</li>
+        <li><strong><code>errorHandler</code> is mounted last</strong> and <code>express.json()</code> first.</li>
+        <li><strong>Secrets come from the environment</strong> — <code>token.secret</code> is at least 32
+            characters and never in the code.</li>
+        <li><strong>Only real options are used.</strong> Anything not in <a href="options.html">All options</a>
+            is invented — at best ignored, at worst a false sense of safety.</li>
+    </ol>
+  </div>
+</details>
+</section>

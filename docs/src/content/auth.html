@@ -1,0 +1,362 @@
+<section class="section" id="auth-basics">
+    <h2>Add sign-up and login</h2>
+<div class="code-block" data-lang="javascript">
+<pre><code>import { createAuthRouter } from 'express-controller-sets';
+
+const auth = createAuthRouter({
+  model: User,
+  token: { secret: process.env.JWT_SECRET, expiresIn: '15m' },   // 32+ characters
+  registerFields: ['name'],
+});
+
+app.use('/api/auth', auth);</code></pre>
+</div>
+<div class="code-block" data-lang="bash">
+<pre><code>POST /api/auth/register   { "email": "ada@example.com", "password": "…", "name": "Ada" }
+POST /api/auth/login      { "identifier": "ada@example.com", "password": "…" }
+→ { "success": true, "data": { "token": "…", "user": { … } } }
+
+GET  /api/auth/me         Authorization: Bearer &lt;token&gt;</code></pre>
+</div>
+</section>
+
+<section class="section" id="auth-protect">
+    <h2>Protect your routes</h2>
+<div class="code-block" data-lang="javascript">
+<pre><code>createRouter({ model: Note, middlewares: [auth.requireAuth], allowedFields: ['title'] });
+createRouter({ model: Report, middlewares: [auth.requireAuth, auth.requireRole('admin')], allowedFields: [] });</code></pre>
+</div>
+<p>After <code>auth.requireAuth</code>, your code can read <code>req.auth.userId</code> and <code>req.auth.role</code>.</p>
+</section>
+
+<section class="section" id="auth-model">
+    <h2>What your model needs</h2>
+    <p>Every name below is configurable through <code>fields</code>; these are the defaults. Mark the
+                    secrets <code>select: false</code> — the library selects them explicitly where it needs them,
+                    and never returns them.</p>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>const userSchema = new mongoose.Schema({
+  email: { type: String, unique: true, sparse: true },
+  phone: { type: String, unique: true, sparse: true },
+  password: { type: String, select: false },
+  role: { type: String, default: 'user' },
+
+  googleId: String, appleId: String, facebookId: String, githubId: String,
+
+  otpHash:      { type: String, select: false },
+  otpPurpose:   { type: String, select: false },
+  otpExpiresAt: { type: Date,   select: false },
+  otpAttempts:  { type: Number, default: 0, select: false },
+
+  failedLoginAttempts: { type: Number, default: 0, select: false },
+  lockedUntil:         { type: Date,   select: false },
+  passwordChangedAt:   Date,
+
+  // Only with refresh tokens enabled — see Refresh tokens.
+  refreshTokens: {
+    type: [{ id: String, hash: String, previousHash: String, rotatedAt: Date,
+             createdAt: Date, lastUsedAt: Date, expiresAt: Date, userAgent: String }],
+    select: false,
+  },
+}, { timestamps: true });</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+</section>
+
+<section class="section" id="auth-options-short">
+    <h2>Common options</h2>
+<div class="table-container"><table><thead><tr><th>Option</th><th>What it does</th></tr></thead><tbody>
+<tr><td><code>identifiers</code></td><td>Fields to sign in with, e.g. <code>['email', 'phone']</code>.</td></tr>
+<tr><td><code>roles</code></td><td><code>{ list: ['user', 'admin'], default: 'user' }</code></td></tr>
+<tr><td><code>registerFields</code> / <code>updateFields</code></td><td>Extra fields users may set.</td></tr>
+<tr><td><code>refresh</code></td><td>Long sessions — <a href="auth-refresh.html">Refresh tokens</a>.</td></tr>
+<tr><td><code>mail</code> / <code>sms</code></td><td>Password-reset codes — <a href="email.html">Email Sender</a>.</td></tr>
+<tr><td><code>social</code></td><td>Google, Apple, Facebook, GitHub — <a href="auth-social.html">Social sign-in</a>.</td></tr>
+</tbody></table></div>
+<p>Every option: <a href="#auth-options">Auth options</a>.</p>
+</section>
+
+<section class="section" id="advanced">
+    <h2>Advanced</h2>
+    <p class="section-intro">Deeper detail — open what you need.</p>
+<details class="advanced" id="auth-endpoints">
+  <summary>All auth endpoints</summary>
+  <div class="details-body"><div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Method</th>
+                                <th>Path</th>
+                                <th>What it does</th>
+                                <th>Who</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="m m-post">POST</span></td>
+                                <td><code>/register</code></td>
+                                <td>Creates an account and returns a token.</td>
+                                <td>Anyone</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-post">POST</span></td>
+                                <td><code>/login</code></td>
+                                <td>Signs in with any configured identifier.</td>
+                                <td>Anyone</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-post">POST</span></td>
+                                <td><code>/social/:provider</code></td>
+                                <td><code>google</code>, <code>apple</code>, <code>facebook</code>,
+                                    <code>github</code>.</td>
+                                <td>Anyone</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-post">POST</span></td>
+                                <td><code>/password/forgot</code></td>
+                                <td>Sends a one-time code by email or SMS.</td>
+                                <td>Anyone</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-post">POST</span></td>
+                                <td><code>/password/reset</code></td>
+                                <td>Verifies the code and sets a new password.</td>
+                                <td>Anyone</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-post">POST</span></td>
+                                <td><code>/password/change</code></td>
+                                <td>Changes it, given the current one.</td>
+                                <td>Signed in</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-post">POST</span></td>
+                                <td><code>/token/refresh</code></td>
+                                <td>Trades a refresh token for a new access token. <a href="auth-refresh.html">Refresh tokens</a></td>
+                                <td>Anyone</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-post">POST</span></td>
+                                <td><code>/logout</code> · <code>/logout/all</code></td>
+                                <td>Ends one session, or every session.</td>
+                                <td>Anyone · Signed in</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-get">GET</span></td>
+                                <td><code>/me</code></td>
+                                <td>The signed-in user.</td>
+                                <td>Signed in</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-get">GET</span></td>
+                                <td><code>/users</code></td>
+                                <td>Lists users, paginated, filterable by identifier or role.</td>
+                                <td>Admin</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-get">GET</span></td>
+                                <td><code>/users/:id</code></td>
+                                <td>One user, without secrets.</td>
+                                <td>Signed in</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-patch">PATCH</span></td>
+                                <td><code>/users/:id</code></td>
+                                <td>Updates yourself, or anyone if you administer.</td>
+                                <td>Self or admin</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-patch">PATCH</span></td>
+                                <td><code>/users/:id/roles</code></td>
+                                <td>Assigns roles from the allowed list.</td>
+                                <td>Admin</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+  </div>
+</details>
+
+<details class="advanced" id="auth">
+  <summary>A full configuration</summary>
+  <div class="details-body"><p class="section-intro">Register, sign in, social sign-in, password reset by one-time code, roles
+                    and user administration — against your own user model. This library defines no schema.</p>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>import { createAuthRouter, createRouter, errorHandler } from 'express-controller-sets';
+
+const auth = createAuthRouter({
+  model: User,
+  identifiers: ['email', 'phone'],        // sign in with either
+  token: { secret: process.env.JWT_SECRET, expiresIn: '15m' },
+  roles: { list: ['user', 'staff', 'admin'], default: 'user', admin: ['admin'] },
+  registerFields: ['name'],
+  updateFields: ['name'],
+
+  // Short access tokens, long sessions. Or AUTH_REFRESH_ENABLED=true in .env.
+  refresh: { enabled: true, rotate: true },
+
+  // Reset codes: email through a nodemailer transporter, SMS through your provider.
+  appName: 'Acme',
+  mail: { transporter: nodemailer.createTransport(process.env.SMTP_URL), from: 'Acme &lt;no-reply@acme.com&gt;' },
+  sms:  { sender: async ({ to, text }) =&gt; twilio.messages.create({ to, from: TWILIO_FROM, body: text }) },
+
+  social: {
+    google:   { clientId: process.env.GOOGLE_CLIENT_ID },
+    apple:    { clientId: process.env.APPLE_CLIENT_ID },
+    facebook: { appId: process.env.FB_APP_ID, appSecret: process.env.FB_APP_SECRET },
+    github:   { clientId: process.env.GH_ID, clientSecret: process.env.GH_SECRET },
+  },
+});
+
+app.use('/auth', auth);
+
+// The guards come off the router, so there is no second config to keep in sync.
+app.use('/notes', createRouter({ model: Note, middlewares: [auth.requireAuth] }));
+app.use('/admin/notes', createRouter({
+  model: Note,
+  middlewares: [auth.requireAuth, auth.requireRole('admin')],
+}));</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+  </div>
+</details>
+
+<details class="advanced" id="auth-urls">
+  <summary>Your URLs, not ours</summary>
+  <div class="details-body"><p><code>routes</code> renames an endpoint or leaves it out, and
+                    <code>middlewares</code> behaves as it does on <code>createRouter</code> — with one
+                    addition: an object targets a single route by name.</p>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>const auth = createAuthRouter({
+  model: User,
+  token: { secret: process.env.JWT_SECRET },
+
+  routes: {
+    register: '/signup',        // rename it
+    login: '/signin',
+    social: false,              // never mount it
+    modifyRoles: false,
+  },
+
+  middlewares: {
+    all: [cors()],              // every auth route
+    login: [rateLimiter],       // only the ones that get guessed at
+    forgotPassword: [rateLimiter],
+  },
+});
+
+app.use('/api/v1/auth', auth);</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>Route middleware runs before the guard, so a limiter sheds load without a database
+                    round trip first. An unknown route name throws when the router is built rather than
+                    doing nothing at request time — and in TypeScript it will not compile.</p>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>auth.urls;    // what this instance mounted
+// [ { name: 'register', method: 'POST', path: '/signup', access: 'public' },
+//   { name: 'login',    method: 'POST', path: '/signin', access: 'public' }, … ]
+
+AUTH_ROUTES;  // everything the factory knows how to mount</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>Both come from the same table the router is built from, so neither can drift from what
+                    is actually served. Every row carries an access level, which is what stops an endpoint
+                    being added without a decision about who may call it.</p>
+  </div>
+</details>
+
+<details class="advanced" id="identifiers">
+  <summary>Signing in with anything</summary>
+  <div class="details-body"><p>One field, several identifiers. Each is normalized on the way in, so a phone number reaches the
+                    same account however it was typed:</p>
+
+                <div class="code-block" data-lang="bash">
+                    <pre><code>POST /auth/login  { "identifier": "Ada@Example.com",  "password": "…" }
+POST /auth/login  { "identifier": "+1 (555) 010-1234", "password": "…" }   # same account as
+POST /auth/login  { "identifier": "+15550101234",      "password": "…" }</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>Email is lowercased, a phone loses its formatting, anything else is trimmed. Supply your own with
+                    <code>identifier('nationalId', (v) =&gt; v.toUpperCase())</code>.</p>
+  </div>
+</details>
+
+<details class="advanced" id="auth-refuses">
+  <summary>What it refuses to do</summary>
+  <div class="details-body"><div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Attempt</th>
+                                <th>Result</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Registering with <code>"role": "admin"</code></td>
+                                <td>The role is stripped. Roles have their own endpoint, behind admin.</td>
+                            </tr>
+                            <tr>
+                                <td><code>PATCH /users/:id</code> with a new password or role</td>
+                                <td>Both ignored. Each has its own endpoint and its own authorization.</td>
+                            </tr>
+                            <tr>
+                                <td>Updating someone else's record</td>
+                                <td><strong>403</strong>, unless you administer.</td>
+                            </tr>
+                            <tr>
+                                <td>Telling a wrong password from an unknown account</td>
+                                <td>Same message, and a decoy hash is verified so the timing matches too.</td>
+                            </tr>
+                            <tr>
+                                <td>Guessing a password</td>
+                                <td>Counted on the record; the account locks. It survives a restart and holds across
+                                    every instance.</td>
+                            </tr>
+                            <tr>
+                                <td><code>{ "password": { "$ne": null } }</code></td>
+                                <td><strong>400</strong>. An object where a credential belongs is an injection, not
+                                    a login.</td>
+                            </tr>
+                            <tr>
+                                <td>An admin removing their own admin role</td>
+                                <td><strong>400</strong>. It would lock everyone out of the endpoint that undoes it.</td>
+                            </tr>
+                            <tr>
+                                <td>Using a token issued before a password change</td>
+                                <td><strong>401</strong>. Changing a password ends the sessions that predate it.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="callout callout-danger">
+                    <i data-lucide="key"></i>
+                    <div>
+                        <p><strong><code>token.secret</code> is the whole system.</strong> It signs every session and
+                            keys every one-time code. At least 32 characters, never in the repository, and rotating
+                            it signs everyone out — which is exactly what you want the day it leaks. Generate one
+                            with <code>node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"</code>.</p>
+                    </div>
+                </div>
+
+                <div class="callout callout-warn">
+                    <i data-lucide="siren"></i>
+                    <div>
+                        <p><strong>What this does not do.</strong> No rate limiting on the endpoints themselves beyond the
+                            per-account lockout — put a limiter in front of <code>/login</code>, <code>/register</code>
+                            and <code>/password/forgot</code> (<a href="#rate-limit">recipe</a>). No email
+                            verification flow. Refresh tokens are opt-in — <a href="auth-refresh.html">turn them on</a>
+                            and keep <code>expiresIn</code> short.</p>
+                    </div>
+                </div>
+  </div>
+</details>
+</section>

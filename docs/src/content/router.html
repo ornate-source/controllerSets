@@ -1,0 +1,116 @@
+<section class="section" id="router-basics">
+    <h2>One call, all routes</h2>
+<p><code>createRouter</code> returns a normal Express router. Mount it anywhere, add middleware, or mount several on one model.</p>
+<div class="code-block" data-lang="javascript">
+<pre><code>const router = createRouter({
+  model: Order,
+  middlewares: [auth.requireAuth],     // runs before every route
+  allowedFields: ['status', 'note'],
+});
+
+app.use('/api/orders', router);</code></pre>
+</div>
+<div class="table-container"><table><thead><tr><th>Option</th><th>Default</th><th>What it does</th></tr></thead><tbody>
+<tr><td><code>middlewares</code></td><td><code>[]</code></td><td>Middleware for every route: auth, rate limits, logging.</td></tr>
+<tr><td><code>enableQuery</code></td><td><code>true</code></td><td>Mount the <a href="http-query.html">HTTP QUERY</a> route.</td></tr>
+</tbody></table></div>
+</section>
+
+<section class="section" id="router-split">
+    <h2>Different rules for reads and writes</h2>
+<p>Middleware guards all routes of a router. For public reads and private writes, use two routers on the same model:</p>
+<div class="code-block" data-lang="javascript">
+<pre><code>app.use('/api/products', createRouter({ model: Product, allowedFields: [] }));        // anyone reads
+
+app.use('/api/admin/products', createRouter({                                      // admins write
+  model: Product,
+  middlewares: [auth.requireAuth, auth.requireRole('admin')],
+  allowedFields: ['name', 'price'],
+}));</code></pre>
+</div>
+<p>Need each user to see only their own records? See <a href="how-to-use.html#only-my-records">Only my records</a>.</p>
+</section>
+
+<section class="section" id="advanced">
+    <h2>Advanced</h2>
+    <p class="section-intro">Deeper detail — open what you need.</p>
+<details class="advanced" id="middlewares">
+  <summary>Guards, tenancy and per-user data</summary>
+  <div class="details-body"><p class="section-intro">The library builds the routes. Deciding who may call them is entirely yours.</p>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>createRouter({
+  model: Order,
+  middlewares: [requireAuth, requireRole('staff')],   // run before every route
+  allowedFields: ['status', 'note'],
+});</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>Everything in <code>middlewares</code> is applied with <code>router.use()</code>, so it guards
+                    <em>all five</em> endpoints in that router. When different verbs need different rules, use two
+                    routers on the same path:</p>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>// Public: anyone may read the catalogue
+app.use('/api/products', createRouter({
+  model: Product,
+  query: ['category'],
+  allowedFields: [],                       // no writes get through here
+}));
+
+// Private: only staff may change it
+app.use('/api/admin/products', createRouter({
+  model: Product,
+  middlewares: [requireAuth, requireRole('staff')],
+  query: ['category'],
+  allowedFields: ['name', 'price', 'category', 'isFeatured'],
+}));</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <div class="callout callout-plain">
+                    <i data-lucide="users"></i>
+                    <div>
+                        <p><strong>Per-user data ("show me only <em>my</em> orders") needs your own middleware.</strong>
+                            The library has no concept of ownership. Constrain the query yourself before it reaches the
+                            controller, and remember that a client can still ask for any ID on <code>/:id</code> unless
+                            you check there too.</p>
+                    </div>
+                </div>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>// A tenancy guard: force every list request to be scoped to the caller.
+//
+// Express 5 re-parses req.query on every read, so `req.query.owner = …` is
+// silently thrown away and the client's own ?owner= wins. Shadow the getter
+// with a real property instead.
+const onlyMine = (req, res, next) =&gt; {
+  Object.defineProperty(req, 'query', {
+    value: { ...req.query, owner: String(req.auth.userId) },  // 'owner' must be in `query`
+    writable: true, configurable: true, enumerable: true,
+  });
+  next();
+};
+
+createRouter({
+  model: Order,
+  middlewares: [auth.requireAuth, onlyMine],
+  query: ['owner', 'status'],
+  enableQuery: false,   // QUERY reads its filter from the body, not req.query
+});</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <div class="callout callout-warn">
+                    <i data-lucide="alert-triangle"></i>
+                    <div>
+                        <p>That guard covers <code>GET /</code> only — which is why the example turns off
+                            <code>QUERY /</code>, whose filter arrives in the body. <code>GET /:id</code>, <code>PATCH /:id</code> and
+                            <code>DELETE /:id</code> address a record directly, so add a middleware that loads the
+                            record and compares its owner — or keep those verbs on an admin-only router.</p>
+                    </div>
+                </div>
+  </div>
+</details>
+</section>

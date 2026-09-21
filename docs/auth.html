@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auth setup · express-controller-sets</title>
+  <meta name="description" content="Sign-up, login, roles and route guards on your own user model.">
+  <link rel="canonical" href="https://ornate-source.github.io/controllerSets/auth.html">
+  <meta property="og:title" content="Auth setup · express-controller-sets">
+  <meta property="og:description" content="Sign-up, login, roles and route guards on your own user model.">
+  <meta property="og:type" content="website">
+  <link rel="alternate" type="text/plain" title="LLM guide" href="llms-full.txt">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/components.css?v=10a91d487a">
+  <link rel="stylesheet" href="assets/css/shell.css?v=94b1910641">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%236366f1'/%3E%3Ctext x='50' y='68' font-family='monospace' font-size='54' font-weight='700' fill='white' text-anchor='middle'%3E%7B%7D%3C/text%3E%3C/svg%3E">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/http.min.js" defer></script>
+  <script src="assets/search-index.js" defer></script>
+  <script src="assets/js/docs.js?v=901f93388a" defer></script>
+</head>
+<body class="dark" data-page="auth">
+  <script>try{var t=localStorage.getItem('controllersets-theme');document.body.className=t||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark')}catch(e){}</script>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <header class="topbar">
+    <button class="icon-btn menu-btn" type="button" id="menu-open" aria-label="Open navigation"><i data-lucide="menu"></i></button>
+    <a class="brand" href="./" aria-label="controller-sets home">
+      <span class="brand-mark" aria-hidden="true">{}</span>
+      <span class="brand-name">controller-sets</span>
+      <span class="brand-version">v3.2.0</span>
+    </a>
+    <button class="search-trigger" type="button" id="search-open" aria-label="Search the docs">
+      <i data-lucide="search"></i><span>Search docs…</span><kbd>⌘K</kbd>
+    </button>
+    <nav class="topbar-links" aria-label="External">
+      <a class="topbar-link is-accent hide-sm" href="llm.html"><i data-lucide="sparkles"></i><span class="label">LLM prompt</span></a>
+      <a class="topbar-link hide-sm" href="https://github.com/ornate-source/controllerSets" target="_blank" rel="noopener"><svg class="gh-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span class="label">GitHub</span></a>
+      <a class="topbar-link hide-sm" href="https://www.npmjs.com/package/express-controller-sets" target="_blank" rel="noopener"><i data-lucide="package"></i><span class="label">npm</span></a>
+      <button class="icon-btn" type="button" id="theme-toggle" aria-label="Toggle colour theme"><i data-lucide="sun" class="sun-icon"></i><i data-lucide="moon" class="moon-icon"></i></button>
+    </nav>
+  </header>
+
+  <div class="nav-overlay" id="nav-overlay"></div>
+
+  <div class="layout">
+    <aside class="sidenav" id="sidenav" aria-label="Documentation">
+      <nav><div class="nav-group" data-group="get-started">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="rocket"></i><span>Get started</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li><a class="nav-page" href="./"><i data-lucide="home"></i><span class="nav-page-label">Overview</span></a></li>
+<li><a class="nav-page" href="quickstart.html"><i data-lucide="zap"></i><span class="nav-page-label">Quickstart</span></a></li>
+<li><a class="nav-page" href="how-to-use.html"><i data-lucide="map"></i><span class="nav-page-label">How to use</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="crud">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="database"></i><span>CRUD</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li><a class="nav-page" href="endpoints.html"><i data-lucide="network"></i><span class="nav-page-label">Endpoints &amp; responses</span></a></li>
+<li><a class="nav-page" href="filtering.html"><i data-lucide="filter"></i><span class="nav-page-label">Filter, search &amp; paginate</span></a></li>
+<li><a class="nav-page" href="writing.html"><i data-lucide="file-pen"></i><span class="nav-page-label">Create, update &amp; validate</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="s3-upload">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="upload-cloud"></i><span>S3 Upload</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li><a class="nav-page" href="uploads.html"><i data-lucide="upload"></i><span class="nav-page-label">Upload files</span></a></li>
+<li><a class="nav-page" href="s3.html"><i data-lucide="hard-drive"></i><span class="nav-page-label">S3 setup</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="dynamic-router">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="route"></i><span>Dynamic Router</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li><a class="nav-page" href="router.html"><i data-lucide="lock"></i><span class="nav-page-label">Router &amp; middlewares</span></a></li>
+<li><a class="nav-page" href="http-query.html"><i data-lucide="file-search"></i><span class="nav-page-label">HTTP QUERY</span></a></li>
+<li><a class="nav-page" href="custom-routes.html"><i data-lucide="puzzle"></i><span class="nav-page-label">Custom routes</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="auth">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="key-round"></i><span>Auth</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li><a class="nav-page" href="auth.html" aria-current="page"><i data-lucide="key-round"></i><span class="nav-page-label">Auth setup</span></a></li>
+<li><a class="nav-page" href="auth-refresh.html"><i data-lucide="refresh-cw"></i><span class="nav-page-label">Refresh tokens</span></a></li>
+<li><a class="nav-page" href="auth-social.html"><i data-lucide="users"></i><span class="nav-page-label">Social sign-in</span></a></li></ul>
+        </div>
+<div class="nav-group nav-single"><a class="nav-page nav-top" href="email.html"><i data-lucide="mail"></i><span class="nav-page-label">Email Sender</span></a></div>
+<div class="nav-group nav-single"><a class="nav-page nav-top" href="env.html"><i data-lucide="file-cog"></i><span class="nav-page-label">.env examples</span></a></div>
+<div class="nav-group" data-group="reference">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="library"></i><span>Reference</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li><a class="nav-page" href="options.html"><i data-lucide="sliders-horizontal"></i><span class="nav-page-label">All options</span></a></li>
+<li><a class="nav-page" href="faq.html"><i data-lucide="messages-square"></i><span class="nav-page-label">FAQ</span></a></li>
+<li><a class="nav-page" href="llm.html"><i data-lucide="bot"></i><span class="nav-page-label">Use with an LLM</span></a></li></ul>
+        </div></nav>
+    </aside>
+
+    <main class="doc" id="main" tabindex="-1">
+      <article class="doc-inner">
+        <header class="page-header">
+          <p class="breadcrumb">Auth <i data-lucide="chevron-right"></i> Auth setup</p>
+          <h1>Auth setup</h1>
+          <p class="page-summary">Sign-up, login, roles and route guards on your own user model.</p>
+        </header>
+        <section class="section" id="auth-basics">
+    <h2>Add sign-up and login<a class="anchor" href="#auth-basics" aria-label="Link to this section">#</a></h2>
+<div class="code-block" data-lang="javascript">
+<pre><code class="language-javascript">import { createAuthRouter } from 'express-controller-sets';
+
+const auth = createAuthRouter({
+  model: User,
+  token: { secret: process.env.JWT_SECRET, expiresIn: '15m' },   // 32+ characters
+  registerFields: ['name'],
+});
+
+app.use('/api/auth', auth);</code></pre>
+</div>
+<div class="code-block" data-lang="bash">
+<pre><code class="language-bash">POST /api/auth/register   { "email": "ada@example.com", "password": "…", "name": "Ada" }
+POST /api/auth/login      { "identifier": "ada@example.com", "password": "…" }
+→ { "success": true, "data": { "token": "…", "user": { … } } }
+
+GET  /api/auth/me         Authorization: Bearer &lt;token&gt;</code></pre>
+</div>
+</section>
+
+<section class="section" id="auth-protect">
+    <h2>Protect your routes<a class="anchor" href="#auth-protect" aria-label="Link to this section">#</a></h2>
+<div class="code-block" data-lang="javascript">
+<pre><code class="language-javascript">createRouter({ model: Note, middlewares: [auth.requireAuth], allowedFields: ['title'] });
+createRouter({ model: Report, middlewares: [auth.requireAuth, auth.requireRole('admin')], allowedFields: [] });</code></pre>
+</div>
+<p>After <code>auth.requireAuth</code>, your code can read <code>req.auth.userId</code> and <code>req.auth.role</code>.</p>
+</section>
+
+<section class="section" id="auth-model">
+    <h2>What your model needs<a class="anchor" href="#auth-model" aria-label="Link to this section">#</a></h2>
+    <p>Every name below is configurable through <code>fields</code>; these are the defaults. Mark the
+                    secrets <code>select: false</code> — the library selects them explicitly where it needs them,
+                    and never returns them.</p>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code class="language-javascript">const userSchema = new mongoose.Schema({
+  email: { type: String, unique: true, sparse: true },
+  phone: { type: String, unique: true, sparse: true },
+  password: { type: String, select: false },
+  role: { type: String, default: 'user' },
+
+  googleId: String, appleId: String, facebookId: String, githubId: String,
+
+  otpHash:      { type: String, select: false },
+  otpPurpose:   { type: String, select: false },
+  otpExpiresAt: { type: Date,   select: false },
+  otpAttempts:  { type: Number, default: 0, select: false },
+
+  failedLoginAttempts: { type: Number, default: 0, select: false },
+  lockedUntil:         { type: Date,   select: false },
+  passwordChangedAt:   Date,
+
+  // Only with refresh tokens enabled — see Refresh tokens.
+  refreshTokens: {
+    type: [{ id: String, hash: String, previousHash: String, rotatedAt: Date,
+             createdAt: Date, lastUsedAt: Date, expiresAt: Date, userAgent: String }],
+    select: false,
+  },
+}, { timestamps: true });</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+</section>
+
+<section class="section" id="auth-options-short">
+    <h2>Common options<a class="anchor" href="#auth-options-short" aria-label="Link to this section">#</a></h2>
+<div class="table-container"><table><thead><tr><th>Option</th><th>What it does</th></tr></thead><tbody>
+<tr><td><code>identifiers</code></td><td>Fields to sign in with, e.g. <code>['email', 'phone']</code>.</td></tr>
+<tr><td><code>roles</code></td><td><code>{ list: ['user', 'admin'], default: 'user' }</code></td></tr>
+<tr><td><code>registerFields</code> / <code>updateFields</code></td><td>Extra fields users may set.</td></tr>
+<tr><td><code>refresh</code></td><td>Long sessions — <a href="auth-refresh.html">Refresh tokens</a>.</td></tr>
+<tr><td><code>mail</code> / <code>sms</code></td><td>Password-reset codes — <a href="email.html">Email Sender</a>.</td></tr>
+<tr><td><code>social</code></td><td>Google, Apple, Facebook, GitHub — <a href="auth-social.html">Social sign-in</a>.</td></tr>
+</tbody></table></div>
+<p>Every option: <a href="options.html#auth-options">Auth options</a>.</p>
+</section>
+
+<section class="section" id="advanced">
+    <h2>Advanced<a class="anchor" href="#advanced" aria-label="Link to this section">#</a></h2>
+    <p class="section-intro">Deeper detail — open what you need.</p>
+<details class="advanced" id="auth-endpoints">
+  <summary>All auth endpoints</summary>
+  <div class="details-body"><div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Method</th>
+                                <th>Path</th>
+                                <th>What it does</th>
+                                <th>Who</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="m m-post">POST</span></td>
+                                <td><code>/register</code></td>
+                                <td>Creates an account and returns a token.</td>
+                                <td>Anyone</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-post">POST</span></td>
+                                <td><code>/login</code></td>
+                                <td>Signs in with any configured identifier.</td>
+                                <td>Anyone</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-post">POST</span></td>
+                                <td><code>/social/:provider</code></td>
+                                <td><code>google</code>, <code>apple</code>, <code>facebook</code>,
+                                    <code>github</code>.</td>
+                                <td>Anyone</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-post">POST</span></td>
+                                <td><code>/password/forgot</code></td>
+                                <td>Sends a one-time code by email or SMS.</td>
+                                <td>Anyone</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-post">POST</span></td>
+                                <td><code>/password/reset</code></td>
+                                <td>Verifies the code and sets a new password.</td>
+                                <td>Anyone</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-post">POST</span></td>
+                                <td><code>/password/change</code></td>
+                                <td>Changes it, given the current one.</td>
+                                <td>Signed in</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-post">POST</span></td>
+                                <td><code>/token/refresh</code></td>
+                                <td>Trades a refresh token for a new access token. <a href="auth-refresh.html">Refresh tokens</a></td>
+                                <td>Anyone</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-post">POST</span></td>
+                                <td><code>/logout</code> · <code>/logout/all</code></td>
+                                <td>Ends one session, or every session.</td>
+                                <td>Anyone · Signed in</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-get">GET</span></td>
+                                <td><code>/me</code></td>
+                                <td>The signed-in user.</td>
+                                <td>Signed in</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-get">GET</span></td>
+                                <td><code>/users</code></td>
+                                <td>Lists users, paginated, filterable by identifier or role.</td>
+                                <td>Admin</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-get">GET</span></td>
+                                <td><code>/users/:id</code></td>
+                                <td>One user, without secrets.</td>
+                                <td>Signed in</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-patch">PATCH</span></td>
+                                <td><code>/users/:id</code></td>
+                                <td>Updates yourself, or anyone if you administer.</td>
+                                <td>Self or admin</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-patch">PATCH</span></td>
+                                <td><code>/users/:id/roles</code></td>
+                                <td>Assigns roles from the allowed list.</td>
+                                <td>Admin</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+  </div>
+</details>
+
+<details class="advanced" id="auth">
+  <summary>A full configuration</summary>
+  <div class="details-body"><p class="section-intro">Register, sign in, social sign-in, password reset by one-time code, roles
+                    and user administration — against your own user model. This library defines no schema.</p>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code class="language-javascript">import { createAuthRouter, createRouter, errorHandler } from 'express-controller-sets';
+
+const auth = createAuthRouter({
+  model: User,
+  identifiers: ['email', 'phone'],        // sign in with either
+  token: { secret: process.env.JWT_SECRET, expiresIn: '15m' },
+  roles: { list: ['user', 'staff', 'admin'], default: 'user', admin: ['admin'] },
+  registerFields: ['name'],
+  updateFields: ['name'],
+
+  // Short access tokens, long sessions. Or AUTH_REFRESH_ENABLED=true in .env.
+  refresh: { enabled: true, rotate: true },
+
+  // Reset codes: email through a nodemailer transporter, SMS through your provider.
+  appName: 'Acme',
+  mail: { transporter: nodemailer.createTransport(process.env.SMTP_URL), from: 'Acme &lt;no-reply@acme.com&gt;' },
+  sms:  { sender: async ({ to, text }) =&gt; twilio.messages.create({ to, from: TWILIO_FROM, body: text }) },
+
+  social: {
+    google:   { clientId: process.env.GOOGLE_CLIENT_ID },
+    apple:    { clientId: process.env.APPLE_CLIENT_ID },
+    facebook: { appId: process.env.FB_APP_ID, appSecret: process.env.FB_APP_SECRET },
+    github:   { clientId: process.env.GH_ID, clientSecret: process.env.GH_SECRET },
+  },
+});
+
+app.use('/auth', auth);
+
+// The guards come off the router, so there is no second config to keep in sync.
+app.use('/notes', createRouter({ model: Note, middlewares: [auth.requireAuth] }));
+app.use('/admin/notes', createRouter({
+  model: Note,
+  middlewares: [auth.requireAuth, auth.requireRole('admin')],
+}));</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+  </div>
+</details>
+
+<details class="advanced" id="auth-urls">
+  <summary>Your URLs, not ours</summary>
+  <div class="details-body"><p><code>routes</code> renames an endpoint or leaves it out, and
+                    <code>middlewares</code> behaves as it does on <code>createRouter</code> — with one
+                    addition: an object targets a single route by name.</p>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code class="language-javascript">const auth = createAuthRouter({
+  model: User,
+  token: { secret: process.env.JWT_SECRET },
+
+  routes: {
+    register: '/signup',        // rename it
+    login: '/signin',
+    social: false,              // never mount it
+    modifyRoles: false,
+  },
+
+  middlewares: {
+    all: [cors()],              // every auth route
+    login: [rateLimiter],       // only the ones that get guessed at
+    forgotPassword: [rateLimiter],
+  },
+});
+
+app.use('/api/v1/auth', auth);</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>Route middleware runs before the guard, so a limiter sheds load without a database
+                    round trip first. An unknown route name throws when the router is built rather than
+                    doing nothing at request time — and in TypeScript it will not compile.</p>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code class="language-javascript">auth.urls;    // what this instance mounted
+// [ { name: 'register', method: 'POST', path: '/signup', access: 'public' },
+//   { name: 'login',    method: 'POST', path: '/signin', access: 'public' }, … ]
+
+AUTH_ROUTES;  // everything the factory knows how to mount</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>Both come from the same table the router is built from, so neither can drift from what
+                    is actually served. Every row carries an access level, which is what stops an endpoint
+                    being added without a decision about who may call it.</p>
+  </div>
+</details>
+
+<details class="advanced" id="identifiers">
+  <summary>Signing in with anything</summary>
+  <div class="details-body"><p>One field, several identifiers. Each is normalized on the way in, so a phone number reaches the
+                    same account however it was typed:</p>
+
+                <div class="code-block" data-lang="bash">
+                    <pre><code class="language-bash">POST /auth/login  { "identifier": "Ada@Example.com",  "password": "…" }
+POST /auth/login  { "identifier": "+1 (555) 010-1234", "password": "…" }   # same account as
+POST /auth/login  { "identifier": "+15550101234",      "password": "…" }</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>Email is lowercased, a phone loses its formatting, anything else is trimmed. Supply your own with
+                    <code>identifier('nationalId', (v) =&gt; v.toUpperCase())</code>.</p>
+  </div>
+</details>
+
+<details class="advanced" id="auth-refuses">
+  <summary>What it refuses to do</summary>
+  <div class="details-body"><div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Attempt</th>
+                                <th>Result</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Registering with <code>"role": "admin"</code></td>
+                                <td>The role is stripped. Roles have their own endpoint, behind admin.</td>
+                            </tr>
+                            <tr>
+                                <td><code>PATCH /users/:id</code> with a new password or role</td>
+                                <td>Both ignored. Each has its own endpoint and its own authorization.</td>
+                            </tr>
+                            <tr>
+                                <td>Updating someone else's record</td>
+                                <td><strong>403</strong>, unless you administer.</td>
+                            </tr>
+                            <tr>
+                                <td>Telling a wrong password from an unknown account</td>
+                                <td>Same message, and a decoy hash is verified so the timing matches too.</td>
+                            </tr>
+                            <tr>
+                                <td>Guessing a password</td>
+                                <td>Counted on the record; the account locks. It survives a restart and holds across
+                                    every instance.</td>
+                            </tr>
+                            <tr>
+                                <td><code>{ "password": { "$ne": null } }</code></td>
+                                <td><strong>400</strong>. An object where a credential belongs is an injection, not
+                                    a login.</td>
+                            </tr>
+                            <tr>
+                                <td>An admin removing their own admin role</td>
+                                <td><strong>400</strong>. It would lock everyone out of the endpoint that undoes it.</td>
+                            </tr>
+                            <tr>
+                                <td>Using a token issued before a password change</td>
+                                <td><strong>401</strong>. Changing a password ends the sessions that predate it.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="callout callout-danger">
+                    <i data-lucide="key"></i>
+                    <div>
+                        <p><strong><code>token.secret</code> is the whole system.</strong> It signs every session and
+                            keys every one-time code. At least 32 characters, never in the repository, and rotating
+                            it signs everyone out — which is exactly what you want the day it leaks. Generate one
+                            with <code>node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"</code>.</p>
+                    </div>
+                </div>
+
+                <div class="callout callout-warn">
+                    <i data-lucide="siren"></i>
+                    <div>
+                        <p><strong>What this does not do.</strong> No rate limiting on the endpoints themselves beyond the
+                            per-account lockout — put a limiter in front of <code>/login</code>, <code>/register</code>
+                            and <code>/password/forgot</code> (<a href="how-to-use.html#rate-limit">recipe</a>). No email
+                            verification flow. Refresh tokens are opt-in — <a href="auth-refresh.html">turn them on</a>
+                            and keep <code>expiresIn</code> short.</p>
+                    </div>
+                </div>
+  </div>
+</details>
+</section>
+
+        <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" href="custom-routes.html"><span class="pager-dir"><i data-lucide="arrow-left"></i> Previous</span><span class="pager-title">Custom routes</span></a>
+      <a class="next" href="auth-refresh.html"><span class="pager-dir">Next <i data-lucide="arrow-right"></i></span><span class="pager-title">Refresh tokens</span></a>
+    </nav>
+        <footer class="doc-footer">
+          <span>express-controller-sets v3.2.0 · MIT licensed · © 2024–present Sabbir Mahmud</span>
+          <a href="https://github.com/ornate-source/controllerSets/edit/main/docs/src/content/auth.html" target="_blank" rel="noopener"><i data-lucide="pencil"></i> Edit this page</a>
+        </footer>
+      </article>
+    </main>
+
+  </div>
+
+  <dialog class="search-dialog" id="search-dialog" aria-label="Search">
+    <div class="search-field"><i data-lucide="search"></i><input id="search-input" type="search" placeholder="Search the docs…" autocomplete="off" spellcheck="false" aria-controls="search-results"><kbd>Esc</kbd></div>
+    <ul class="search-results" id="search-results" role="listbox"></ul>
+    <div class="search-foot"><span><kbd>↑</kbd> <kbd>↓</kbd> to move</span><span><kbd>↵</kbd> to open</span></div>
+  </dialog>
+
+  <button id="back-to-top" class="back-to-top" type="button" aria-label="Back to top"><i data-lucide="arrow-up"></i></button>
+</body>
+</html>

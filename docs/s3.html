@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>S3 setup · express-controller-sets</title>
+  <meta name="description" content="Connect AWS S3, Cloudflare R2, DigitalOcean Spaces or MinIO.">
+  <link rel="canonical" href="https://ornate-source.github.io/controllerSets/s3.html">
+  <meta property="og:title" content="S3 setup · express-controller-sets">
+  <meta property="og:description" content="Connect AWS S3, Cloudflare R2, DigitalOcean Spaces or MinIO.">
+  <meta property="og:type" content="website">
+  <link rel="alternate" type="text/plain" title="LLM guide" href="llms-full.txt">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/components.css?v=10a91d487a">
+  <link rel="stylesheet" href="assets/css/shell.css?v=94b1910641">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%236366f1'/%3E%3Ctext x='50' y='68' font-family='monospace' font-size='54' font-weight='700' fill='white' text-anchor='middle'%3E%7B%7D%3C/text%3E%3C/svg%3E">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/http.min.js" defer></script>
+  <script src="assets/search-index.js" defer></script>
+  <script src="assets/js/docs.js?v=901f93388a" defer></script>
+</head>
+<body class="dark" data-page="s3">
+  <script>try{var t=localStorage.getItem('controllersets-theme');document.body.className=t||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark')}catch(e){}</script>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <header class="topbar">
+    <button class="icon-btn menu-btn" type="button" id="menu-open" aria-label="Open navigation"><i data-lucide="menu"></i></button>
+    <a class="brand" href="./" aria-label="controller-sets home">
+      <span class="brand-mark" aria-hidden="true">{}</span>
+      <span class="brand-name">controller-sets</span>
+      <span class="brand-version">v3.2.0</span>
+    </a>
+    <button class="search-trigger" type="button" id="search-open" aria-label="Search the docs">
+      <i data-lucide="search"></i><span>Search docs…</span><kbd>⌘K</kbd>
+    </button>
+    <nav class="topbar-links" aria-label="External">
+      <a class="topbar-link is-accent hide-sm" href="llm.html"><i data-lucide="sparkles"></i><span class="label">LLM prompt</span></a>
+      <a class="topbar-link hide-sm" href="https://github.com/ornate-source/controllerSets" target="_blank" rel="noopener"><svg class="gh-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span class="label">GitHub</span></a>
+      <a class="topbar-link hide-sm" href="https://www.npmjs.com/package/express-controller-sets" target="_blank" rel="noopener"><i data-lucide="package"></i><span class="label">npm</span></a>
+      <button class="icon-btn" type="button" id="theme-toggle" aria-label="Toggle colour theme"><i data-lucide="sun" class="sun-icon"></i><i data-lucide="moon" class="moon-icon"></i></button>
+    </nav>
+  </header>
+
+  <div class="nav-overlay" id="nav-overlay"></div>
+
+  <div class="layout">
+    <aside class="sidenav" id="sidenav" aria-label="Documentation">
+      <nav><div class="nav-group" data-group="get-started">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="rocket"></i><span>Get started</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li><a class="nav-page" href="./"><i data-lucide="home"></i><span class="nav-page-label">Overview</span></a></li>
+<li><a class="nav-page" href="quickstart.html"><i data-lucide="zap"></i><span class="nav-page-label">Quickstart</span></a></li>
+<li><a class="nav-page" href="how-to-use.html"><i data-lucide="map"></i><span class="nav-page-label">How to use</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="crud">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="database"></i><span>CRUD</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li><a class="nav-page" href="endpoints.html"><i data-lucide="network"></i><span class="nav-page-label">Endpoints &amp; responses</span></a></li>
+<li><a class="nav-page" href="filtering.html"><i data-lucide="filter"></i><span class="nav-page-label">Filter, search &amp; paginate</span></a></li>
+<li><a class="nav-page" href="writing.html"><i data-lucide="file-pen"></i><span class="nav-page-label">Create, update &amp; validate</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="s3-upload">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="upload-cloud"></i><span>S3 Upload</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li><a class="nav-page" href="uploads.html"><i data-lucide="upload"></i><span class="nav-page-label">Upload files</span></a></li>
+<li><a class="nav-page" href="s3.html" aria-current="page"><i data-lucide="hard-drive"></i><span class="nav-page-label">S3 setup</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="dynamic-router">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="route"></i><span>Dynamic Router</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li><a class="nav-page" href="router.html"><i data-lucide="lock"></i><span class="nav-page-label">Router &amp; middlewares</span></a></li>
+<li><a class="nav-page" href="http-query.html"><i data-lucide="file-search"></i><span class="nav-page-label">HTTP QUERY</span></a></li>
+<li><a class="nav-page" href="custom-routes.html"><i data-lucide="puzzle"></i><span class="nav-page-label">Custom routes</span></a></li></ul>
+        </div>
+<div class="nav-group" data-group="auth">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="key-round"></i><span>Auth</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li><a class="nav-page" href="auth.html"><i data-lucide="key-round"></i><span class="nav-page-label">Auth setup</span></a></li>
+<li><a class="nav-page" href="auth-refresh.html"><i data-lucide="refresh-cw"></i><span class="nav-page-label">Refresh tokens</span></a></li>
+<li><a class="nav-page" href="auth-social.html"><i data-lucide="users"></i><span class="nav-page-label">Social sign-in</span></a></li></ul>
+        </div>
+<div class="nav-group nav-single"><a class="nav-page nav-top" href="email.html"><i data-lucide="mail"></i><span class="nav-page-label">Email Sender</span></a></div>
+<div class="nav-group nav-single"><a class="nav-page nav-top" href="env.html"><i data-lucide="file-cog"></i><span class="nav-page-label">.env examples</span></a></div>
+<div class="nav-group" data-group="reference">
+          <button class="nav-group-toggle" type="button" aria-expanded="true"><i data-lucide="library"></i><span>Reference</span><i data-lucide="chevron-down" class="chev"></i></button>
+          <ul class="nav-pages"><li><a class="nav-page" href="options.html"><i data-lucide="sliders-horizontal"></i><span class="nav-page-label">All options</span></a></li>
+<li><a class="nav-page" href="faq.html"><i data-lucide="messages-square"></i><span class="nav-page-label">FAQ</span></a></li>
+<li><a class="nav-page" href="llm.html"><i data-lucide="bot"></i><span class="nav-page-label">Use with an LLM</span></a></li></ul>
+        </div></nav>
+    </aside>
+
+    <main class="doc" id="main" tabindex="-1">
+      <article class="doc-inner">
+        <header class="page-header">
+          <p class="breadcrumb">S3 Upload <i data-lucide="chevron-right"></i> S3 setup</p>
+          <h1>S3 setup</h1>
+          <p class="page-summary">Connect AWS S3, Cloudflare R2, DigitalOcean Spaces or MinIO.</p>
+        </header>
+        <section class="section" id="s3-basics">
+    <h2>Connect a bucket<a class="anchor" href="#s3-basics" aria-label="Link to this section">#</a></h2>
+<p>Five variables. Any S3-compatible storage works.</p>
+<div class="code-block" data-lang="bash">
+<pre><code class="language-bash">S3_ENDPOINT=https://s3.us-east-1.amazonaws.com
+S3_SPACES_KEY=your-access-key
+S3_SPACES_SECRET=your-secret-key
+S3_BUCKET_NAME=your-bucket
+S3_REGION=us-east-1                 # optional</code></pre>
+</div>
+<div class="table-container"><table><thead><tr><th>Provider</th><th><code>S3_ENDPOINT</code></th><th><code>S3_REGION</code></th></tr></thead><tbody>
+<tr><td>AWS S3</td><td><code>https://s3.&lt;region&gt;.amazonaws.com</code></td><td>your region</td></tr>
+<tr><td>DigitalOcean Spaces</td><td><code>https://&lt;region&gt;.digitaloceanspaces.com</code></td><td><code>us-east-1</code></td></tr>
+<tr><td>Cloudflare R2</td><td><code>https://&lt;account-id&gt;.r2.cloudflarestorage.com</code></td><td><code>auto</code></td></tr>
+<tr><td>MinIO (local)</td><td><code>http://localhost:9000</code></td><td><code>us-east-1</code></td></tr>
+</tbody></table></div>
+<p>Full files for each provider: <a href="env.html#env-s3">.env examples</a>.</p>
+</section>
+
+<section class="section" id="advanced">
+    <h2>Advanced<a class="anchor" href="#advanced" aria-label="Link to this section">#</a></h2>
+    <p class="section-intro">Deeper detail — open what you need.</p>
+<details class="advanced" id="s3-env">
+  <summary>S3 environment</summary>
+  <div class="details-body"><p class="section-intro">Five variables. Only needed if you use an upload router.</p>
+
+                <div class="code-block" data-lang="bash">
+                    <pre><code class="language-bash">S3_ENDPOINT=https://nyc3.digitaloceanspaces.com   # required
+S3_SPACES_KEY=your-access-key                     # required
+S3_SPACES_SECRET=your-secret-key                  # required
+S3_BUCKET_NAME=your-bucket                        # required
+S3_REGION=us-east-1                               # optional, defaults to us-east-1</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>The variable names carry "SPACES" because the client is configured with path-style addressing, which
+                    works with DigitalOcean Spaces, MinIO, Cloudflare R2 and Amazon S3 alike. Any S3-compatible
+                    endpoint will do.</p>
+
+                <div class="callout callout-warn">
+                    <i data-lucide="file-cog"></i>
+                    <div>
+                        <p><strong>This library does not call <code>dotenv.config()</code>.</strong> Loading
+                            environment is your application's decision, not a side effect a dependency imposes. Load it
+                            yourself before you start handling requests:</p>
+                        <div class="code-block" data-lang="javascript" style="margin-top:.6rem">
+                            <pre><code class="language-javascript">import 'dotenv/config';   // first import in your entry file</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="callout callout-tip">
+                    <i data-lucide="refresh-cw"></i>
+                    <div>
+                        <p><strong>Configuration is read per request, not at import.</strong> An app that loads its
+                            environment after importing the package still works — no permanent 503 caused by a snapshot
+                            taken a moment too early. Missing variables produce a 503 and a server log naming exactly
+                            which ones are absent.</p>
+                    </div>
+                </div>
+  </div>
+</details>
+</section>
+
+        <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" href="uploads.html"><span class="pager-dir"><i data-lucide="arrow-left"></i> Previous</span><span class="pager-title">Upload files</span></a>
+      <a class="next" href="router.html"><span class="pager-dir">Next <i data-lucide="arrow-right"></i></span><span class="pager-title">Router &amp; middlewares</span></a>
+    </nav>
+        <footer class="doc-footer">
+          <span>express-controller-sets v3.2.0 · MIT licensed · © 2024–present Sabbir Mahmud</span>
+          <a href="https://github.com/ornate-source/controllerSets/edit/main/docs/src/content/s3.html" target="_blank" rel="noopener"><i data-lucide="pencil"></i> Edit this page</a>
+        </footer>
+      </article>
+    </main>
+
+  </div>
+
+  <dialog class="search-dialog" id="search-dialog" aria-label="Search">
+    <div class="search-field"><i data-lucide="search"></i><input id="search-input" type="search" placeholder="Search the docs…" autocomplete="off" spellcheck="false" aria-controls="search-results"><kbd>Esc</kbd></div>
+    <ul class="search-results" id="search-results" role="listbox"></ul>
+    <div class="search-foot"><span><kbd>↑</kbd> <kbd>↓</kbd> to move</span><span><kbd>↵</kbd> to open</span></div>
+  </dialog>
+
+  <button id="back-to-top" class="back-to-top" type="button" aria-label="Back to top"><i data-lucide="arrow-up"></i></button>
+</body>
+</html>

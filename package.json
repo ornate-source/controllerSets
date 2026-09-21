@@ -8,11 +8,13 @@
   "files": [
     "src",
     "MIGRATION.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "docs/llms-full.txt"
   ],
   "scripts": {
     "test": "node --test tests/*.test.js",
-    "bench": "node bench/bench.mjs"
+    "bench": "node bench/bench.mjs",
+    "docs": "node docs/build.mjs"
   },
   "author": "Sabbir Mahmud",
   "license": "MIT",

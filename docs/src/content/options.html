@@ -1,0 +1,446 @@
+<section class="section" id="option-reference">
+    <h2><i data-lucide="book-open"></i> Every option</h2>
+    <p class="section-intro">The complete list, with defaults.</p>
+
+    <h3>Controller options</h3>
+    <p>Accepted by <code>createRouter</code>, <code>createRouterS3upload</code> and the
+        <code>ControllerSets</code> constructor alike.</p>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Option</th>
+                    <th>Type</th>
+                    <th>Default</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>model</code></td>
+                    <td>Model</td>
+                    <td><em>required</em></td>
+                    <td>The Mongoose model these endpoints operate on.</td>
+                </tr>
+                <tr>
+                    <td><code>orderBy</code></td>
+                    <td>string</td>
+                    <td><code>'none'</code></td>
+                    <td>Default sort. Prefix with <code>-</code> for descending. Never allowlist-checked —
+                        it's your choice.</td>
+                </tr>
+                <tr>
+                    <td><code>query</code></td>
+                    <td>string[]</td>
+                    <td><code>[]</code></td>
+                    <td>Fields exposed as equality filters, and the fallback allowlist for filtering and
+                        sorting.</td>
+                </tr>
+                <tr>
+                    <td><code>search</code></td>
+                    <td>string | string[]</td>
+                    <td><code>[]</code></td>
+                    <td>Fields searched by <code>?s=</code>. Dot-notation reaches into
+                        <code>ref</code>'d models.</td>
+                </tr>
+                <tr>
+                    <td><code>allowedFields</code></td>
+                    <td>string[] | {create, update}</td>
+                    <td><em>unset</em></td>
+                    <td>Fields a client may write. Unset means every schema field is writable, and logs a
+                        warning.</td>
+                </tr>
+                <tr>
+                    <td><code>blockedFields</code></td>
+                    <td>string[] | {create, update}</td>
+                    <td><em>unset</em></td>
+                    <td>Fields a client may never write. Applied after <code>allowedFields</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>filterableFields</code></td>
+                    <td>string[]</td>
+                    <td><code>query</code></td>
+                    <td>Fields usable with <code>?compareField=</code> and <code>?rangeField=</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>sortableFields</code></td>
+                    <td>string[]</td>
+                    <td><code>query</code> + <code>orderBy</code></td>
+                    <td>Fields usable with <code>?sort=</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>validate</code></td>
+                    <td>function · {create, update}</td>
+                    <td><em>none</em></td>
+                    <td>Your own check on a write, run after the field policy and before Mongoose. See
+                        <a href="#validation">Validating writes</a>.</td>
+                </tr>
+                <tr>
+                    <td><code>maxLimit</code></td>
+                    <td>number</td>
+                    <td><code>100</code></td>
+                    <td>Hard cap on documents returned, paginated or not. Also caps
+                        <code>?pageSize=</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>defaultPageSize</code></td>
+                    <td>number</td>
+                    <td><code>50</code></td>
+                    <td>Page size when <code>?page=</code> arrives without <code>pageSize</code>. Still
+                        clamped by <code>maxLimit</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>maxPage</code></td>
+                    <td>number</td>
+                    <td><em>off</em></td>
+                    <td>Highest page a client may ask for. Beyond it, <strong>400</strong> — a deep page
+                        costs the database a full index walk to skip.</td>
+                </tr>
+                <tr>
+                    <td><code>countStrategy</code></td>
+                    <td><code>'exact' | 'estimated' | 'none'</code></td>
+                    <td><code>'exact'</code></td>
+                    <td>How a paginated read counts matches. <code>'none'</code> returns
+                        <code>hasMore</code> instead of totals and runs no count query.</td>
+                </tr>
+                <tr>
+                    <td><code>maxTimeMS</code></td>
+                    <td>number</td>
+                    <td><em>off</em></td>
+                    <td>Server-side time limit per query, including the count beside a page. The only
+                        bound on a query that is slow in the database rather than here.</td>
+                </tr>
+                <tr>
+                    <td><code>maxSearchLength</code></td>
+                    <td>number</td>
+                    <td><code>128</code></td>
+                    <td>Longest accepted search term. Longer terms return 400.</td>
+                </tr>
+                <tr>
+                    <td><code>allowRawRegex</code></td>
+                    <td>boolean</td>
+                    <td><code>false</code></td>
+                    <td>Pass search terms to MongoDB unescaped. Unsafe for untrusted callers.</td>
+                </tr>
+                <tr>
+                    <td><code>lean</code></td>
+                    <td>boolean</td>
+                    <td><code>false</code></td>
+                    <td>Return plain objects. Faster, but skips schema <code>toJSON</code> transforms.</td>
+                </tr>
+                <tr>
+                    <td><code>onGet</code></td>
+                    <td>function</td>
+                    <td><code>'none'</code></td>
+                    <td>Per-request <code>populates</code> and <code>selects</code>. Applies to reads and
+                        to the document returned by PATCH.</td>
+                </tr>
+                <tr>
+                    <td><code>runAfterCreate</code></td>
+                    <td>function</td>
+                    <td><code>'none'</code></td>
+                    <td>Called with the created document, awaited before the 201.</td>
+                </tr>
+                <tr>
+                    <td><code>strictAfterCreate</code></td>
+                    <td>boolean</td>
+                    <td><code>false</code></td>
+                    <td>Propagate <code>runAfterCreate</code> failures instead of logging them.</td>
+                </tr>
+                <tr>
+                    <td><code>logger</code></td>
+                    <td>{warn, error, debug?}</td>
+                    <td><code>console</code></td>
+                    <td>Where warnings and hook failures go. Point it at your own logger.</td>
+                </tr>
+                <tr>
+                    <td><code>legacyMode</code></td>
+                    <td>boolean</td>
+                    <td><code>false</code></td>
+                    <td>Restore 2.x behaviour: no field gating, raw regex, unbounded reads. Temporary.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3>Router-only options</h3>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Option</th>
+                    <th>Where</th>
+                    <th>Default</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>middlewares</code></td>
+                    <td>both factories</td>
+                    <td><code>[]</code></td>
+                    <td>Express middlewares applied to every route in the router.</td>
+                </tr>
+                <tr>
+                    <td><code>enableQuery</code></td>
+                    <td>both factories</td>
+                    <td><code>true</code></td>
+                    <td>Mount <code>QUERY /</code> — see <a href="#http-query">HTTP QUERY</a>. Skipped
+                        automatically, with one warning, on runtimes that cannot parse the method.</td>
+                </tr>
+                <tr>
+                    <td><code>path</code></td>
+                    <td>S3 router</td>
+                    <td><code>'files/'</code></td>
+                    <td>Key prefix inside the bucket.</td>
+                </tr>
+                <tr>
+                    <td><code>fields</code></td>
+                    <td>S3 router</td>
+                    <td><code>[{name:'file',maxCount:1}]</code></td>
+                    <td>Multipart file fields.</td>
+                </tr>
+                <tr>
+                    <td><code>imgOptimizations</code></td>
+                    <td>S3 router</td>
+                    <td><em>off</em></td>
+                    <td><code>'low' | 'medium' | 'med' | 'high'</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>upload</code></td>
+                    <td>S3 router</td>
+                    <td><code>{}</code></td>
+                    <td>ACL, MIME allowlist and limits — see <a href="#upload-options">Upload
+                            options</a>.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3>Exports</h3>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Export</th>
+                    <th>Type</th>
+                    <th>Purpose</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>createRouter(options)</code></td>
+                    <td>function</td>
+                    <td>Six CRUD endpoints for a model.</td>
+                </tr>
+                <tr>
+                    <td><code>createRouterS3upload(options)</code></td>
+                    <td>function</td>
+                    <td>The same, with S3 uploads on POST and PATCH.</td>
+                </tr>
+                <tr>
+                    <td><code>ControllerSets</code></td>
+                    <td>class</td>
+                    <td>The handlers themselves, for your own routes.</td>
+                </tr>
+                <tr>
+                    <td><code>errorHandler</code></td>
+                    <td>middleware</td>
+                    <td>Consistent JSON errors. Mount last.</td>
+                </tr>
+                <tr>
+                    <td><code>fileUploadMiddleware(req,res,next,options)</code></td>
+                    <td>middleware</td>
+                    <td>Uploads without the CRUD routes.</td>
+                </tr>
+                <tr>
+                    <td><code>compressImage(buffer,type,level)</code></td>
+                    <td>async</td>
+                    <td>Re-encode an image buffer toward a target size.</td>
+                </tr>
+                <tr>
+                    <td><code>HttpError</code></td>
+                    <td>class</td>
+                    <td>An error carrying a status whose message is safe to return.</td>
+                </tr>
+                <tr>
+                    <td><code>ValidationError</code></td>
+                    <td>class</td>
+                    <td>A rejected body, with optional per-field messages. Throw it from
+                        <code>validate</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>escapeRegex(value)</code></td>
+                    <td>function</td>
+                    <td>Escape regex metacharacters in your own queries.</td>
+                </tr>
+                <tr>
+                    <td><code>createAuthRouter(options)</code></td>
+                    <td>function</td>
+                    <td>Register, login, social sign-in, reset, roles — see
+                        <a href="#auth">Authentication</a>.</td>
+                </tr>
+                <tr>
+                    <td><code>AUTH_ROUTES</code></td>
+                    <td>array</td>
+                    <td>Every auth endpoint with its default URL and access level.</td>
+                </tr>
+                <tr>
+                    <td><code>requireAuth</code> · <code>requireRole</code></td>
+                    <td>middleware</td>
+                    <td>Guards for your own routes. Also attached to the auth router.</td>
+                </tr>
+                <tr>
+                    <td><code>hashPassword</code> · <code>verifyPassword</code></td>
+                    <td>async</td>
+                    <td>The scrypt hashing used by the auth routes.</td>
+                </tr>
+                <tr>
+                    <td><code>signToken</code> · <code>verifyToken</code></td>
+                    <td>function</td>
+                    <td>HS256 JWTs, for tokens you issue yourself.</td>
+                </tr>
+                <tr>
+                    <td><code>DEFAULT_TEMPLATES</code></td>
+                    <td>object</td>
+                    <td>The built-in mail and SMS templates, to extend rather than rewrite.</td>
+                </tr>
+                <tr>
+                    <td><code>isQueryMethodSupported()</code></td>
+                    <td>function</td>
+                    <td>Whether this runtime can serve HTTP <code>QUERY</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>QUERY_FILTER_OPERATORS</code></td>
+                    <td>object</td>
+                    <td>The <code>gte</code> → <code>$gte</code> table a QUERY body is resolved against.
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="section" id="auth-options">
+    <h2>Auth options</h2>
+    <p class="section-intro">Everything <code>createAuthRouter</code> accepts. Refresh and mail settings also
+        fall back to environment variables — see <a href="env.html">the .env file</a>.</p>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Option</th>
+                    <th>Default</th>
+                    <th>What it controls</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>model</code></td>
+                    <td>required</td>
+                    <td>Your Mongoose user model.</td>
+                </tr>
+                <tr>
+                    <td><code>token.secret</code></td>
+                    <td>required</td>
+                    <td>HMAC secret, at least 32 characters. From the environment, never the code.</td>
+                </tr>
+                <tr>
+                    <td><code>token.expiresIn</code></td>
+                    <td><code>'15m'</code></td>
+                    <td>Access-token lifetime: <code>'15m'</code>, <code>'7d'</code> or seconds.</td>
+                </tr>
+                <tr>
+                    <td><code>token.issuer · token.audience</code></td>
+                    <td>none</td>
+                    <td>Set and checked on every token when given.</td>
+                </tr>
+                <tr>
+                    <td><code>identifiers</code></td>
+                    <td><code>['email']</code></td>
+                    <td>Fields a client may sign in with. Use <code>identifier(field, normalize)</code> for custom normalizing.</td>
+                </tr>
+                <tr>
+                    <td><code>fields</code></td>
+                    <td>see <a href="#auth-model">model</a></td>
+                    <td>Rename any stored field: <code>{ password: 'passHash' }</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>roles</code></td>
+                    <td><code>{ default: 'user', admin: ['admin'] }</code></td>
+                    <td><code>list</code>, <code>default</code>, <code>admin</code>, <code>field</code>, <code>multiple</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>registerFields · updateFields</code></td>
+                    <td>none</td>
+                    <td>Extra fields a registrant may set, and a user may change on themselves.</td>
+                </tr>
+                <tr>
+                    <td><code>password.minLength</code></td>
+                    <td><code>8</code></td>
+                    <td>Shortest accepted password.</td>
+                </tr>
+                <tr>
+                    <td><code>password.hash · password.verify</code></td>
+                    <td>scrypt</td>
+                    <td>Bring bcrypt or argon2.</td>
+                </tr>
+                <tr>
+                    <td><code>lockout</code></td>
+                    <td><code>{ maxAttempts: 10, lockSeconds: 900 }</code></td>
+                    <td>Failed sign-ins before the account locks, and for how long.</td>
+                </tr>
+                <tr>
+                    <td><code>otp</code></td>
+                    <td><code>{ length: 6, ttlSeconds: 600, maxAttempts: 5 }</code></td>
+                    <td>One-time code policy. <code>otp.deliver</code> is the legacy sender override.</td>
+                </tr>
+                <tr>
+                    <td><code>refresh</code></td>
+                    <td>off</td>
+                    <td><code>enabled</code>, <code>rotate</code>, <code>expiresIn</code>, <code>graceSeconds</code>, <code>revokeAllOnReuse</code>, <code>maxSessions</code>. <a href="auth-refresh.html">Refresh tokens</a></td>
+                </tr>
+                <tr>
+                    <td><code>appName</code></td>
+                    <td><code>APP_NAME</code></td>
+                    <td>Shown as <code>{{appName}}</code> in templates.</td>
+                </tr>
+                <tr>
+                    <td><code>mail</code></td>
+                    <td><code>SMTP_*</code> if set</td>
+                    <td><code>transporter</code>, <code>transport</code>, <code>from</code>, <code>sender</code>, <code>toField</code>, <code>templates</code>. <a href="#mail">Email</a></td>
+                </tr>
+                <tr>
+                    <td><code>sms</code></td>
+                    <td>off</td>
+                    <td><code>sender</code>, <code>toField</code>, <code>templates</code>. <a href="#senders">SMS</a></td>
+                </tr>
+                <tr>
+                    <td><code>social</code></td>
+                    <td>none</td>
+                    <td>Providers by name: <code>google</code>, <code>apple</code>, <code>facebook</code>, <code>github</code>, or your own <code>verify</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>routes</code></td>
+                    <td>all mounted</td>
+                    <td>Rename (<code>'/signup'</code>) or remove (<code>false</code>) a route by name.</td>
+                </tr>
+                <tr>
+                    <td><code>middlewares</code></td>
+                    <td>none</td>
+                    <td>An array for every route, or <code>{ all, login, … }</code> per route.</td>
+                </tr>
+                <tr>
+                    <td><code>onRegister · onLogin</code></td>
+                    <td>none</td>
+                    <td><code>(user, req)</code> hooks. Throw an <code>HttpError</code> from <code>onLogin</code> to refuse.</td>
+                </tr>
+                <tr>
+                    <td><code>logger</code></td>
+                    <td>console</td>
+                    <td><code>{ warn, error, debug? }</code></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
