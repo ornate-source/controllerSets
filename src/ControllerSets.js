@@ -16,10 +16,7 @@ import {
 
 // Express CRUD handlers for a Mongoose model. Implicit-deny throughout: a field
 // is not filterable, sortable or writable until the author names it.
-//
-// This class is the surface only — one method per route, each delegating to its
-// module in `core/`. `getAll` and `query` retrieve through the same `core/list.js`,
-// so the two routes cannot diverge in what they return or what they cost.
+
 class ControllerSets {
     constructor(...args) {
         const config = buildConfig(normalizeOptions(args));
