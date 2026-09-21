@@ -7,6 +7,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.2.0] — 2026-09-21
+
+Adds authentication: register, sign-in by any identifier, social sign-in, password change,
+reset by one-time code, roles and user administration. It defines no schema — you pass your
+own model and say which fields hold what.
+
+### Added
+
+- **`createAuthRouter(options)`** mounts eleven endpoints: `POST /register`, `POST /login`,
+  `POST /social/:provider`, `POST /password/forgot`, `POST /password/reset`,
+  `POST /password/change`, `GET /me`, `GET /users`, `GET /users/:id`, `PATCH /users/:id`,
+  `PATCH /users/:id/roles`.
+- **Any identifier.** `identifiers: ['email', 'phone']` lets one field accept either, each
+  normalized on the way in — email lowercased, phone stripped of formatting — so
+  `+1 (555) 010-1234` and `+15550101234` reach the same account.
+- **Passwords** are hashed with scrypt from Node's own crypto: no dependency to install or
+  audit, and the cost parameters are stored in each hash so they can be raised later without
+  invalidating what is already saved. Supply `password.hash` / `password.verify` to use
+  bcrypt or argon2 instead.
+- **Tokens** are HS256 JWTs signed and verified in-process. The algorithm is hard-coded
+  rather than read from the token, which is what `alg: none` and RS256→HS256 confusion both
+  depend on. A password change ends every session issued before it.
+- **Social sign-in** for Google, Apple, Facebook and GitHub, each verified with the provider:
+  Google and Apple by RS256 signature against their published keys, with issuer and audience
+  checked; Facebook through `debug_token`, so a token minted for another app is refused;
+  GitHub by access token or by exchanging the OAuth `code` server-side. A provider is only
+  mounted once configured, and any of them can be replaced with your own `verify`.
+- **One-time codes** for password reset over email or SMS. Stored as an HMAC under the server
+  secret rather than in the clear, bound to a purpose, expiring, and counted — a six-digit
+  code is otherwise brute-forceable. Delivery is yours: `otp.deliver` receives the code, and
+  this library holds no mail or SMS credentials.
+- **Roles** with `requireRole`, an allowlist of assignable roles, single or multiple roles per
+  user, and a refusal to let an administrator strip their own admin role and lock everyone out.
+- **`auth.requireAuth` / `auth.requireRole`** come attached to the router, so the CRUD routers
+  reuse them without a second copy of the configuration.
+- **`identifier(field, normalize)`** helper, because TypeScript cannot infer a callback
+  parameter inside an array whose element type is a union.
+
+### Router configuration
+
+- **`routes`** renames any endpoint (`{ login: '/signin' }`) or leaves it unmounted
+  (`{ social: false }`). An unknown name throws at startup, and is a compile error in
+  TypeScript.
+- **`middlewares`** matches `createRouter`: an array runs on every auth route. An object
+  targets them by name — `{ all: [cors()], login: [limiter], forgotPassword: [limiter] }` —
+  which puts a rate limiter on the endpoints that get guessed at without throttling `/me`.
+  Route middleware runs before the auth guard.
+- **`auth.urls`** lists what was mounted, with each route's access level; **`AUTH_ROUTES`**
+  lists everything the factory can mount. Both are frozen, and both come from the same table
+  the router is built from, so they cannot drift from what is actually served.
+
+### Security posture
+
+- One message for every failed sign-in, and an unknown account is verified against a decoy
+  hash so the response time does not distinguish it. Both are how a login endpoint becomes a
+  list of your customers.
+- `POST /password/forgot` answers identically whether or not the account exists.
+- Secret fields — password, OTP, lockout counters — are stripped from every response by
+  projection *and* on serialization, and can never be written by a client.
+- A registrant cannot choose their own role, and `PATCH /users/:id` cannot change a role or a
+  password. Those have their own endpoints, with their own authorization.
+- Failed sign-ins are counted on the user record, so the lockout survives a restart and holds
+  across every instance behind a load balancer.
+- Roles are re-read from the record on each request rather than trusted from the token.
+
+---
+
 ## [3.1.0] — 2026-09-21
 
 Three things: the HTTP **QUERY** method, a **custom validation hook** for writes, and

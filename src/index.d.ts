@@ -1,4 +1,11 @@
-import { ErrorRequestHandler, NextFunction, Request, Response, Router } from "express";
+import {
+    ErrorRequestHandler,
+    NextFunction,
+    Request,
+    RequestHandler,
+    Response,
+    Router,
+} from "express";
 import { Document, Model, PopulateOptions } from "mongoose";
 
 /** Result returned by the onGet hook */
@@ -351,3 +358,244 @@ export class ValidationError extends HttpError {
 
 /** Escapes regex metacharacters so user input matches literally. */
 export function escapeRegex(value: unknown): string;
+
+/* ==========================================================================
+ * Authentication
+ * ========================================================================== */
+
+/** A login identifier with its own normalizer — trim, lowercase, strip formatting. */
+export interface IdentifierField {
+    field: string;
+    normalize?(value: string): string;
+}
+
+/** A login identifier: a field name, or a field with its own normalizer. */
+export type IdentifierSpec = string | IdentifierField;
+
+/**
+ * Declares an identifier with its own normalizer.
+ *
+ * A plain object works identically; this exists because TypeScript cannot infer
+ * the callback's parameter inside an array whose element type is a union.
+ */
+export function identifier(
+    field: string,
+    normalize?: (value: string) => string,
+): IdentifierField;
+
+/** Field names on *your* user model. Nothing here is a schema this library owns. */
+export interface AuthFieldMap {
+    /** Where the password hash lives. Default `"password"`. */
+    password?: string;
+    /** Where the role lives. Default `"role"`. */
+    role?: string;
+    otpHash?: string;
+    otpPurpose?: string;
+    otpExpiresAt?: string;
+    otpAttempts?: string;
+    failedLogins?: string;
+    lockedUntil?: string;
+    passwordChangedAt?: string;
+    /** A boolean field that blocks sign-in when true. Unset by default. */
+    disabled?: string | null;
+}
+
+export interface TokenOptions {
+    /** HMAC secret, at least 32 characters. Required. */
+    secret: string;
+    /** `"15m"`, `"7d"`, or seconds. Default `"15m"`. */
+    expiresIn?: string | number;
+    issuer?: string;
+    audience?: string;
+    /** End sessions issued before a password change. Default true. */
+    invalidateOnPasswordChange?: boolean;
+}
+
+export interface OtpOptions {
+    /** Digits in a code. Default 6. */
+    length?: number;
+    /** How long a code stays valid. Default 600. */
+    ttlSeconds?: number;
+    /** Guesses allowed before the code is dead. Default 5. */
+    maxAttempts?: number;
+    /**
+     * Sends the code. This library never talks to your mail or SMS provider —
+     * without this the code is generated and a warning is logged.
+     */
+    deliver?: (payload: {
+        user: Record<string, any>;
+        code: string;
+        channel: "email" | "sms";
+        req: Request;
+    }) => void | Promise<void>;
+}
+
+export interface RoleOptions {
+    /** Field holding the role. Default `"role"`. */
+    field?: string;
+    /** Roles that may be assigned. Unset means any string. */
+    list?: string[];
+    /** Role given at registration. Default the first of `list`, else `"user"`. */
+    default?: string;
+    /** Roles treated as administrators. Default `["admin"]`. */
+    admin?: string | string[];
+    /** True when the role field is an array. Default false. */
+    multiple?: boolean;
+}
+
+/** What a provider returns once it has verified a credential. */
+export interface SocialProfile {
+    id: string;
+    email?: string | null;
+    name?: string | null;
+    picture?: string | null;
+    raw?: unknown;
+}
+
+export interface SocialProvider {
+    /** Field on your model holding this provider's account id. Default `<name>Id`. */
+    idField?: string;
+    /** Replaces the built-in verification entirely. */
+    verify?: (credential: Record<string, any>, settings: any) => Promise<SocialProfile>;
+    [setting: string]: any;
+}
+
+/** The endpoints a `createAuthRouter` can mount. */
+export type AuthRouteName =
+    | "register"
+    | "login"
+    | "social"
+    | "forgotPassword"
+    | "resetPassword"
+    | "changePassword"
+    | "me"
+    | "listUsers"
+    | "getUser"
+    | "updateUser"
+    | "modifyRoles";
+
+/** Who may reach a route, decided when it is mounted. */
+export type AuthAccess = "public" | "authenticated" | "admin";
+
+export interface AuthUrl {
+    name: AuthRouteName;
+    method: string;
+    path: string;
+    access: AuthAccess;
+}
+
+/**
+ * Per-route middleware. An array applies to every endpoint, as `middlewares`
+ * does on `createRouter`; an object targets them by name, which is how a rate
+ * limiter goes on `login` without throttling `me`.
+ */
+export type AuthMiddlewares =
+    | RequestHandler[]
+    | ({ all?: RequestHandler[] } & Partial<Record<AuthRouteName, RequestHandler[]>>);
+
+export interface AuthOptions<T extends Document = any> {
+    model: Model<T>;
+    /** Rename a route, or leave it unmounted with `false`. */
+    routes?: Partial<Record<AuthRouteName, string | false>>;
+    /** Middleware for every route, or per route by name. */
+    middlewares?: AuthMiddlewares;
+    /** Fields a client may sign in with. Default `["email"]`. */
+    identifiers?: IdentifierSpec[] | IdentifierSpec;
+    fields?: AuthFieldMap;
+    token: TokenOptions;
+    password?: {
+        /** Minimum length accepted. Default 8. */
+        minLength?: number;
+        /** Replace scrypt with bcrypt, argon2 or anything else. */
+        hash?: (plain: string) => Promise<string> | string;
+        verify?: (plain: string, stored: string) => Promise<boolean> | boolean;
+    };
+    otp?: OtpOptions;
+    /** Failed sign-ins before the account locks. Default 10 attempts, 900s. */
+    lockout?: { maxAttempts?: number; lockSeconds?: number };
+    roles?: RoleOptions;
+    /** Providers to enable, keyed by name: `google`, `apple`, `facebook`, `github`. */
+    social?: Record<string, SocialProvider>;
+    /** Fields a client may set at registration, beyond its identifiers. */
+    registerFields?: string[];
+    /** Fields a client may change on itself. */
+    updateFields?: string[];
+    onRegister?: (user: T, req: Request) => void | Promise<void>;
+    /** Last word on whether a sign-in proceeds. Throw an `HttpError` to refuse. */
+    onLogin?: (user: T, req: Request) => void | Promise<void>;
+    logger?: Logger;
+    /** Caps for `GET /users`, as in `ControllerOptions`. */
+    maxLimit?: number;
+    defaultPageSize?: number;
+    maxTimeMS?: number;
+    countStrategy?: CountStrategy;
+    lean?: boolean;
+}
+
+/** What `requireAuth` puts on the request. */
+export interface AuthContext {
+    userId: string;
+    role?: string | string[];
+    claims: Record<string, any>;
+}
+
+declare global {
+    namespace Express {
+        interface Request {
+            auth?: AuthContext;
+        }
+    }
+}
+
+/**
+ * An auth router, with its guards attached so your own routes can reuse them
+ * without rebuilding the configuration.
+ */
+export interface AuthRouter extends Router {
+    /** Verifies the bearer token and populates `req.auth`. */
+    requireAuth: RequestHandler;
+    /** Gates a route on a role. Mount after `requireAuth`. */
+    requireRole(...roles: (string | string[])[]): RequestHandler;
+    /** The resolved configuration, for anything wired by hand. */
+    config: any;
+    /** What was actually mounted, in order. */
+    urls: readonly AuthUrl[];
+}
+
+/** Every endpoint `createAuthRouter` knows how to mount, with its default URL. */
+export const AUTH_ROUTES: readonly AuthUrl[];
+
+/**
+ * Register, login, social sign-in, password change and reset by one-time code,
+ * user listing and role management — mounted as one router.
+ */
+export function createAuthRouter<T extends Document = any>(
+    options: AuthOptions<T>,
+): AuthRouter;
+
+/** Verifies the bearer token and populates `req.auth`. */
+export function requireAuth<T extends Document = any>(
+    config: ReturnType<typeof buildAuthConfig>,
+    options?: { loadUser?: boolean },
+): RequestHandler;
+
+/** Gates a route on a role. Mount after `requireAuth`. */
+export function requireRole(...roles: (string | string[])[]): RequestHandler;
+
+/** Resolves raw options into the frozen auth config the middleware needs. */
+export function buildAuthConfig<T extends Document = any>(options: AuthOptions<T>): any;
+
+export function hashPassword(plain: string): Promise<string>;
+export function verifyPassword(plain: string, stored: string): Promise<boolean>;
+
+export function signToken(
+    claims: Record<string, any>,
+    options: TokenOptions & { secret: string },
+): string;
+export function verifyToken(
+    token: string,
+    options: { secret: string; issuer?: string; audience?: string; clockToleranceSeconds?: number },
+): Record<string, any>;
+
+/** The built-in provider verifiers, for wrapping or reuse. */
+export const BUILT_IN_PROVIDERS: Record<string, SocialProvider>;

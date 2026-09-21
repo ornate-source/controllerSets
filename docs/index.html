@@ -41,7 +41,7 @@
                     <span class="logo-mark" aria-hidden="true">{}</span>
                     <span class="logo-titles">
                         <span class="logo-text">controller-sets</span>
-                        <span class="logo-sub">v3.1.0 · docs</span>
+                        <span class="logo-sub">v3.2.0 · docs</span>
                     </span>
                 </div>
                 <button class="icon-btn mobile-only" id="menu-close" aria-label="Close menu">
@@ -102,6 +102,8 @@
                 <p class="nav-group-title">Going live</p>
                 <ul>
                     <li><a href="#middlewares"><i data-lucide="lock"></i> Auth &amp; middlewares</a></li>
+                    <li><a href="#auth"><i data-lucide="key-round"></i> Authentication <span
+                                class="nav-star">NEW</span></a></li>
                     <li><a href="#performance"><i data-lucide="gauge"></i> Performance <span
                                 class="nav-star">NEW</span></a></li>
                     <li><a href="#security"><i data-lucide="shield-check"></i> Security checklist</a></li>
@@ -124,7 +126,7 @@
 
             <!-- ============================ HERO ============================ -->
             <section class="hero" id="what-is-this">
-                <span class="hero-eyebrow"><span class="hero-eyebrow-dot"></span> v3.1 — now with HTTP QUERY</span>
+                <span class="hero-eyebrow"><span class="hero-eyebrow-dot"></span> v3.2 — now with authentication</span>
                 <h1><span class="line">One model in,</span><span class="line grad">a whole REST API out.</span></h1>
                 <p class="lead">Express Controller Sets is a Node.js library that turns a Mongoose model into six
                     working endpoints — list, query, read, create, update, delete — with filtering, search, pagination
@@ -2847,6 +2849,367 @@ createRouter({
                 </div>
             </section>
 
+            <!-- ====================== AUTH ====================== -->
+            <section class="section reveal" id="auth">
+                <h2><i data-lucide="key-round"></i> Authentication</h2>
+                <p class="section-intro">Register, sign in, social sign-in, password reset by one-time code, roles
+                    and user administration — against your own user model. This library defines no schema.</p>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>import { createAuthRouter, createRouter, errorHandler } from 'express-controller-sets';
+
+const auth = createAuthRouter({
+  model: User,
+  identifiers: ['email', 'phone'],        // sign in with either
+  token: { secret: process.env.JWT_SECRET, expiresIn: '15m' },
+  roles: { list: ['user', 'staff', 'admin'], default: 'user', admin: ['admin'] },
+  registerFields: ['name'],
+  updateFields: ['name'],
+
+  // Delivery is yours. No mail or SMS credentials live in this library.
+  otp: { deliver: async ({ user, code, channel }) =&gt; sendCode(user, code, channel) },
+
+  social: {
+    google:   { clientId: process.env.GOOGLE_CLIENT_ID },
+    apple:    { clientId: process.env.APPLE_CLIENT_ID },
+    facebook: { appId: process.env.FB_APP_ID, appSecret: process.env.FB_APP_SECRET },
+    github:   { clientId: process.env.GH_ID, clientSecret: process.env.GH_SECRET },
+  },
+});
+
+app.use('/auth', auth);
+
+// The guards come off the router, so there is no second config to keep in sync.
+app.use('/notes', createRouter({ model: Note, middlewares: [auth.requireAuth] }));
+app.use('/admin/notes', createRouter({
+  model: Note,
+  middlewares: [auth.requireAuth, auth.requireRole('admin')],
+}));</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <h3>The endpoints</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Method</th>
+                                <th>Path</th>
+                                <th>What it does</th>
+                                <th>Who</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="m m-post">POST</span></td>
+                                <td><code>/register</code></td>
+                                <td>Creates an account and returns a token.</td>
+                                <td>Anyone</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-post">POST</span></td>
+                                <td><code>/login</code></td>
+                                <td>Signs in with any configured identifier.</td>
+                                <td>Anyone</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-post">POST</span></td>
+                                <td><code>/social/:provider</code></td>
+                                <td><code>google</code>, <code>apple</code>, <code>facebook</code>,
+                                    <code>github</code>.</td>
+                                <td>Anyone</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-post">POST</span></td>
+                                <td><code>/password/forgot</code></td>
+                                <td>Sends a one-time code by email or SMS.</td>
+                                <td>Anyone</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-post">POST</span></td>
+                                <td><code>/password/reset</code></td>
+                                <td>Verifies the code and sets a new password.</td>
+                                <td>Anyone</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-post">POST</span></td>
+                                <td><code>/password/change</code></td>
+                                <td>Changes it, given the current one.</td>
+                                <td>Signed in</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-get">GET</span></td>
+                                <td><code>/me</code></td>
+                                <td>The signed-in user.</td>
+                                <td>Signed in</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-get">GET</span></td>
+                                <td><code>/users</code></td>
+                                <td>Lists users, paginated, filterable by identifier or role.</td>
+                                <td>Admin</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-get">GET</span></td>
+                                <td><code>/users/:id</code></td>
+                                <td>One user, without secrets.</td>
+                                <td>Signed in</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-patch">PATCH</span></td>
+                                <td><code>/users/:id</code></td>
+                                <td>Updates yourself, or anyone if you administer.</td>
+                                <td>Self or admin</td>
+                            </tr>
+                            <tr>
+                                <td><span class="m m-patch">PATCH</span></td>
+                                <td><code>/users/:id/roles</code></td>
+                                <td>Assigns roles from the allowed list.</td>
+                                <td>Admin</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>Your URLs, not ours</h3>
+                <p><code>routes</code> renames an endpoint or leaves it out, and
+                    <code>middlewares</code> behaves as it does on <code>createRouter</code> — with one
+                    addition: an object targets a single route by name.</p>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>const auth = createAuthRouter({
+  model: User,
+  token: { secret: process.env.JWT_SECRET },
+
+  routes: {
+    register: '/signup',        // rename it
+    login: '/signin',
+    social: false,              // never mount it
+    modifyRoles: false,
+  },
+
+  middlewares: {
+    all: [cors()],              // every auth route
+    login: [rateLimiter],       // only the ones that get guessed at
+    forgotPassword: [rateLimiter],
+  },
+});
+
+app.use('/api/v1/auth', auth);</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>Route middleware runs before the guard, so a limiter sheds load without a database
+                    round trip first. An unknown route name throws when the router is built rather than
+                    doing nothing at request time — and in TypeScript it will not compile.</p>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>auth.urls;    // what this instance mounted
+// [ { name: 'register', method: 'POST', path: '/signup', access: 'public' },
+//   { name: 'login',    method: 'POST', path: '/signin', access: 'public' }, … ]
+
+AUTH_ROUTES;  // everything the factory knows how to mount</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>Both come from the same table the router is built from, so neither can drift from what
+                    is actually served. Every row carries an access level, which is what stops an endpoint
+                    being added without a decision about who may call it.</p>
+
+                <h3>What your model needs</h3>
+                <p>Every name below is configurable through <code>fields</code>; these are the defaults. Mark the
+                    secrets <code>select: false</code> — the library selects them explicitly where it needs them,
+                    and never returns them.</p>
+
+                <div class="code-block" data-lang="javascript">
+                    <pre><code>const userSchema = new mongoose.Schema({
+  email: { type: String, unique: true, sparse: true },
+  phone: { type: String, unique: true, sparse: true },
+  password: { type: String, select: false },
+  role: { type: String, default: 'user' },
+
+  googleId: String, appleId: String, facebookId: String, githubId: String,
+
+  otpHash:      { type: String, select: false },
+  otpPurpose:   { type: String, select: false },
+  otpExpiresAt: { type: Date,   select: false },
+  otpAttempts:  { type: Number, default: 0, select: false },
+
+  failedLoginAttempts: { type: Number, default: 0, select: false },
+  lockedUntil:         { type: Date,   select: false },
+  passwordChangedAt:   Date,
+}, { timestamps: true });</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <h3>Signing in with anything</h3>
+                <p>One field, several identifiers. Each is normalized on the way in, so a phone number reaches the
+                    same account however it was typed:</p>
+
+                <div class="code-block" data-lang="bash">
+                    <pre><code>POST /auth/login  { "identifier": "Ada@Example.com",  "password": "…" }
+POST /auth/login  { "identifier": "+1 (555) 010-1234", "password": "…" }   # same account as
+POST /auth/login  { "identifier": "+15550101234",      "password": "…" }</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>Email is lowercased, a phone loses its formatting, anything else is trimmed. Supply your own with
+                    <code>identifier('nationalId', (v) =&gt; v.toUpperCase())</code>.</p>
+
+                <h3>Resetting a password</h3>
+                <div class="code-block" data-lang="bash">
+                    <pre><code># 1. Ask for a code. The answer is the same whether or not the account exists.
+POST /auth/password/forgot  { "identifier": "ada@example.com", "channel": "sms" }
+→ { "success": true, "message": "If that account exists, a code has been sent." }
+
+# 2. Your `otp.deliver` receives { user, code, channel } and sends it.
+
+# 3. Spend it.
+POST /auth/password/reset   { "identifier": "ada@example.com",
+                              "code": "402913", "newPassword": "…" }</code></pre>
+                    <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                </div>
+
+                <p>The code is stored as an HMAC under your token secret, never in the clear; it is bound to its
+                    purpose, expires, and is counted — five wrong guesses and it is dead. Without those three a
+                    six-digit code is a number an attacker simply enumerates.</p>
+
+                <h3>Social sign-in</h3>
+                <p>Each provider is verified <em>with the provider</em>. A profile the client sends is a claim about
+                    who someone is, and none of these take one on trust.</p>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Provider</th>
+                                <th>Send</th>
+                                <th>How it is checked</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Google</td>
+                                <td><code>{ idToken }</code></td>
+                                <td>RS256 signature against Google's published keys, then issuer and audience.</td>
+                            </tr>
+                            <tr>
+                                <td>Apple</td>
+                                <td><code>{ idToken, name? }</code></td>
+                                <td>The same, against Apple's keys. Apple sends a name only on first authorization,
+                                    so the client forwards it.</td>
+                            </tr>
+                            <tr>
+                                <td>Facebook</td>
+                                <td><code>{ accessToken }</code></td>
+                                <td><code>debug_token</code> confirms the token was minted for <em>your</em> app,
+                                    then the profile is read.</td>
+                            </tr>
+                            <tr>
+                                <td>GitHub</td>
+                                <td><code>{ accessToken }</code> or <code>{ code }</code></td>
+                                <td>A code is exchanged server-side, so the client never holds the secret. The
+                                    verified primary email is fetched separately.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>A provider only exists once you have configured it — an unconfigured one is a
+                    <strong>404</strong>, not an open door. Sign-in matches on the provider's account id first, and
+                    falls back to a <em>verified</em> email so a social login links to the account that already
+                    registered by password.</p>
+
+                <div class="callout callout-plain">
+                    <i data-lucide="plug"></i>
+                    <div>
+                        <p><strong>Any other provider.</strong> A provider is one function. Supply
+                            <code>verify</code> and it replaces the built-in entirely:</p>
+                        <div class="code-block" data-lang="javascript">
+                            <pre><code>social: {
+  discord: {
+    idField: 'discordId',
+    verify: async ({ accessToken }) =&gt; {
+      const profile = await fetchDiscordUser(accessToken);
+      return { id: profile.id, email: profile.verified ? profile.email : null };
+    },
+  },
+}</code></pre>
+                            <button class="copy-btn"><i data-lucide="copy"></i> Copy</button>
+                        </div>
+                    </div>
+                </div>
+
+                <h3>What it refuses to do</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Attempt</th>
+                                <th>Result</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Registering with <code>"role": "admin"</code></td>
+                                <td>The role is stripped. Roles have their own endpoint, behind admin.</td>
+                            </tr>
+                            <tr>
+                                <td><code>PATCH /users/:id</code> with a new password or role</td>
+                                <td>Both ignored. Each has its own endpoint and its own authorization.</td>
+                            </tr>
+                            <tr>
+                                <td>Updating someone else's record</td>
+                                <td><strong>403</strong>, unless you administer.</td>
+                            </tr>
+                            <tr>
+                                <td>Telling a wrong password from an unknown account</td>
+                                <td>Same message, and a decoy hash is verified so the timing matches too.</td>
+                            </tr>
+                            <tr>
+                                <td>Guessing a password</td>
+                                <td>Counted on the record; the account locks. It survives a restart and holds across
+                                    every instance.</td>
+                            </tr>
+                            <tr>
+                                <td><code>{ "password": { "$ne": null } }</code></td>
+                                <td><strong>400</strong>. An object where a credential belongs is an injection, not
+                                    a login.</td>
+                            </tr>
+                            <tr>
+                                <td>An admin removing their own admin role</td>
+                                <td><strong>400</strong>. It would lock everyone out of the endpoint that undoes it.</td>
+                            </tr>
+                            <tr>
+                                <td>Using a token issued before a password change</td>
+                                <td><strong>401</strong>. Changing a password ends the sessions that predate it.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="callout callout-danger">
+                    <i data-lucide="key"></i>
+                    <div>
+                        <p><strong><code>token.secret</code> is the whole system.</strong> It signs every session and
+                            keys every one-time code. At least 32 characters, never in the repository, and rotating
+                            it signs everyone out — which is exactly what you want the day it leaks. Generate one
+                            with <code>node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"</code>.</p>
+                    </div>
+                </div>
+
+                <div class="callout callout-warn">
+                    <i data-lucide="siren"></i>
+                    <div>
+                        <p><strong>What this does not do.</strong> No refresh tokens or session revocation lists —
+                            keep <code>expiresIn</code> short. No rate limiting on the endpoints themselves beyond
+                            the per-account lockout, so put a limiter in front of <code>/login</code>,
+                            <code>/register</code> and <code>/password/forgot</code>. No email verification flow. And
+                            it sends nothing: <code>otp.deliver</code> is where your provider goes.</p>
+                    </div>
+                </div>
+            </section>
+
             <!-- ====================== SECURITY ====================== -->
             <section class="section reveal" id="security">
                 <h2><i data-lucide="shield-check"></i> Before you go live</h2>
@@ -3322,6 +3685,32 @@ new ControllerSets({ model: Model, orderBy: '-createdAt', query: ['category'] })
                                 <td><code>escapeRegex(value)</code></td>
                                 <td>function</td>
                                 <td>Escape regex metacharacters in your own queries.</td>
+                            </tr>
+                            <tr>
+                                <td><code>createAuthRouter(options)</code></td>
+                                <td>function</td>
+                                <td>Register, login, social sign-in, reset, roles — see
+                                    <a href="#auth">Authentication</a>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>AUTH_ROUTES</code></td>
+                                <td>array</td>
+                                <td>Every auth endpoint with its default URL and access level.</td>
+                            </tr>
+                            <tr>
+                                <td><code>requireAuth</code> · <code>requireRole</code></td>
+                                <td>middleware</td>
+                                <td>Guards for your own routes. Also attached to the auth router.</td>
+                            </tr>
+                            <tr>
+                                <td><code>hashPassword</code> · <code>verifyPassword</code></td>
+                                <td>async</td>
+                                <td>The scrypt hashing used by the auth routes.</td>
+                            </tr>
+                            <tr>
+                                <td><code>signToken</code> · <code>verifyToken</code></td>
+                                <td>function</td>
+                                <td>HS256 JWTs, for tokens you issue yourself.</td>
                             </tr>
                             <tr>
                                 <td><code>isQueryMethodSupported()</code></td>

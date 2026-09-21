@@ -3,6 +3,19 @@ export { createRouter, createRouterS3upload, isQueryMethodSupported } from "./ro
 export { compressImage, fileUploadMiddleware } from "./s3upload.js";
 export { errorHandler } from "./utils/errorHandler.js";
 export {
+    AUTH_ROUTES,
+    buildAuthConfig,
+    createAuthRouter,
+    identifier,
+    requireAuth,
+    requireRole,
+    hashPassword,
+    verifyPassword,
+    signToken,
+    verifyToken,
+    BUILT_IN_PROVIDERS,
+} from "./auth/index.js";
+export {
     HttpError,
     ValidationError,
     escapeRegex,

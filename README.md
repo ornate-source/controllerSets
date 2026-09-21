@@ -15,6 +15,22 @@ Designed to help you build APIs faster by automating repetitive controller logic
 
 ## 📋 Changelog
 
+### Version 3.2.0 — Authentication
+
+Adds a full auth API. It defines no schema: you pass your own user model and say which fields
+hold what.
+
+- **New**: `createAuthRouter()` — register, login, social sign-in (Google, Apple, Facebook,
+  GitHub), password change, reset by one-time code over email or SMS, `GET /me`, user listing,
+  single user, self-update, and role management.
+- **New**: sign in with **any identifier** — `identifiers: ['email', 'phone']` accepts either
+  in one field, normalized on the way in.
+- **New**: `requireAuth` / `requireRole`, attached to the router, for protecting your CRUD
+  routers with the same configuration.
+- Passwords are hashed with Node's scrypt (no dependency; bring bcrypt or argon2 if you
+  prefer). Tokens are HS256 JWTs with the algorithm hard-coded rather than read from the
+  token. One-time codes are stored as keyed HMACs, expiring and attempt-limited.
+
 ### Version 3.1.0 — HTTP QUERY, custom validation, cursor pagination
 
 - **New**: `QUERY /` — a safe, idempotent read whose parameters travel in a JSON body instead
@@ -262,6 +278,151 @@ What it gives you is the faster strategy already built.
 > This package generates **public** endpoints. Authentication and authorization are yours to
 > supply via the `middlewares` option, and `allowedFields` is what stands between a client and
 > every writable field on your schema. Neither is applied for you.
+
+---
+
+## 🔐 Authentication
+
+You bring the model; the library never defines a schema. Point it at your fields and mount it:
+
+```javascript
+import express from 'express';
+import { createAuthRouter, createRouter, errorHandler } from 'express-controller-sets';
+import User from './models/User.js';
+import Note from './models/Note.js';
+
+const app = express();
+app.use(express.json());
+
+const auth = createAuthRouter({
+    model: User,
+    identifiers: ['email', 'phone'],          // sign in with either
+    token: { secret: process.env.JWT_SECRET, expiresIn: '15m' },
+    roles: { list: ['user', 'staff', 'admin'], default: 'user', admin: ['admin'] },
+    registerFields: ['name'],                 // what a registrant may also set
+    updateFields: ['name'],                   // what they may change later
+
+    // The code is yours to deliver — no mail or SMS credentials live here.
+    otp: { deliver: async ({ user, code, channel }) => sendCode(user, code, channel) },
+
+    social: {
+        google: { clientId: process.env.GOOGLE_CLIENT_ID },
+        apple: { clientId: process.env.APPLE_CLIENT_ID },
+        facebook: { appId: process.env.FB_APP_ID, appSecret: process.env.FB_APP_SECRET },
+        github: { clientId: process.env.GH_ID, clientSecret: process.env.GH_SECRET },
+    },
+});
+
+app.use('/auth', auth);
+
+// The guards travel with the router — no second config to keep in sync.
+app.use('/notes', createRouter({ model: Note, middlewares: [auth.requireAuth] }));
+app.use('/admin/notes', createRouter({
+    model: Note,
+    middlewares: [auth.requireAuth, auth.requireRole('admin')],
+}));
+
+app.use(errorHandler);
+```
+
+| Method | Path | What it does |
+|---|---|---|
+| `POST` | `/register` | Create an account, return a token. |
+| `POST` | `/login` | Sign in with any configured identifier. |
+| `POST` | `/social/:provider` | `google`, `apple`, `facebook`, `github`. |
+| `POST` | `/password/forgot` | Send a one-time code by email or SMS. |
+| `POST` | `/password/reset` | Verify the code, set a new password. |
+| `POST` | `/password/change` | Change it with the current one. |
+| `GET` | `/me` | The signed-in user. |
+| `GET` | `/users` · `/users/:id` | List (admin) and read. |
+| `PATCH` | `/users/:id` | Update yourself, or anyone if you administer. |
+| `PATCH` | `/users/:id/roles` | Assign roles (admin). |
+
+### Your URLs, not ours
+
+`routes` renames an endpoint or leaves it out; `middlewares` works as it does on
+`createRouter`, and also takes an object to target one route by name:
+
+```javascript
+const auth = createAuthRouter({
+    model: User,
+    token: { secret: process.env.JWT_SECRET },
+
+    routes: {
+        register: '/signup',       // rename
+        login: '/signin',
+        social: false,             // never mounted
+        modifyRoles: false,
+    },
+
+    middlewares: {
+        all: [cors()],             // every auth route
+        login: [rateLimiter],      // just the ones that get guessed at
+        forgotPassword: [rateLimiter],
+    },
+});
+
+app.use('/api/v1/auth', auth);
+
+auth.urls;
+// [ { name: 'register', method: 'POST', path: '/signup', access: 'public' },
+//   { name: 'login',    method: 'POST', path: '/signin', access: 'public' }, … ]
+```
+
+`auth.urls` is what this instance actually mounted; `AUTH_ROUTES` is everything the factory
+knows how to mount. An unknown route name throws at startup rather than silently doing
+nothing, and in TypeScript it is a compile error.
+
+Your model needs a field for each thing the library stores. Every name is configurable via
+`fields`; these are the defaults:
+
+```javascript
+const userSchema = new mongoose.Schema({
+    email: { type: String, unique: true, sparse: true },
+    phone: { type: String, unique: true, sparse: true },
+    password: { type: String, select: false },
+    role: { type: String, default: 'user' },
+
+    googleId: String, appleId: String, facebookId: String, githubId: String,
+
+    otpHash:  { type: String, select: false },
+    otpPurpose: { type: String, select: false },
+    otpExpiresAt: { type: Date, select: false },
+    otpAttempts: { type: Number, default: 0, select: false },
+
+    failedLoginAttempts: { type: Number, default: 0, select: false },
+    lockedUntil: { type: Date, select: false },
+    passwordChangedAt: Date,
+}, { timestamps: true });
+```
+
+### What it does on your behalf
+
+- **Passwords** hashed with Node's scrypt — nothing to install, and the cost parameters ride
+  along in each hash so they can be raised later. Pass `password.hash` / `password.verify` for
+  bcrypt or argon2.
+- **Tokens** are HS256 JWTs whose algorithm is hard-coded rather than read from the token,
+  which is what `alg: none` and RS256→HS256 confusion both rely on. A password change ends
+  every session issued before it.
+- **Social tokens are verified with the provider**, never trusted as sent: Google and Apple by
+  RS256 signature against their published keys with issuer and audience checked, Facebook
+  through `debug_token` so another app's token is refused, GitHub by token or `code` exchange.
+- **One-time codes** are stored as an HMAC under your secret, bound to a purpose, expiring and
+  attempt-limited — a six-digit code is guessable otherwise.
+- **Failed sign-ins are counted on the record**, so a lockout survives a restart and holds
+  across every instance behind a load balancer.
+- **Enumeration is closed**: one message for every failed login, an unknown account verified
+  against a decoy hash so timing does not give it away, and `password/forgot` answering the
+  same either way.
+- **Secrets never leave**: password, OTP and lockout fields are stripped by projection and on
+  serialization, and are never client-writable. A registrant cannot choose a role, and
+  `PATCH /users/:id` changes neither role nor password — those have their own endpoints.
+
+> [!IMPORTANT]
+> `token.secret` must be at least 32 characters and must not be in your repository. Generate
+> one with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
+
+---
 
 > [!TIP]
 > **View the [Full Documentation & Live Demo](https://ornate-source.github.io/controllerSets/)** for a complete list of endpoints, filtering options, and S3 configuration.

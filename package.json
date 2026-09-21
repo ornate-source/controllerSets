@@ -1,7 +1,7 @@
 {
   "name": "express-controller-sets",
-  "version": "3.1.0",
-  "description": "Unified package for Express.js controller sets, dynamic routing, HTTP QUERY reads, and S3 file uploads.",
+  "version": "3.2.0",
+  "description": "Unified package for Express.js controller sets, authentication, dynamic routing, HTTP QUERY reads, and S3 file uploads.",
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "type": "module",
@@ -71,6 +71,13 @@
     "s3",
     "multer",
     "multer-s3",
-    "file-upload"
+    "file-upload",
+    "authentication",
+    "jwt",
+    "auth",
+    "oauth",
+    "social-login",
+    "otp",
+    "rbac"
   ]
 }
