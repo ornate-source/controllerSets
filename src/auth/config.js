@@ -17,10 +17,39 @@ const DEFAULT_FIELDS = {
     failedLogins: "failedLoginAttempts",
     lockedUntil: "lockedUntil",
     passwordChangedAt: "passwordChangedAt",
+    refreshTokens: "refreshTokens",
     disabled: null,
 };
 
 const DEFAULT_LOCKOUT = { maxAttempts: 10, lockSeconds: 900 };
+const DEFAULT_REFRESH = {
+    expiresIn: "30d",
+    rotate: true,
+    // Two requests refreshing at once is ordinary client behaviour, not an
+    // attack. The loser of that race gets this long to still be accepted.
+    graceSeconds: 10,
+    // A leaked token may not be the only one, so a replay ends every session.
+    revokeAllOnReuse: true,
+    maxSessions: 5,
+};
+
+/**
+ * Reads a boolean from the environment.
+ *
+ * Explicit configuration always wins; this is the fallback, so a deployment can
+ * flip rotation without a code change. Loading `.env` itself remains the
+ * application's job — this library only reads what is already in `process.env`.
+ */
+const envFlag = (name) => {
+    const raw = process.env[name];
+    if (raw === undefined || raw.trim() === "") return undefined;
+
+    const value = raw.trim().toLowerCase();
+    if (["1", "true", "yes", "on"].includes(value)) return true;
+    if (["0", "false", "no", "off"].includes(value)) return false;
+
+    throw new Error(`Auth: ${name} must be true or false, not '${raw}'.`);
+};
 const DEFAULT_OTP = { length: 6, ttlSeconds: 600, maxAttempts: 5 };
 const DEFAULT_PASSWORD_POLICY = { minLength: 8 };
 
@@ -34,6 +63,7 @@ export const alwaysSecret = (fields) =>
         fields.otpAttempts,
         fields.failedLogins,
         fields.lockedUntil,
+        fields.refreshTokens,
     ].filter(Boolean);
 
 const requireSecret = (secret) => {
@@ -91,6 +121,44 @@ const normalizeRoles = (option = {}) => {
  */
 export const identifier = (field, normalize) => (normalize ? { field, normalize } : { field });
 
+/**
+ * Refresh tokens are opt-in: enabling them requires a field on your model, and
+ * turning them on silently would break a model that has none.
+ */
+const resolveRefresh = (option = {}, model, fields) => {
+    const enabled = option.enabled ?? envFlag("AUTH_REFRESH_ENABLED") ?? false;
+    if (!enabled) return Object.freeze({ enabled: false });
+
+    const expiresIn = option.expiresIn ?? process.env.AUTH_REFRESH_EXPIRES_IN ?? DEFAULT_REFRESH.expiresIn;
+    const ttlSeconds = durationToSeconds(expiresIn);
+    if (!ttlSeconds) {
+        throw new Error("Auth: 'refresh.expiresIn' must be a duration like '30d'.");
+    }
+
+    // Mongoose drops a path the schema does not define, so without this the
+    // session would be written nowhere and every refresh would fail with no
+    // indication why.
+    const field = fields.refreshTokens;
+    if (model?.schema?.path && !model.schema.path(field)) {
+        throw new Error(
+            `Auth: refresh tokens need a '${field}' array on your user schema. Add:\n` +
+                `  ${field}: [{ id: String, hash: String, previousHash: String, ` +
+                `rotatedAt: Date, createdAt: Date, lastUsedAt: Date, expiresAt: Date, ` +
+                `userAgent: String }]`,
+        );
+    }
+
+    return Object.freeze({
+        enabled: true,
+        ttlSeconds,
+        expiresIn,
+        rotate: option.rotate ?? envFlag("AUTH_REFRESH_ROTATE") ?? DEFAULT_REFRESH.rotate,
+        graceSeconds: option.graceSeconds ?? DEFAULT_REFRESH.graceSeconds,
+        revokeAllOnReuse: option.revokeAllOnReuse ?? DEFAULT_REFRESH.revokeAllOnReuse,
+        maxSessions: option.maxSessions ?? DEFAULT_REFRESH.maxSessions,
+    });
+};
+
 export const buildAuthConfig = (options = {}) => {
     if (!options.model) throw new Error("Auth: a Mongoose user model is required.");
 
@@ -109,6 +177,7 @@ export const buildAuthConfig = (options = {}) => {
     }
 
     const providers = options.social ?? {};
+    const refresh = resolveRefresh(options.refresh, options.model, fields);
 
     return Object.freeze({
         model: options.model,
@@ -136,6 +205,7 @@ export const buildAuthConfig = (options = {}) => {
         }),
 
         otp: Object.freeze(otp),
+        refresh,
         lockout: Object.freeze({ ...DEFAULT_LOCKOUT, ...(options.lockout ?? {}) }),
         roles: Object.freeze(normalizeRoles(options.roles)),
         social: Object.freeze(providers),

@@ -8,8 +8,11 @@ import {
     getUser,
     listUsers,
     login,
+    logout,
+    logoutAll,
     me,
     modifyRoles,
+    refreshSession,
     register,
     resetPassword,
     socialLogin,
@@ -52,6 +55,21 @@ const ROUTES = [
         path: "/password/change",
         access: "authenticated",
         handler: changePassword,
+    },
+    {
+        name: "refresh",
+        method: "post",
+        path: "/token/refresh",
+        access: "public",
+        handler: refreshSession,
+    },
+    { name: "logout", method: "post", path: "/logout", access: "public", handler: logout },
+    {
+        name: "logoutAll",
+        method: "post",
+        path: "/logout/all",
+        access: "authenticated",
+        handler: logoutAll,
     },
     { name: "me", method: "get", path: "/me", access: "authenticated", handler: me },
     { name: "listUsers", method: "get", path: "/users", access: "admin", handler: listUsers },
@@ -144,7 +162,12 @@ export const createAuthRouter = (options = {}) => {
     const run = (fn) => (req, res, next) => Promise.resolve(fn(req, res, config)).catch(next);
     const urls = [];
 
+    const refreshRoutes = new Set(["refresh", "logout", "logoutAll"]);
+
     for (const route of ROUTES) {
+        // No endpoint for a feature that is switched off.
+        if (refreshRoutes.has(route.name) && !config.refresh.enabled) continue;
+
         const path = resolvePath(route, overrides);
         if (!path) continue;
 

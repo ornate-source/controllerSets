@@ -18,8 +18,9 @@ import {
 } from "./account.js";
 import { verifyAgainstDecoy } from "./password.js";
 import { generateOtp, hashOtp, otpMatches } from "./otp.js";
-import { signToken } from "./token.js";
+import { durationToSeconds, signToken } from "./token.js";
 import { resolveProvider } from "./providers/index.js";
+import { closeSession, openSession, revokeAllSessions, useRefreshToken } from "./refresh.js";
 
 // The endpoints. Each one is short because the decisions live in `account.js`,
 // `password.js`, `token.js` and `otp.js`; what is left here is the sequence.
@@ -33,7 +34,28 @@ const issue = (user, config) =>
         config.token,
     );
 
-const session = (user, config) => ({ token: issue(user, config), user: publicUser(user, config) });
+/**
+ * What every successful sign-in returns.
+ *
+ * A refresh token is included only when refresh is enabled, so a deployment
+ * that does not use them sees exactly the response it always has.
+ */
+const session = async (user, config, req) => {
+    const body = {
+        token: issue(user, config),
+        expiresIn: durationToSeconds(config.token.expiresIn),
+        user: publicUser(user, config),
+    };
+
+    if (config.refresh.enabled) {
+        body.refreshToken = await openSession(user, config, {
+            userAgent: req?.headers?.["user-agent"],
+        });
+        body.refreshExpiresIn = config.refresh.ttlSeconds;
+    }
+
+    return body;
+};
 
 /* ------------------------------------------------------------------ *
  * POST /register
@@ -64,7 +86,7 @@ export const register = handler(async (req, res, config) => {
 
     if (config.onRegister) await config.onRegister(user, req);
 
-    return created(res, session(user, config));
+    return created(res, await session(user, config, req));
 });
 
 /* ------------------------------------------------------------------ *
@@ -110,7 +132,7 @@ export const login = handler(async (req, res, config) => {
         await clearFailures(user, config);
     }
 
-    return ok(res, session(user, config));
+    return ok(res, await session(user, config, req));
 });
 
 /* ------------------------------------------------------------------ *
@@ -158,7 +180,7 @@ export const socialLogin = handler(async (req, res, config) => {
     }
     if (config.onLogin) await config.onLogin(user, req);
 
-    return ok(res, { ...session(user, config), provider: name });
+    return ok(res, { ...(await session(user, config, req)), provider: name });
 });
 
 /* ------------------------------------------------------------------ *
@@ -187,6 +209,10 @@ export const changePassword = handler(async (req, res, config) => {
             },
         },
     );
+
+    // The access tokens die with `passwordChangedAt`; the refresh tokens have
+    // to be taken away, or a stolen one outlives the password it replaced.
+    if (config.refresh.enabled) await revokeAllSessions(user._id, config);
 
     return okMessage(res, "Password changed.");
 });
@@ -279,11 +305,64 @@ export const resetPassword = handler(async (req, res, config) => {
                 [config.fields.otpAttempts]: 0,
                 [config.fields.failedLogins]: 0,
                 [config.fields.lockedUntil]: null,
+                ...(config.refresh.enabled ? { [config.fields.refreshTokens]: [] } : {}),
             },
         },
     );
 
     return okMessage(res, "Password reset. Sign in with your new password.");
+});
+
+/* ------------------------------------------------------------------ *
+ * POST /token/refresh
+ * ------------------------------------------------------------------ */
+
+const refreshDisabled = () =>
+    new HttpError(404, "Refresh tokens are not enabled on this endpoint.");
+
+export const refreshSession = handler(async (req, res, config) => {
+    if (!config.refresh.enabled) throw refreshDisabled();
+
+    const presented = req.body?.refreshToken;
+    const { user, refreshToken } = await useRefreshToken(presented, config);
+
+    if (config.fields.disabled && user[config.fields.disabled]) {
+        throw new HttpError(403, "This account is not active.");
+    }
+
+    // A fresh access token, and the user's current role — not the one the old
+    // token was minted with.
+    return ok(res, {
+        token: issue(user, config),
+        expiresIn: durationToSeconds(config.token.expiresIn),
+        refreshToken,
+        refreshExpiresIn: config.refresh.ttlSeconds,
+        user: publicUser(user, config),
+    });
+});
+
+/* ------------------------------------------------------------------ *
+ * POST /logout  and  POST /logout/all
+ * ------------------------------------------------------------------ */
+
+export const logout = handler(async (req, res, config) => {
+    if (!config.refresh.enabled) throw refreshDisabled();
+
+    // Holding the token is the authority to end the session it belongs to, so
+    // this needs no access token — which is what lets a client sign out after
+    // its short-lived one has already expired.
+    if (typeof req.body?.refreshToken === "string") {
+        await closeSession(req.body.refreshToken, config);
+    }
+
+    return okMessage(res, "Signed out.");
+});
+
+export const logoutAll = handler(async (req, res, config) => {
+    if (!config.refresh.enabled) throw refreshDisabled();
+
+    await revokeAllSessions(req.auth.userId, config);
+    return okMessage(res, "Signed out everywhere.");
 });
 
 /* ------------------------------------------------------------------ *

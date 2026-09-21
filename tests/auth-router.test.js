@@ -39,6 +39,7 @@ test(
                 failedLoginAttempts: { type: Number, default: 0, select: false },
                 lockedUntil: { type: Date, select: false },
                 passwordChangedAt: Date,
+                sessions: { type: [{ id: String, hash: String, expiresAt: Date }], select: false },
             }),
         );
         await User.init();
@@ -71,7 +72,10 @@ test(
         await t.test("reports the URLs it mounted", () => {
             const router = build();
 
-            assert.strictEqual(router.urls.length, AUTH_ROUTES.length);
+            // Refresh is opt-in, so its three endpoints are in the catalogue
+            // but not on a router that did not ask for them.
+            assert.strictEqual(router.urls.length, AUTH_ROUTES.length - 3);
+            assert.ok(!router.urls.some((u) => u.name === "refresh"));
             assert.deepStrictEqual(router.urls[0], {
                 name: "register",
                 method: "POST",
@@ -89,6 +93,21 @@ test(
                 router.urls.filter((u) => u.access === "admin").map((u) => u.name),
                 ["listUsers", "modifyRoles"],
             );
+        });
+
+        await t.test("refresh endpoints appear only when refresh is enabled", () => {
+            const off = build();
+            const on = build({
+                refresh: { enabled: true },
+                // The schema needs somewhere to keep sessions.
+                fields: { refreshTokens: "sessions" },
+            });
+
+            for (const name of ["refresh", "logout", "logoutAll"]) {
+                assert.ok(!off.urls.some((u) => u.name === name), `${name} off`);
+                assert.ok(on.urls.some((u) => u.name === name), `${name} on`);
+            }
+            assert.strictEqual(on.urls.length, AUTH_ROUTES.length);
         });
 
         await t.test("the exported table describes what can be mounted", () => {
@@ -132,10 +151,11 @@ test(
         });
 
         await t.test("routes can be left out", async () => {
+            const baseline = build().urls.length;
             const router = build({ routes: { social: false, listUsers: false, modifyRoles: false } });
 
             assert.ok(!router.urls.some((u) => u.name === "social"));
-            assert.strictEqual(router.urls.length, AUTH_ROUTES.length - 3);
+            assert.strictEqual(router.urls.length, baseline - 3);
 
             await withServer(mount(router), async (base) => {
                 const social = await call(base, "POST", "/auth/social/google", { idToken: "x" });

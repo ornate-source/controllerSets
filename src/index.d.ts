@@ -396,6 +396,8 @@ export interface AuthFieldMap {
     failedLogins?: string;
     lockedUntil?: string;
     passwordChangedAt?: string;
+    /** Array of sessions, used only with refresh tokens. Default `"refreshTokens"`. */
+    refreshTokens?: string;
     /** A boolean field that blocks sign-in when true. Unset by default. */
     disabled?: string | null;
 }
@@ -428,6 +430,22 @@ export interface OtpOptions {
         channel: "email" | "sms";
         req: Request;
     }) => void | Promise<void>;
+}
+
+/** Every value falls back to the environment, then the default shown. */
+export interface RefreshOptions {
+    /** Mount `/token/refresh`, `/logout`, `/logout/all`. Env `AUTH_REFRESH_ENABLED`, default false. */
+    enabled?: boolean;
+    /** Issue a new refresh token on every refresh. Env `AUTH_REFRESH_ROTATE`, default true. */
+    rotate?: boolean;
+    /** `"30d"` or seconds. Env `AUTH_REFRESH_EXPIRES_IN`, default `"30d"`. */
+    expiresIn?: string | number;
+    /** How long a just-rotated token is still accepted, for racing clients. Default 10. */
+    graceSeconds?: number;
+    /** On replay of a rotated-away token, end every session rather than one. Default true. */
+    revokeAllOnReuse?: boolean;
+    /** Sessions kept per user; the oldest is dropped. Default 5. */
+    maxSessions?: number;
 }
 
 export interface RoleOptions {
@@ -468,6 +486,9 @@ export type AuthRouteName =
     | "forgotPassword"
     | "resetPassword"
     | "changePassword"
+    | "refresh"
+    | "logout"
+    | "logoutAll"
     | "me"
     | "listUsers"
     | "getUser"
@@ -511,6 +532,8 @@ export interface AuthOptions<T extends Document = any> {
         verify?: (plain: string, stored: string) => Promise<boolean> | boolean;
     };
     otp?: OtpOptions;
+    /** Refresh tokens and sign-out. Off unless enabled here or via `AUTH_REFRESH_ENABLED`. */
+    refresh?: RefreshOptions;
     /** Failed sign-ins before the account locks. Default 10 attempts, 900s. */
     lockout?: { maxAttempts?: number; lockSeconds?: number };
     roles?: RoleOptions;

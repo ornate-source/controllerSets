@@ -337,6 +337,39 @@ app.use(errorHandler);
 | `GET` | `/users` · `/users/:id` | List (admin) and read. |
 | `PATCH` | `/users/:id` | Update yourself, or anyone if you administer. |
 | `PATCH` | `/users/:id/roles` | Assign roles (admin). |
+| `POST` | `/token/refresh` | Trade a refresh token for a new access token. *(refresh enabled)* |
+| `POST` | `/logout` | End the session a refresh token belongs to. *(refresh enabled)* |
+| `POST` | `/logout/all` | End every session of the signed-in user. *(refresh enabled)* |
+
+### Refresh tokens
+
+Off by default, because they need somewhere to live on your model. Turn them on in code or
+from the environment — explicit options win over `.env`:
+
+```bash
+AUTH_REFRESH_ENABLED=true
+AUTH_REFRESH_ROTATE=true      # true: every refresh returns a new token; false: it stays the same
+AUTH_REFRESH_EXPIRES_IN=30d
+```
+
+```javascript
+createAuthRouter({
+    model: User,
+    token: { secret: process.env.JWT_SECRET, expiresIn: '15m' },
+    refresh: {
+        enabled: true,
+        rotate: true,             // defaults to AUTH_REFRESH_ROTATE, then true
+        expiresIn: '30d',
+        graceSeconds: 10,         // a racing duplicate refresh is not treated as theft
+        revokeAllOnReuse: true,   // replaying a rotated-away token ends every session
+        maxSessions: 5,           // oldest session dropped beyond this
+    },
+});
+```
+
+Sign-in responses then carry `refreshToken` and `refreshExpiresIn` alongside `token`. Refresh
+tokens are opaque, stored only as an HMAC, and revoked on password change or reset. The library
+reads `process.env` but does not load `.env` — call `dotenv` (or `node --env-file`) first.
 
 ### Your URLs, not ours
 
@@ -393,6 +426,13 @@ const userSchema = new mongoose.Schema({
     failedLoginAttempts: { type: Number, default: 0, select: false },
     lockedUntil: { type: Date, select: false },
     passwordChangedAt: Date,
+
+    // Only with refresh tokens enabled.
+    refreshTokens: {
+        type: [{ id: String, hash: String, previousHash: String, rotatedAt: Date,
+                 createdAt: Date, lastUsedAt: Date, expiresAt: Date, userAgent: String }],
+        select: false,
+    },
 }, { timestamps: true });
 ```
 

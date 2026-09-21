@@ -3201,8 +3201,9 @@ POST /auth/password/reset   { "identifier": "ada@example.com",
                 <div class="callout callout-warn">
                     <i data-lucide="siren"></i>
                     <div>
-                        <p><strong>What this does not do.</strong> No refresh tokens or session revocation lists —
-                            keep <code>expiresIn</code> short. No rate limiting on the endpoints themselves beyond
+                        <p><strong>What this does not do.</strong> Refresh tokens are opt-in
+                            (<code>refresh.enabled</code> or <code>AUTH_REFRESH_ENABLED</code>), so keep
+                            <code>expiresIn</code> short and turn them on. No rate limiting on the endpoints themselves beyond
                             the per-account lockout, so put a limiter in front of <code>/login</code>,
                             <code>/register</code> and <code>/password/forgot</code>. No email verification flow. And
                             it sends nothing: <code>otp.deliver</code> is where your provider goes.</p>
