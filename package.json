@@ -1,6 +1,6 @@
 {
   "name": "express-controller-sets",
-  "version": "3.3.0",
+  "version": "3.3.1",
   "description": "Unified package for Express.js controller sets, authentication, dynamic routing, HTTP QUERY reads, and S3 file uploads.",
   "main": "src/index.js",
   "types": "src/index.d.ts",
