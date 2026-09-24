@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.3.1] — 2026-09-24
+
+Documentation release. No runtime behaviour changed.
+
+### Changed
+
+- **Authentication is labelled beta.** `createAuthRouter`, `requireAuth` and `requireRole`
+  work and are tested, but their options, routes and response shapes may change in a minor
+  release before the module is declared stable. The README and docs now say so. Pin an exact
+  version if you depend on auth in production.
+- Docs: the site is reorganised. New pages — Quickstart (replaces "How to use"), Concepts,
+  HTTP API, Protecting routes, Custom routes (replaces "Advanced"), Upgrading and
+  Troubleshooting (replaces "FAQ"). Page sources moved to `docs/src/content/`.
+- README links point at the new Quickstart and HTTP API pages.
+
+---
+
 ## [3.3.0] — 2026-09-21
 
 One router for CRUD with or without files.

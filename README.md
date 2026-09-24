@@ -19,13 +19,35 @@ An advanced, unified toolkit for Express.js that accelerates API development by 
 > instead of guessing. It also ships in the package at
 > `node_modules/express-controller-sets/docs/llms-full.txt`.
 
+> [!WARNING]
+> **Authentication (`createAuthRouter`) is in beta.** Its options, routes and response shapes
+> may change in a minor release before it is declared stable. Pin an exact version if you use
+> it in production, and review the auth section of the changelog before upgrading. The CRUD
+> router, uploads and caching are stable and unaffected.
+
 Designed to help you build APIs faster by automating repetitive controller logic and middleware configuration while maintaining type safety and flexibility.
 
 ---
 
 ## 📋 Changelog
 
-### Version 3.2.0 — Authentication
+### Version 3.3.1 — Documentation, auth marked beta
+
+- **Docs**: the documentation site is reorganised into Quickstart, Concepts, HTTP API,
+  Protecting routes, Custom routes, Upgrading and Troubleshooting pages.
+- **Notice**: authentication (`createAuthRouter`, `requireAuth`, `requireRole`) is now
+  explicitly labelled **beta**. Nothing changed in its behaviour; its API may still change in a
+  minor release.
+
+### Version 3.3.0 — One router for CRUD with or without files
+
+- **New**: `createRouter({ upload })` accepts files on `POST /` and `PATCH /:id` and stores
+  them in S3.
+- **Deprecated**: `createRouterS3upload` — use `createRouter` with `upload`. Removed in 4.0.
+- **Changed**: `sharp` is an optional peer dependency; install it yourself to compress images.
+  `engines.node` is now `>=20.19.0`.
+
+### Version 3.2.0 — Authentication (beta)
 
 Adds a full auth API. It defines no schema: you pass your own user model and say which fields
 hold what.
@@ -312,6 +334,11 @@ createRouter({ model: Product, cache: true, allowedFields: ['name', 'price'] });
 - No Redis in development? `cache: { store: createMemoryCacheStore() }`.
 
 ## 🔐 Authentication
+
+> [!WARNING]
+> **Beta.** The auth module works and is tested, but its options, routes and response shapes
+> may change in a minor release. Pin an exact version in production and read the changelog
+> before upgrading.
 
 You bring the model; the library never defines a schema. Point it at your fields and mount it:
 
